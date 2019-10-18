@@ -24,8 +24,6 @@ This will run the shell.
 
 
 ### Compilation
-
-Notes on compilation
 #### Get the code base
 ```
 git clone https://github.com/tianocore/edk2.git
@@ -37,7 +35,8 @@ cd edk2
 . edksetup.sh
 make -C BaseTools
 ```
-
-Conf/target.txt
+#### Configure and compile
+```
+Edit Conf/target.txt (update ACTIVE_PLATFORM/TARGET/TARGET_ARCH/TOOL_CHAIN_TAG)
 GCC5_AARCH64_PREFIX=aarch64-linux-gnu- build -a AARCH64 -t GCC5 -b RELEASE
 ```
