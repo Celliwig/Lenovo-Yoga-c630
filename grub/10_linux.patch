@@ -1,0 +1,50 @@
+--- 10_linux	2019-10-17 01:37:54.346030635 +0100
++++ /etc/grub.d/10_linux	2019-10-17 02:41:30.824933423 +0100
+@@ -114,6 +114,7 @@
+   version="$2"
+   type="$3"
+   args="$4"
++  devicetree_prefix="$5"
+ 
+   if [ -z "$boot_device_id" ]; then
+       boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
+@@ -227,6 +228,8 @@
+         fi
+     fi
+   fi
++  echo "	devicetree ${devicetree_prefix}_${version}.dtb\n"
++
+   sed "s/^/$submenu_indentation/" << EOF
+ }
+ EOF
+@@ -365,7 +368,7 @@
+ 
+   if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xy ]; then
+     linux_entry "${OS}" "${version}" simple \
+-    "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
++    "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}" "${GRUB_DTB_PREFIX}"
+ 
+     submenu_indentation="$grub_tab"
+     
+@@ -378,17 +381,17 @@
+   fi
+ 
+   linux_entry "${OS}" "${version}" advanced \
+-              "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}"
++              "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}" "${GRUB_DTB_PREFIX}"
+   for supported_init in ${SUPPORTED_INITS}; do
+     init_path="${supported_init#*:}"
+     if [ -x "${init_path}" ] && [ "$(readlink -f /sbin/init)" != "$(readlink -f "${init_path}")" ]; then
+       linux_entry "${OS}" "${version}" "init-${supported_init%%:*}" \
+-		  "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}"
++		  "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} init=${init_path}" "${GRUB_DTB_PREFIX}"
+     fi
+   done
+   if [ "x${GRUB_DISABLE_RECOVERY}" != "xtrue" ]; then
+     linux_entry "${OS}" "${version}" recovery \
+-                "${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}"
++                "${GRUB_CMDLINE_LINUX_RECOVERY} ${GRUB_CMDLINE_LINUX}" "${GRUB_DTB_PREFIX}"
+   fi
+ 
+   list=`echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' '`
+
