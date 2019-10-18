@@ -19,5 +19,5 @@ This will run the shell.
 * help bcfg                                                       _; Show help for bcfg_
 * bcfg boot dump                                                  _; View the current boot configuration_
 * bcfg boot add __0__ fs2:\EFI\Utils\Shell.efi "UEFI Shell"       _; Add the UEFI shell as the first item to boot_
-* bfcg boot mv __1__ __0__                                        _; Boot order: swap 1st and 2nd items_
+* bfcg boot mv __0__ __1__                                        _; Boot order: swap 1st and 2nd items_
 * bcfg boot rm __0__                                              _; Remove the first item in the boot list_
