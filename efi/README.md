@@ -21,3 +21,23 @@ This will run the shell.
 * bcfg boot add __0__ fs2:\EFI\Utils\Shell.efi "UEFI Shell"       _; Add the UEFI shell as the first item to boot_
 * bfcg boot mv __0__ __1__                                        _; Boot order: swap 1st and 2nd items_
 * bcfg boot rm __0__                                              _; Remove the first item in the boot list_
+
+
+### Compilation
+
+Notes on compilation
+#### Get the code base
+```
+git clone https://github.com/tianocore/edk2.git
+git clone https://github.com/tianocore/edk2-platforms.git
+```
+#### Compile code base tools
+```
+cd edk2
+. edksetup.sh
+make -C BaseTools
+```
+
+Conf/target.txt
+GCC5_AARCH64_PREFIX=aarch64-linux-gnu- build -a AARCH64 -t GCC5 -b RELEASE
+```
