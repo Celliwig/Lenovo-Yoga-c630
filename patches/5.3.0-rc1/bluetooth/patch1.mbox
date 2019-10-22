@@ -1,0 +1,83 @@
+From	Bjorn Andersson <>
+Subject	[PATCH 1/4] Bluetooth: hci_qca: Update regulator_set_load() usage
+Date	Thu, 17 Oct 2019 22:24:01 -0700
+	
+
+Since the introduction of '5451781dadf8 ("regulator: core: Only count
+load for enabled consumers")' in v5.0, the requested load of a regulator
+consumer is only accounted for when said consumer is voted enabled.
+
+So there's no need to vote for load ever time the regulator is
+enabled or disabled.
+
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+---
+ drivers/bluetooth/hci_qca.c | 33 ++++++++++++++++++---------------
+ 1 file changed, 18 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/bluetooth/hci_qca.c b/drivers/bluetooth/hci_qca.c
+index e3164c200eac..c07c529b0d81 100644
+--- a/drivers/bluetooth/hci_qca.c
++++ b/drivers/bluetooth/hci_qca.c
+@@ -1393,13 +1393,6 @@ static int qca_enable_regulator(struct qca_vreg vregs,
+ 	if (ret)
+ 		return ret;
+ 
+-	if (vregs.load_uA)
+-		ret = regulator_set_load(regulator,
+-					 vregs.load_uA);
+-
+-	if (ret)
+-		return ret;
+-
+ 	return regulator_enable(regulator);
+ 
+ }
+@@ -1409,8 +1402,6 @@ static void qca_disable_regulator(struct qca_vreg vregs,
+ {
+ 	regulator_disable(regulator);
+ 	regulator_set_voltage(regulator, 0, vregs.max_uV);
+-	if (vregs.load_uA)
+-		regulator_set_load(regulator, 0);
+ 
+ }
+ 
+@@ -1462,18 +1453,30 @@ static int qca_power_setup(struct hci_uart *hu, bool on)
+ static int qca_init_regulators(struct qca_power *qca,
+ 				const struct qca_vreg *vregs, size_t num_vregs)
+ {
++	struct regulator_bulk_data *bulk;
++	int ret;
+ 	int i;
+ 
+-	qca->vreg_bulk = devm_kcalloc(qca->dev, num_vregs,
+-				      sizeof(struct regulator_bulk_data),
+-				      GFP_KERNEL);
+-	if (!qca->vreg_bulk)
++	bulk = devm_kcalloc(qca->dev, num_vregs, sizeof(*bulk), GFP_KERNEL);
++	if (!bulk)
+ 		return -ENOMEM;
+ 
+ 	for (i = 0; i < num_vregs; i++)
+-		qca->vreg_bulk[i].supply = vregs[i].name;
++		bulk[i].supply = vregs[i].name;
++
++	ret = devm_regulator_bulk_get(qca->dev, num_vregs, bulk);
++	if (ret < 0)
++		return ret;
+ 
+-	return devm_regulator_bulk_get(qca->dev, num_vregs, qca->vreg_bulk);
++	for (i = 0; i < num_vregs; i++) {
++		ret = regulator_set_load(bulk[i].consumer, vregs[i].load_uA);
++		if (ret)
++			return ret;
++	}
++
++	qca->vreg_bulk = bulk;
++
++	return 0;
+ }
+ 
+ static int qca_serdev_probe(struct serdev_device *serdev)
+-- 
+2.23.0
