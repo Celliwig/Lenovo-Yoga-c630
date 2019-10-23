@@ -1,0 +1,28 @@
+From	Pierre-Louis Bossart <>
+Subject	[PATCH 0/2] soundwire: fix Kconfig select/depend issues
+Date	Thu, 11 Apr 2019 14:28:12 -0500
+	
+
+0-day/Kbuild starts complaining about missed module dependencies and
+compilation issues. Since codecs and soc drivers need to be compilable
+independently, let's fix this using the following model:
+
+SOUNDWIRE_INTEL ---- select -----------
+                                      |
+				      v
+REGMAP_SOUNDWIRE --- select ---> SOUNDWIRE_BUS
+
+
+Pierre-Louis Bossart (2):
+  regmap: soundwire: fix Kconfig select/depend issue
+  soundwire: fix SOUNDWIRE_BUS option
+
+ drivers/base/regmap/Kconfig | 3 ++-
+ drivers/soundwire/Kconfig   | 1 -
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+-- 
+2.17.1
+
+https://lkml.org/lkml/2019/4/11/760
+

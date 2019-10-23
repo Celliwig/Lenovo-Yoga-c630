@@ -1,0 +1,14 @@
+diff --git a/drivers/base/regmap/Kconfig b/drivers/base/regmap/Kconfig
+index 6ad5ef48b61e..4e422afe3c0d 100644
+--- a/drivers/base/regmap/Kconfig
++++ b/drivers/base/regmap/Kconfig
+@@ -44,7 +44,8 @@ config REGMAP_IRQ
+ 
+ config REGMAP_SOUNDWIRE
+ 	tristate
+-	depends on SOUNDWIRE_BUS
++	depends on SOUNDWIRE
++	select SOUNDWIRE_BUS
+ 
+ config REGMAP_SCCB
+ 	tristate

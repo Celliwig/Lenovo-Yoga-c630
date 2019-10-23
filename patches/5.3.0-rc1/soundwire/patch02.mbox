@@ -1,0 +1,32 @@
+From	Pierre-Louis Bossart <>
+Subject	[PATCH 2/2] soundwire: fix SOUNDWIRE_BUS option
+Date	Thu, 11 Apr 2019 14:28:14 -0500
+	
+
+SOUNDWIRE_BUS can be selected independendly by the SOC driver
+(e.g. SOUNDWIRE_INTEL) or the codec driver (via REGMAP_SOUNDWIRE).
+
+Remove wrong-way link between SOUNDWIRE_BUS and REGMAP_SOUNDWIRE
+
+Fixes: 6c49b32d3c09 ('soundwire: select REGMAP_SOUNDWIRE')
+Signed-off-by: Pierre-Louis Bossart <pierre-louis.bossart@linux.intel.com>
+---
+ drivers/soundwire/Kconfig | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/soundwire/Kconfig b/drivers/soundwire/Kconfig
+index 84876a74874f..d382d80d2fe1 100644
+--- a/drivers/soundwire/Kconfig
++++ b/drivers/soundwire/Kconfig
+@@ -18,7 +18,6 @@ comment "SoundWire Devices"
+ 
+ config SOUNDWIRE_BUS
+ 	tristate
+-	select REGMAP_SOUNDWIRE
+ 
+ config SOUNDWIRE_CADENCE
+ 	tristate
+-- 
+2.17.1
+
+

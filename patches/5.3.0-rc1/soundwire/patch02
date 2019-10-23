@@ -1,0 +1,12 @@
+diff --git a/drivers/soundwire/Kconfig b/drivers/soundwire/Kconfig
+index 84876a74874f..d382d80d2fe1 100644
+--- a/drivers/soundwire/Kconfig
++++ b/drivers/soundwire/Kconfig
+@@ -18,7 +18,6 @@ comment "SoundWire Devices"
+ 
+ config SOUNDWIRE_BUS
+ 	tristate
+-	select REGMAP_SOUNDWIRE
+ 
+ config SOUNDWIRE_CADENCE
+ 	tristate
