@@ -1,0 +1,13 @@
+author	Srinivas Kandagatla <srinivas.kandagatla@linaro.org>	2019-10-16 03:21:56 -0700
+committer	Srinivas Kandagatla <srinivas.kandagatla@linaro.org>	2019-10-18 00:29:17 +0100
+commit	9d9d1abd709211c040ea20bc0d5ce5c48bf8a817 (patch)
+tree	74dc42f25211dc60e3327285ffac03a25d7fd856
+parent	78fc83f816b1e430423d537c4946e02306ed9da0 (diff)
+download	linux-9d9d1abd709211c040ea20bc0d5ce5c48bf8a817.tar.gz
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+
+arm64: dts: lenovo-yoga-c630: add audio support
+https://git.linaro.org/people/srinivas.kandagatla/linux.git/commit/?h=audio/v5.4-rc3-YOGA-C630&id=9d9d1abd709211c040ea20bc0d5ce5c48bf8a817
+
+arm64: dts: sdm845: add audio support
+https://git.linaro.org/people/srinivas.kandagatla/linux.git/commit/?h=audio/v5.4-rc3-YOGA-C630&id=78fc83f816b1e430423d537c4946e02306ed9da0
