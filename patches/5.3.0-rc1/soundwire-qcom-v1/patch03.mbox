@@ -1,0 +1,28 @@
+From	Srinivas Kandagatla <>
+Subject	[RFC PATCH 3/6] soundwire: core: define SDW_MAX_PORT
+Date	Fri, 7 Jun 2019 09:56:40 +0100
+	
+
+This patch adds SDW_MAX_PORT so that other driver can use it.
+
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ include/linux/soundwire/sdw.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linux/soundwire/sdw.h b/include/linux/soundwire/sdw.h
+index aac68e879fae..80ca997e4e5d 100644
+--- a/include/linux/soundwire/sdw.h
++++ b/include/linux/soundwire/sdw.h
+@@ -36,6 +36,7 @@ struct sdw_slave;
+ #define SDW_FRAME_CTRL_BITS		48
+ #define SDW_MAX_DEVICES			11
+ 
++#define SDW_MAX_PORTS	14
+ #define SDW_VALID_PORT_RANGE(n)		((n) <= 14 && (n) >= 1)
+ 
+ #define SDW_DAI_ID_RANGE_START		100
+-- 
+2.21.0
+
+
