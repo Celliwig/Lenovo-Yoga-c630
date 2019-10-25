@@ -1,0 +1,39 @@
+#!/bin/sh
+
+PREREQ=""
+FWFILE="/etc/initramfs-tools/firmware"
+FWPREFIX="/lib/firmware/"
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+# Sanity check
+if [ ! -e "${FWFILE}" ]; then
+	echo "W: ${FWFILE} does not exist." >&2
+	return
+fi
+
+grep '^[^#]' ${FWFILE} | while read firmware args; do
+	[ -n "${firmware}" ] || continue
+
+	firmware_path=${FWPREFIX}${firmware}
+
+	if [ -f "${firmware_path}" ]; then
+		echo "W: firmware_hook: forcing copy: ${firmware_path}." >&2
+		copy_file firmware "${firmware_path}" "${args}"
+	else
+		echo "W: firmware_hook: ${firmware_path} does not exist." >&2
+	fi
+done
+
