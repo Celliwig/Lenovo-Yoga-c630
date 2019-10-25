@@ -1,0 +1,39 @@
+diff --git a/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts b/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
+index ded120d3aef5..d3c841628d66 100644
+--- a/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
++++ b/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
+@@ -20,6 +20,11 @@
+ 	};
+ };
+ 
++&adsp_pas {
++	firmware-name = "qcom/c630/qcadsp850.mbn";
++	status = "okay";
++};
++
+ &apps_rsc {
+ 	pm8998-rpmh-regulators {
+ 		compatible = "qcom,pm8998-rpmh-regulators";
+@@ -229,6 +234,11 @@
+ 	status = "disabled";
+ };
+ 
++&cdsp_pas {
++	firmware-name = "qcom/c630/qccdsp850.mbn";
++	status = "okay";
++};
++
+ &gcc {
+ 	protected-clocks = <GCC_QSPI_CORE_CLK>,
+ 			   <GCC_QSPI_CORE_CLK_SRC>,
+@@ -296,6 +306,10 @@
+ 	};
+ };
+ 
++&mss_pil {
++	firmware-name = "qcom/c630/qcdsp1v2850.mbn", "qcom/c630/qcdsp2850.mbn";
++};
++
+ &qup_i2c12_default {
+ 	drive-strength = <2>;
+ 	bias-disable;
