@@ -1,0 +1,43 @@
+From	Srinivas Kandagatla <>
+Subject	[PATCH 1/2] slimbus: qcom-ngd-ctrl: Add of_node_put() before return
+Date	Sun, 18 Aug 2019 10:39:01 +0100
+	
+
+From: Nishka Dasgupta <nishkadg.linux@gmail.com>
+
+Each iteration of for_each_available_child_of_node puts the previous
+node, but in the case of a return from the middle of the loop, there is
+no put, thus causing a memory leak. Hence add an of_node_put before the
+return in two places.
+Issue found with Coccinelle.
+
+Signed-off-by: Nishka Dasgupta <nishkadg.linux@gmail.com>
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ drivers/slimbus/qcom-ngd-ctrl.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/slimbus/qcom-ngd-ctrl.c b/drivers/slimbus/qcom-ngd-ctrl.c
+index f3585777324c..29fbab55c3b3 100644
+--- a/drivers/slimbus/qcom-ngd-ctrl.c
++++ b/drivers/slimbus/qcom-ngd-ctrl.c
+@@ -1338,12 +1338,15 @@ static int of_qcom_slim_ngd_register(struct device *parent,
+ 			continue;
+ 
+ 		ngd = kzalloc(sizeof(*ngd), GFP_KERNEL);
+-		if (!ngd)
++		if (!ngd) {
++			of_node_put(node);
+ 			return -ENOMEM;
++		}
+ 
+ 		ngd->pdev = platform_device_alloc(QCOM_SLIM_NGD_DRV_NAME, id);
+ 		if (!ngd->pdev) {
+ 			kfree(ngd);
++			of_node_put(node);
+ 			return -ENOMEM;
+ 		}
+ 		ngd->id = id;
+-- 
+2.21.0

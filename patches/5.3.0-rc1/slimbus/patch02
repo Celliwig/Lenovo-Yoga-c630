@@ -1,0 +1,21 @@
+diff --git a/drivers/slimbus/qcom-ngd-ctrl.c b/drivers/slimbus/qcom-ngd-ctrl.c
+index f3585777324c..29fbab55c3b3 100644
+--- a/drivers/slimbus/qcom-ngd-ctrl.c
++++ b/drivers/slimbus/qcom-ngd-ctrl.c
+@@ -1338,12 +1338,15 @@ static int of_qcom_slim_ngd_register(struct device *parent,
+ 			continue;
+ 
+ 		ngd = kzalloc(sizeof(*ngd), GFP_KERNEL);
+-		if (!ngd)
++		if (!ngd) {
++			of_node_put(node);
+ 			return -ENOMEM;
++		}
+ 
+ 		ngd->pdev = platform_device_alloc(QCOM_SLIM_NGD_DRV_NAME, id);
+ 		if (!ngd->pdev) {
+ 			kfree(ngd);
++			of_node_put(node);
+ 			return -ENOMEM;
+ 		}
+ 		ngd->id = id;

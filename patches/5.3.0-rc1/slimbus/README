@@ -1,0 +1,30 @@
+From	Srinivas Kandagatla <>
+Subject	[PATCH 0/2] slimbus: patches(set 1) for 5.4
+Date	Sun, 18 Aug 2019 10:39:00 +0100
+	
+
+Hi Greg,
+
+Here are some slimbus patches for 5.4 which includes:
+Two fixes, one to fix the dt node refcount and other
+is to address a coccicheck.
+
+Can you please queue them up for 5.4.
+
+Thanks,
+srini
+
+Nishka Dasgupta (1):
+  slimbus: qcom-ngd-ctrl: Add of_node_put() before return
+
+Srinivas Kandagatla (1):
+  slimbus: fix slim_tid_txn()
+
+ drivers/slimbus/qcom-ngd-ctrl.c | 5 ++++-
+ drivers/slimbus/slimbus.h       | 2 +-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+-- 
+2.21.0
+
+https://lkml.org/lkml/2019/8/18/72

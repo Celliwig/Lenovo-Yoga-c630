@@ -1,0 +1,32 @@
+From	Srinivas Kandagatla <>
+Subject	[PATCH 2/2] slimbus: fix slim_tid_txn()
+Date	Sun, 18 Aug 2019 10:39:02 +0100
+	
+
+fix below issue reported by coccicheck
+./drivers/slimbus/slimbus.h:440:3-46: duplicated argument to && or ||
+
+Looks like this was a typo, SLIM_MSG_MC_REQUEST_CHANGE_VALUE is command
+which requires transaction ID, so fix it, this also fix the warning.
+
+Reported-by: Hariprasad Kelam <hariprasad.kelam@gmail.com>
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ drivers/slimbus/slimbus.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/slimbus/slimbus.h b/drivers/slimbus/slimbus.h
+index 9be41089edde..b2f013bfe42e 100644
+--- a/drivers/slimbus/slimbus.h
++++ b/drivers/slimbus/slimbus.h
+@@ -439,7 +439,7 @@ static inline bool slim_tid_txn(u8 mt, u8 mc)
+ 		(mc == SLIM_MSG_MC_REQUEST_INFORMATION ||
+ 		 mc == SLIM_MSG_MC_REQUEST_CLEAR_INFORMATION ||
+ 		 mc == SLIM_MSG_MC_REQUEST_VALUE ||
+-		 mc == SLIM_MSG_MC_REQUEST_CLEAR_INFORMATION));
++		 mc == SLIM_MSG_MC_REQUEST_CHANGE_VALUE));
+ }
+ 
+ static inline bool slim_ec_txn(u8 mt, u8 mc)
+-- 
+2.21.0
