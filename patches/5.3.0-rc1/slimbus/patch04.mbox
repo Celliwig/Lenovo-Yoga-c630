@@ -1,0 +1,29 @@
+slimbus: core: generate uevent for non-dt only
+Rely on MODULE_ALIAS() for automatic kernel module loading, rather than
+basing it on the OF compatible. This ensures that drivers without
+of_device_id table, such as wcd9335, will be automatically loaded.
+
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+[bjorn: Added commit message]
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Diffstat
+-rw-r--r--	drivers/slimbus/core.c	5	
+		
+1 files changed, 0 insertions, 5 deletions
+diff --git a/drivers/slimbus/core.c b/drivers/slimbus/core.c
+index b2f07d2043eb..526e3215d8fe 100644
+--- a/drivers/slimbus/core.c
++++ b/drivers/slimbus/core.c
+@@ -98,11 +98,6 @@ static int slim_device_remove(struct device *dev)
+ static int slim_device_uevent(struct device *dev, struct kobj_uevent_env *env)
+ {
+ 	struct slim_device *sbdev = to_slim_device(dev);
+-	int ret;
+-
+-	ret = of_device_uevent_modalias(dev, env);
+-	if (ret != -ENODEV)
+-		return ret;
+ 
+ 	return add_uevent_var(env, "MODALIAS=slim:%s", dev_name(&sbdev->dev));
+ }
