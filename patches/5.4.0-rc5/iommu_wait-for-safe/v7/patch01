@@ -1,5 +1,5 @@
 diff --git a/drivers/firmware/qcom_scm-64.c b/drivers/firmware/qcom_scm-64.c
-index 91d5ad7cf58b..6697bb741b83 100644
+index 91d5ad7cf58b..65d772b7fd1e 100644
 --- a/drivers/firmware/qcom_scm-64.c
 +++ b/drivers/firmware/qcom_scm-64.c
 @@ -62,32 +62,72 @@ static DEFINE_MUTEX(qcom_scm_lock);
@@ -127,7 +127,7 @@ index 91d5ad7cf58b..6697bb741b83 100644
  
  	if (args_virt) {
  		dma_unmap_single(dev, args_phys, alloc_len, DMA_TO_DEVICE);
-@@ -156,6 +170,43 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
+@@ -156,6 +170,42 @@ static int qcom_scm_call(struct device *dev, u32 svc_id, u32 cmd_id,
  	return 0;
  }
  
@@ -158,13 +158,12 @@ index 91d5ad7cf58b..6697bb741b83 100644
 + * @res:	Structure containing results from SMC/HVC call
 + *
 + * Sends a command to the SCM and waits for the command to finish processing.
-+ * This should be called in atomic context only.
++ * This can be called in atomic context.
 + */
 +static int qcom_scm_call_atomic(struct device *dev, u32 svc_id, u32 cmd_id,
 +				const struct qcom_scm_desc *desc,
 +				struct arm_smccc_res *res)
 +{
-+	cant_sleep();
 +	return ___qcom_scm_call(dev, svc_id, cmd_id, desc, res, true);
 +}
 +

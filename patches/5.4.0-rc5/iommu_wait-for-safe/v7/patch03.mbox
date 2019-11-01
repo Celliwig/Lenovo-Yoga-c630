@@ -1,6 +1,6 @@
 From	Sai Prakash Ranjan <>
-Subject	[PATCHv6 3/3] iommu: arm-smmu-impl: Add sdm845 implementation hook
-Date	Tue, 17 Sep 2019 15:15:04 +0530
+Subject	[PATCHv7 3/3] iommu: arm-smmu-impl: Add sdm845 implementation hook
+Date	Fri, 20 Sep 2019 13:34:29 +0530
 	
 
 From: Vivek Gautam <vivek.gautam@codeaurora.org>
@@ -70,18 +70,18 @@ Reviewed-by: Robin Murphy <robin.murphy@arm.com>
 Signed-off-by: Sai Prakash Ranjan <saiprakash.ranjan@codeaurora.org>
 ---
  drivers/iommu/Makefile        |  2 +-
- drivers/iommu/arm-smmu-impl.c |  6 +++--
+ drivers/iommu/arm-smmu-impl.c |  5 +++-
  drivers/iommu/arm-smmu-qcom.c | 51 +++++++++++++++++++++++++++++++++++
  drivers/iommu/arm-smmu.h      |  3 +++
- 4 files changed, 59 insertions(+), 3 deletions(-)
+ 4 files changed, 59 insertions(+), 2 deletions(-)
  create mode 100644 drivers/iommu/arm-smmu-qcom.c
 
 diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
-index a2729aadd300..2816e49a8c46 100644
+index 4f405f926e73..86dadd13b2e6 100644
 --- a/drivers/iommu/Makefile
 +++ b/drivers/iommu/Makefile
 @@ -13,7 +13,7 @@ obj-$(CONFIG_MSM_IOMMU) += msm_iommu.o
- obj-$(CONFIG_AMD_IOMMU) += amd_iommu.o amd_iommu_init.o
+ obj-$(CONFIG_AMD_IOMMU) += amd_iommu.o amd_iommu_init.o amd_iommu_quirks.o
  obj-$(CONFIG_AMD_IOMMU_DEBUGFS) += amd_iommu_debugfs.o
  obj-$(CONFIG_AMD_IOMMU_V2) += amd_iommu_v2.o
 -obj-$(CONFIG_ARM_SMMU) += arm-smmu.o arm-smmu-impl.o
@@ -90,18 +90,10 @@ index a2729aadd300..2816e49a8c46 100644
  obj-$(CONFIG_DMAR_TABLE) += dmar.o
  obj-$(CONFIG_INTEL_IOMMU) += intel-iommu.o intel-pasid.o
 diff --git a/drivers/iommu/arm-smmu-impl.c b/drivers/iommu/arm-smmu-impl.c
-index 3f88cd078dd5..d62da270f430 100644
+index 5c87a38620c4..b2fe72a8f019 100644
 --- a/drivers/iommu/arm-smmu-impl.c
 +++ b/drivers/iommu/arm-smmu-impl.c
-@@ -9,7 +9,6 @@
- 
- #include "arm-smmu.h"
- 
--
- static int arm_smmu_gr0_ns(int offset)
- {
- 	switch(offset) {
-@@ -109,7 +108,7 @@ static struct arm_smmu_device *cavium_smmu_impl_init(struct arm_smmu_device *smm
+@@ -109,7 +109,7 @@ static struct arm_smmu_device *cavium_smmu_impl_init(struct arm_smmu_device *smm
  #define ARM_MMU500_ACR_S2CRB_TLBEN	(1 << 10)
  #define ARM_MMU500_ACR_SMTNMB_TLBEN	(1 << 8)
  
@@ -110,7 +102,7 @@ index 3f88cd078dd5..d62da270f430 100644
  {
  	u32 reg, major;
  	int i;
-@@ -170,5 +169,8 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
+@@ -170,5 +170,8 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
  				  "calxeda,smmu-secure-config-access"))
  		smmu->impl = &calxeda_impl;
  
@@ -177,10 +169,10 @@ index 000000000000..24c071c1d8b0
 +	return &qsmmu->smmu;
 +}
 diff --git a/drivers/iommu/arm-smmu.h b/drivers/iommu/arm-smmu.h
-index ac9eac966cf5..4bc9e853c95d 100644
+index b19b6cae9b5e..de99a85e140a 100644
 --- a/drivers/iommu/arm-smmu.h
 +++ b/drivers/iommu/arm-smmu.h
-@@ -391,5 +391,8 @@ static inline void arm_smmu_writeq(struct arm_smmu_device *smmu, int page,
+@@ -398,5 +398,8 @@ static inline void arm_smmu_writeq(struct arm_smmu_device *smmu, int page,
  	arm_smmu_writeq((s), ARM_SMMU_CB((s), (n)), (o), (v))
  
  struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu);
