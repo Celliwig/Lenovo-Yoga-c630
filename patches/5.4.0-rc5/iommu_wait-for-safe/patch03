@@ -1,0 +1,105 @@
+diff --git a/drivers/iommu/Makefile b/drivers/iommu/Makefile
+index 4f405f926e73..86dadd13b2e6 100644
+--- a/drivers/iommu/Makefile
++++ b/drivers/iommu/Makefile
+@@ -13,7 +13,7 @@ obj-$(CONFIG_MSM_IOMMU) += msm_iommu.o
+ obj-$(CONFIG_AMD_IOMMU) += amd_iommu.o amd_iommu_init.o amd_iommu_quirks.o
+ obj-$(CONFIG_AMD_IOMMU_DEBUGFS) += amd_iommu_debugfs.o
+ obj-$(CONFIG_AMD_IOMMU_V2) += amd_iommu_v2.o
+-obj-$(CONFIG_ARM_SMMU) += arm-smmu.o arm-smmu-impl.o
++obj-$(CONFIG_ARM_SMMU) += arm-smmu.o arm-smmu-impl.o arm-smmu-qcom.o
+ obj-$(CONFIG_ARM_SMMU_V3) += arm-smmu-v3.o
+ obj-$(CONFIG_DMAR_TABLE) += dmar.o
+ obj-$(CONFIG_INTEL_IOMMU) += intel-iommu.o intel-pasid.o
+diff --git a/drivers/iommu/arm-smmu-impl.c b/drivers/iommu/arm-smmu-impl.c
+index 5c87a38620c4..b2fe72a8f019 100644
+--- a/drivers/iommu/arm-smmu-impl.c
++++ b/drivers/iommu/arm-smmu-impl.c
+@@ -109,7 +109,7 @@ static struct arm_smmu_device *cavium_smmu_impl_init(struct arm_smmu_device *smm
+ #define ARM_MMU500_ACR_S2CRB_TLBEN	(1 << 10)
+ #define ARM_MMU500_ACR_SMTNMB_TLBEN	(1 << 8)
+ 
+-static int arm_mmu500_reset(struct arm_smmu_device *smmu)
++int arm_mmu500_reset(struct arm_smmu_device *smmu)
+ {
+ 	u32 reg, major;
+ 	int i;
+@@ -170,5 +170,8 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
+ 				  "calxeda,smmu-secure-config-access"))
+ 		smmu->impl = &calxeda_impl;
+ 
++	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500"))
++		return qcom_smmu_impl_init(smmu);
++
+ 	return smmu;
+ }
+diff --git a/drivers/iommu/arm-smmu-qcom.c b/drivers/iommu/arm-smmu-qcom.c
+new file mode 100644
+index 000000000000..24c071c1d8b0
+--- /dev/null
++++ b/drivers/iommu/arm-smmu-qcom.c
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Copyright (c) 2019, The Linux Foundation. All rights reserved.
++ */
++
++#include <linux/qcom_scm.h>
++
++#include "arm-smmu.h"
++
++struct qcom_smmu {
++	struct arm_smmu_device smmu;
++};
++
++static int qcom_sdm845_smmu500_reset(struct arm_smmu_device *smmu)
++{
++	int ret;
++
++	arm_mmu500_reset(smmu);
++
++	/*
++	 * To address performance degradation in non-real time clients,
++	 * such as USB and UFS, turn off wait-for-safe on sdm845 based boards,
++	 * such as MTP and db845, whose firmwares implement secure monitor
++	 * call handlers to turn on/off the wait-for-safe logic.
++	 */
++	ret = qcom_scm_qsmmu500_wait_safe_toggle(0);
++	if (ret)
++		dev_warn(smmu->dev, "Failed to turn off SAFE logic\n");
++
++	return ret;
++}
++
++static const struct arm_smmu_impl qcom_smmu_impl = {
++	.reset = qcom_sdm845_smmu500_reset,
++};
++
++struct arm_smmu_device *qcom_smmu_impl_init(struct arm_smmu_device *smmu)
++{
++	struct qcom_smmu *qsmmu;
++
++	qsmmu = devm_kzalloc(smmu->dev, sizeof(*qsmmu), GFP_KERNEL);
++	if (!qsmmu)
++		return ERR_PTR(-ENOMEM);
++
++	qsmmu->smmu = *smmu;
++
++	qsmmu->smmu.impl = &qcom_smmu_impl;
++	devm_kfree(smmu->dev, smmu);
++
++	return &qsmmu->smmu;
++}
+diff --git a/drivers/iommu/arm-smmu.h b/drivers/iommu/arm-smmu.h
+index b19b6cae9b5e..de99a85e140a 100644
+--- a/drivers/iommu/arm-smmu.h
++++ b/drivers/iommu/arm-smmu.h
+@@ -398,5 +398,8 @@ static inline void arm_smmu_writeq(struct arm_smmu_device *smmu, int page,
+ 	arm_smmu_writeq((s), ARM_SMMU_CB((s), (n)), (o), (v))
+ 
+ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu);
++struct arm_smmu_device *qcom_smmu_impl_init(struct arm_smmu_device *smmu);
++
++int arm_mmu500_reset(struct arm_smmu_device *smmu);
+ 
+ #endif /* _ARM_SMMU_H */
