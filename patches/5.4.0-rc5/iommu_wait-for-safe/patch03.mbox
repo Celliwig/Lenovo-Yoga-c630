@@ -1,7 +1,13 @@
 From	Vivek Gautam <>
-Subject	[PATCH v3 3/4] iommu/arm-smmu: Add support to handle Qcom's wait-for-safe logic
-Date	Wed, 12 Jun 2019 12:45:53 +0530
+Subject	[PATCH v4 3/3] iommu: arm-smmu-impl: Add sdm845 implementation hook
+Date	Fri, 23 Aug 2019 12:02:48 +0530
 	
+
+Add reset hook for sdm845 based platforms to turn off
+the wait-for-safe sequence.
+
+Understanding how wait-for-safe logic affects USB and UFS performance
+on MTP845 and DB845 boards:
 
 Qcom's implementation of arm,mmu-500 adds a WAIT-FOR-SAFE logic
 to address under-performance issues in real-time clients, such as
@@ -19,29 +25,25 @@ clients, such as USB, and UFS etc. This happens because, with wait-for-safe
 logic enabled the hardware tries to throttle non-real time clients while
 waiting for SAFE ack signals from real-time clients.
 
-On MTP sdm845 devices, with wait-for-safe logic enabled at the boot time
-by the bootloaders we see degraded performance of USB and UFS when kernel
+On mtp845 and db845 devices, with wait-for-safe logic enabled by the
+bootloaders we see degraded performance of USB and UFS when kernel
 enables the smmu stage-1 translations for these clients.
 Turn off this wait-for-safe logic from the kernel gets us back the perf
 of USB and UFS devices until we re-visit this when we start seeing perf
 issues on display/camera on upstream supported SDM845 platforms.
+The bootloaders on these boards implement secure monitor callbacks to
+handle a specific command - QCOM_SCM_SVC_SMMU_PROGRAM with which the
+logic can be toggled.
 
-Now, different bootloaders with their access control policies allow this
-register access differently through secure monitor calls -
-1) With one we can issue io-read/write secure monitor call (qcom-scm)
-   to update the register, while,
-2) With other, such as one on MTP sdm845 we should use the specific
-   qcom-scm command to send request to do the complete register
-   configuration.
-Adding a separate device tree flag for arm-smmu to identify which
-firmware configuration of the two mentioned above we use.
-Not adding code change to allow type-(1) bootloaders to toggle the
-safe using io-read/write qcom-scm call.
+There are other boards such as cheza whose bootloaders don't enable this
+logic. Such boards don't implement callbacks to handle the specific SCM
+call so disabling this logic for such boards will be a no-op.
 
 This change is inspired by the downstream change from Patrick Daly
 to address performance issues with display and camera by handling
 this wait-for-safe within separte io-pagetable ops to do TLB
-maintenance. So a big thanks to him for the change.
+maintenance. So a big thanks to him for the change and for all the
+offline discussions.
 
 Without this change the UFS reads are pretty slow:
 $ time dd if=/dev/sda of=/dev/zero bs=1048576 count=10 conv=sync
@@ -63,55 +65,65 @@ sys     0m 0.54s
 
 Signed-off-by: Vivek Gautam <vivek.gautam@codeaurora.org>
 ---
- drivers/iommu/arm-smmu.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ drivers/iommu/arm-smmu-impl.c | 27 ++++++++++++++++++++++++++-
+ 1 file changed, 26 insertions(+), 1 deletion(-)
 
-diff --git a/drivers/iommu/arm-smmu.c b/drivers/iommu/arm-smmu.c
-index 0ad086da399c..3c3ad43eda97 100644
---- a/drivers/iommu/arm-smmu.c
-+++ b/drivers/iommu/arm-smmu.c
-@@ -39,6 +39,7 @@
- #include <linux/pci.h>
- #include <linux/platform_device.h>
- #include <linux/pm_runtime.h>
+diff --git a/drivers/iommu/arm-smmu-impl.c b/drivers/iommu/arm-smmu-impl.c
+index 3f88cd078dd5..0aef87c41f9c 100644
+--- a/drivers/iommu/arm-smmu-impl.c
++++ b/drivers/iommu/arm-smmu-impl.c
+@@ -6,6 +6,7 @@
+ 
+ #include <linux/bitfield.h>
+ #include <linux/of.h>
 +#include <linux/qcom_scm.h>
- #include <linux/slab.h>
- #include <linux/spinlock.h>
  
-@@ -177,6 +178,7 @@ struct arm_smmu_device {
- 	u32				features;
+ #include "arm-smmu.h"
  
- #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
-+#define ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA (1 << 1)
- 	u32				options;
- 	enum arm_smmu_arch_version	version;
- 	enum arm_smmu_implementation	model;
-@@ -262,6 +264,7 @@ static bool using_legacy_binding, using_generic_binding;
+@@ -102,7 +103,6 @@ static struct arm_smmu_device *cavium_smmu_impl_init(struct arm_smmu_device *smm
+ 	return &cs->smmu;
+ }
  
- static struct arm_smmu_option_prop arm_smmu_options[] = {
- 	{ ARM_SMMU_OPT_SECURE_CFG_ACCESS, "calxeda,smmu-secure-config-access" },
-+	{ ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA, "qcom,smmu-500-fw-impl-safe-errata" },
- 	{ 0, NULL},
+-
+ #define ARM_MMU500_ACTLR_CPRE		(1 << 1)
+ 
+ #define ARM_MMU500_ACR_CACHE_LOCK	(1 << 26)
+@@ -147,6 +147,28 @@ static const struct arm_smmu_impl arm_mmu500_impl = {
+ 	.reset = arm_mmu500_reset,
  };
  
-@@ -2292,6 +2295,19 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
- 	arm_smmu_device_reset(smmu);
- 	arm_smmu_test_smr_masks(smmu);
- 
++static int qcom_sdm845_smmu500_reset(struct arm_smmu_device *smmu)
++{
++	int ret;
++
++	arm_mmu500_reset(smmu);
++
 +	/*
 +	 * To address performance degradation in non-real time clients,
-+	 * such as USB and UFS, turn off wait-for-safe on sdm845 platforms,
-+	 * such as MTP, whose firmwares implement corresponding secure monitor
-+	 * call handlers.
++	 * such as USB and UFS, turn off wait-for-safe on sdm845 based boards,
++	 * such as MTP and db845, whose firmwares implement secure monitor
++	 * call handlers to turn on/off the wait-for-safe logic.
 +	 */
-+	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500") &&
-+	    smmu->options & ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA) {
-+		err = qcom_scm_qsmmu500_wait_safe_toggle(0);
-+		if (err)
-+			dev_warn(dev, "Failed to turn off SAFE logic\n");
-+	}
++	ret = qcom_scm_qsmmu500_wait_safe_toggle(0);
++	if (ret)
++		dev_warn(smmu->dev, "Failed to turn off SAFE logic\n");
 +
- 	/*
- 	 * We want to avoid touching dev->power.lock in fastpaths unless
- 	 * it's really going to do something useful - pm_runtime_enabled()
++	return 0;
++}
++
++const struct arm_smmu_impl qcom_sdm845_smmu500_impl = {
++	.reset = qcom_sdm845_smmu500_reset,
++};
+ 
+ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
+ {
+@@ -170,5 +192,8 @@ struct arm_smmu_device *arm_smmu_impl_init(struct arm_smmu_device *smmu)
+ 				  "calxeda,smmu-secure-config-access"))
+ 		smmu->impl = &calxeda_impl;
+ 
++	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500"))
++		smmu->impl = &qcom_sdm845_smmu500_impl;
++
+ 	return smmu;
+ }
 -- 

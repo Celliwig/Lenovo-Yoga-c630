@@ -1,10 +1,8 @@
 From	Vivek Gautam <>
-Subject	[PATCH v3 0/4] Qcom smmu-500 wait-for-safe handling for sdm845
-Date	Wed, 12 Jun 2019 12:45:50 +0530
+Subject	[PATCH v4 0/3] Qcom smmu-500 wait-for-safe handling for sdm845
+Date	Fri, 23 Aug 2019 12:02:45 +0530
 	
 
-Subject changed, older subject was -
-Qcom smmu-500 TLB invalidation errata for sdm845.
 Previous version of the patches are at [1]:
 
 Qcom's implementation of smmu-500 on sdm845 adds a hardware logic called
@@ -26,6 +24,19 @@ issues on real-time clients on sdm845. In downstream we add separate page table
 ops to handle TLB maintenance and toggle wait-for-safe in tlb_sync call so that
 achieve required performance for display and camera [3, 4].
 
+Changes since v3:
+ * Based on arm-smmu implementation cleanup series [5] by Robin Murphy which is
+   already merged in Will's tree [6].
+ * Implemented the sdm845 specific reset hook which does arm_smmu_device_reset()
+   followed by making SCM call to disable the wait-for-safe logic.
+ * Removed depedency for SCM call on any dt flag. We invariably try to disable
+   the wait-for-safe logic on sdm845. The platforms such as mtp845, and db845
+   that implement handlers for this particular SCM call should be able disable
+   wait-for-safe logic.
+   Other platforms such as cheza don't enable the wait-for-safe logic at all
+   from their bootloaders. So there's no need to disable the same.
+ * No change in SCM call patches 1 & 2.
+
 Changes since v2:
  * Dropped the patch to add atomic io_read/write scm API.
  * Removed support for any separate page table ops to handle wait-for-safe.
@@ -42,26 +53,24 @@ Changes since v1:
       for tlb sync.
  * No change in SCM call patches - patches 1 to 3.
 
-[1] https://lore.kernel.org/patchwork/cover/983913/
+[1] https://lore.kernel.org/patchwork/cover/1087453/
 [2] https://github.com/vivekgautam1/linux/tree/v5.2-rc4/sdm845-display-working
 [3] https://source.codeaurora.org/quic/la/kernel/msm-4.9/commit/drivers/iommu/arm-smmu.c?h=CogSystems-msm-49/msm-4.9&id=da765c6c75266b38191b38ef086274943f353ea7
 [4] https://source.codeaurora.org/quic/la/kernel/msm-4.9/commit/drivers/iommu/arm-smmu.c?h=CogSystems-msm-49/msm-4.9&id=8696005aaaf745de68f57793c1a534a34345c30a
+[5] https://patchwork.kernel.org/patch/11096265/
+[6] https://git.kernel.org/pub/scm/linux/kernel/git/will/linux.git/
 
-Vivek Gautam (4):
+Vivek Gautam (3):
   firmware: qcom_scm-64: Add atomic version of qcom_scm_call
   firmware/qcom_scm: Add scm call to handle smmu errata
-  iommu/arm-smmu: Add support to handle Qcom's wait-for-safe logic
-  arm64: dts/sdm845: Enable FW implemented safe sequence handler on MTP
+  iommu: arm-smmu-impl: Add sdm845 implementation hook
 
- arch/arm64/boot/dts/qcom/sdm845.dtsi |   1 +
- drivers/firmware/qcom_scm-32.c       |   5 ++
- drivers/firmware/qcom_scm-64.c       | 149 ++++++++++++++++++++++++-----------
- drivers/firmware/qcom_scm.c          |   6 ++
- drivers/firmware/qcom_scm.h          |   5 ++
- drivers/iommu/arm-smmu.c             |  16 ++++
- include/linux/qcom_scm.h             |   2 +
- 7 files changed, 140 insertions(+), 44 deletions(-)
+ drivers/firmware/qcom_scm-32.c |   5 ++
+ drivers/firmware/qcom_scm-64.c | 149 +++++++++++++++++++++++++++++------------
+ drivers/firmware/qcom_scm.c    |   6 ++
+ drivers/firmware/qcom_scm.h    |   5 ++
+ drivers/iommu/arm-smmu-impl.c  |  27 +++++++-
+ include/linux/qcom_scm.h       |   2 +
+ 6 files changed, 149 insertions(+), 45 deletions(-)
 
--- 
-
-https://lkml.org/lkml/2019/6/12/101
+--
