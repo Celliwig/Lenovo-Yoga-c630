@@ -1,0 +1,84 @@
+From	Srinivas Kandagatla <>
+Subject	[PATCH v3 00/11] ASoC: Add support to WCD9340/WCD9341 codec
+Date	Tue, 29 Oct 2019 11:26:49 +0000
+	
+
+This patchset adds support to Qualcomm WCD9340/WCD9341 Codec which
+is a standalone Hi-Fi audio codec IC.
+This codec supports both I2S/I2C and SLIMbus audio interfaces.
+On slimbus interface it supports two data lanes; 16 Tx ports
+and 8 Rx ports. It has Five DACs and seven dedicated interpolators,
+Multibutton headset control (MBHC), Active noise cancellation,
+Sidetone paths, MAD (mic activity detection) and codec processing engine.
+It supports Class-H differential earpiece out and stereo single
+ended headphones out.
+
+This codec also has integrated SoundWire controller.
+Patchset for this is already sent for review at
+https://patchwork.kernel.org/cover/11185769/
+
+This patchset has been tested on SDM845 based DragonBoard DB845c and
+Lenovo Yoga C630 laptop with WSA881x smart speaker amplifiers via
+soundwire and 4 DMICs.
+
+Pin Controller patch does not have any link dependency, it can go by its own.
+
+Most of the code in this driver is rework of Qualcomm downstream drivers
+used in Andriod. Credits to Banajit Goswami and Patrick Lai's Team.
+
+If anyone is interested to try, here are working set of patches on top of rc3.
+https://git.linaro.org/people/srinivas.kandagatla/linux.git/log/?h=audio/v5.4-rc5-YOGA-C630
+alsa ucm files:
+https://git.linaro.org/people/srinivas.kandagatla/alsa-lib.git/log/?h=DB845c
+
+Thanks,
+srini
+
+Changes since v2:
+- Updated mfd driver as suggested by Lee.
+- Updated bindings as suggested by Rob.
+- Addressed various comments by Cezary Rojewski
+- Cleaned up code a bit.
+
+Srinivas Kandagatla (10):
+  ASoC: dt-bindings: add dt bindings for WCD9340/WCD9341 audio codec
+  mfd: wcd934x: add support to wcd9340/wcd9341 codec
+  ASoC: wcd934x: add support to wcd9340/wcd9341 codec
+  ASoC: wcd934x: add basic controls
+  ASoC: wcd934x: add playback dapm widgets
+  ASoC: wcd934x: add capture dapm widgets
+  ASoC: wcd934x: add audio routings
+  dt-bindings: pinctrl: qcom-wcd934x: Add bindings for gpio
+  ASoC: qcom: dt-bindings: Add compatible for DB845c and Lenovo Yoga
+  ASoC: qcom: sdm845: add support to DB845c and Lenovo Yoga
+
+Yeleswarapu Nagaradhesh (1):
+  pinctrl: qcom-wcd934x: Add support to wcd934x pinctrl driver.
+
+ .../pinctrl/qcom,wcd934x-pinctrl.yaml         |   52 +
+ .../devicetree/bindings/sound/qcom,sdm845.txt |    5 +-
+ .../bindings/sound/qcom,wcd934x.yaml          |  162 +
+ drivers/mfd/Kconfig                           |   12 +
+ drivers/mfd/Makefile                          |    1 +
+ drivers/mfd/wcd934x.c                         |  306 +
+ drivers/pinctrl/qcom/Kconfig                  |    7 +
+ drivers/pinctrl/qcom/Makefile                 |    1 +
+ drivers/pinctrl/qcom/pinctrl-wcd934x-gpio.c   |  365 ++
+ include/linux/mfd/wcd934x/registers.h         |  529 ++
+ include/linux/mfd/wcd934x/wcd934x.h           |   31 +
+ sound/soc/codecs/Kconfig                      |   10 +
+ sound/soc/codecs/Makefile                     |    2 +
+ sound/soc/codecs/wcd934x.c                    | 5084 +++++++++++++++++
+ sound/soc/qcom/sdm845.c                       |   86 +-
+ 15 files changed, 6651 insertions(+), 2 deletions(-)
+ create mode 100644 Documentation/devicetree/bindings/pinctrl/qcom,wcd934x-pinctrl.yaml
+ create mode 100644 Documentation/devicetree/bindings/sound/qcom,wcd934x.yaml
+ create mode 100644 drivers/mfd/wcd934x.c
+ create mode 100644 drivers/pinctrl/qcom/pinctrl-wcd934x-gpio.c
+ create mode 100644 include/linux/mfd/wcd934x/registers.h
+ create mode 100644 include/linux/mfd/wcd934x/wcd934x.h
+ create mode 100644 sound/soc/codecs/wcd934x.c
+
+-- 
+
+https://lkml.org/lkml/2019/10/29/461
