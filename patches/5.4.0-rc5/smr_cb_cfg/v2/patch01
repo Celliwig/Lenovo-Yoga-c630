@@ -1,0 +1,204 @@
+diff -Naur Lenovo-Yoga-c630-kernel/drivers/iommu/arm-smmu.c Linaro-linux/drivers/iommu/arm-smmu.c
+--- Lenovo-Yoga-c630-kernel/drivers/iommu/arm-smmu.c	2019-11-01 22:27:18.739305927 +0000
++++ Linaro-linux/drivers/iommu/arm-smmu.c	2019-11-01 20:18:32.017473020 +0000
+@@ -78,6 +78,7 @@
+ 	enum arm_smmu_s2cr_type		type;
+ 	enum arm_smmu_s2cr_privcfg	privcfg;
+ 	u8				cbndx;
++	bool				pinned;
+ };
+ 
+ #define s2cr_init_val (struct arm_smmu_s2cr){				\
+@@ -219,9 +220,19 @@
+ 	return err;
+ }
+ 
+-static int __arm_smmu_alloc_bitmap(unsigned long *map, int start, int end)
++static int __arm_smmu_alloc_cb(struct arm_smmu_device *smmu, int start,
++			       struct device *dev)
+ {
++	struct iommu_fwspec *fwspec = dev_iommu_fwspec_get(dev);
++	unsigned long *map = smmu->context_map;
++	int end = smmu->num_context_banks;
+ 	int idx;
++	int i;
++
++	for_each_cfg_sme(fwspec, i, idx) {
++		if (smmu->s2crs[idx].pinned)
++			return smmu->s2crs[idx].cbndx;
++	}
+ 
+ 	do {
+ 		idx = find_next_zero_bit(map, end, start);
+@@ -626,7 +637,8 @@
+ }
+ 
+ static int arm_smmu_init_domain_context(struct iommu_domain *domain,
+-					struct arm_smmu_device *smmu)
++					struct arm_smmu_device *smmu,
++					struct device *dev)
+ {
+ 	int irq, start, ret = 0;
+ 	unsigned long ias, oas;
+@@ -740,8 +752,7 @@
+ 		ret = -EINVAL;
+ 		goto out_unlock;
+ 	}
+-	ret = __arm_smmu_alloc_bitmap(smmu->context_map, start,
+-				      smmu->num_context_banks);
++	ret = __arm_smmu_alloc_cb(smmu, start, dev);
+ 	if (ret < 0)
+ 		goto out_unlock;
+ 
+@@ -930,23 +941,35 @@
+ static void arm_smmu_test_smr_masks(struct arm_smmu_device *smmu)
+ {
+ 	u32 smr;
++	int idx;
+ 
+ 	if (!smmu->smrs)
+ 		return;
+ 
++	for (idx = 0; idx < smmu->num_mapping_groups; idx++) {
++		smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(idx));
++		if (!(smr & SMR_VALID))
++			break;
++	}
++
++	if (idx == smmu->num_mapping_groups) {
++		dev_err(smmu->dev, "Unable to compute streamid_mask\n");
++		return;
++	}
++
+ 	/*
+ 	 * SMR.ID bits may not be preserved if the corresponding MASK
+ 	 * bits are set, so check each one separately. We can reject
+ 	 * masters later if they try to claim IDs outside these masks.
+ 	 */
+ 	smr = FIELD_PREP(SMR_ID, smmu->streamid_mask);
+-	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(0), smr);
+-	smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(0));
++	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(idx), smr);
++	smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(idx));
+ 	smmu->streamid_mask = FIELD_GET(SMR_ID, smr);
+ 
+ 	smr = FIELD_PREP(SMR_MASK, smmu->streamid_mask);
+-	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(0), smr);
+-	smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(0));
++	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_SMR(idx), smr);
++	smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(idx));
+ 	smmu->smr_mask_mask = FIELD_GET(SMR_MASK, smr);
+ }
+ 
+@@ -994,12 +1017,19 @@
+ 
+ static bool arm_smmu_free_sme(struct arm_smmu_device *smmu, int idx)
+ {
++	bool pinned = smmu->s2crs[idx].pinned;
++	u8 cbndx = smmu->s2crs[idx].cbndx;;
++
+ 	if (--smmu->s2crs[idx].count)
+ 		return false;
+ 
+ 	smmu->s2crs[idx] = s2cr_init_val;
+-	if (smmu->smrs)
++	if (pinned) {
++		smmu->s2crs[idx].pinned = true;
++		smmu->s2crs[idx].cbndx = cbndx;
++	} else if (smmu->smrs) {
+ 		smmu->smrs[idx].valid = false;
++	}
+ 
+ 	return true;
+ }
+@@ -1135,7 +1165,7 @@
+ 		return ret;
+ 
+ 	/* Ensure that the domain is finalised */
+-	ret = arm_smmu_init_domain_context(domain, smmu);
++	ret = arm_smmu_init_domain_context(domain, smmu, dev);
+ 	if (ret < 0)
+ 		goto rpm_put;
+ 
+@@ -1634,6 +1664,48 @@
+ 	arm_smmu_gr0_write(smmu, ARM_SMMU_GR0_sCR0, reg);
+ }
+ 
++static int arm_smmu_read_smr_state(struct arm_smmu_device *smmu)
++{
++	u32 smr, s2cr;
++	u32 mask;
++	u32 type;
++	u32 cbndx;
++	u32 privcfg;
++	u32 id;
++	int i;
++
++	for (i = 0; i < smmu->num_mapping_groups; i++) {
++		smr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_SMR(i));
++		mask = FIELD_GET(SMR_MASK, smr);
++		id = FIELD_GET(SMR_ID, smr);
++
++		s2cr = arm_smmu_gr0_read(smmu, ARM_SMMU_GR0_S2CR(i));
++		type = FIELD_GET(S2CR_TYPE, s2cr);
++		cbndx = FIELD_GET(S2CR_CBNDX, s2cr);
++		privcfg = FIELD_GET(S2CR_PRIVCFG, s2cr);
++
++		smmu->smrs[i].mask = mask;
++		smmu->smrs[i].id = id;
++		smmu->smrs[i].valid = !!(smr & SMR_VALID);
++
++		smmu->s2crs[i].group = NULL;
++		smmu->s2crs[i].count = 0;
++		smmu->s2crs[i].type = type;
++		smmu->s2crs[i].privcfg = privcfg;
++		smmu->s2crs[i].cbndx = cbndx;
++
++		if (!(smr & SMR_VALID))
++			continue;
++
++		smmu->s2crs[i].pinned = true;
++		bitmap_set(smmu->context_map, cbndx, 1);
++
++		dev_err(smmu->dev, "Handoff smr: %x s2cr: %x cb: %d\n", smr, s2cr, cbndx);
++	}
++
++	return 0;
++}
++
+ static int arm_smmu_id_size_to_bits(int size)
+ {
+ 	switch (size) {
+@@ -1847,6 +1919,8 @@
+ 		dev_notice(smmu->dev, "\tStage-2: %lu-bit IPA -> %lu-bit PA\n",
+ 			   smmu->ipa_size, smmu->pa_size);
+ 
++	arm_smmu_read_smr_state(smmu);
++
+ 	if (smmu->impl && smmu->impl->cfg_probe)
+ 		return smmu->impl->cfg_probe(smmu);
+ 
+diff -Naur Lenovo-Yoga-c630-kernel/drivers/iommu/arm-smmu-impl.c Linaro-linux/drivers/iommu/arm-smmu-impl.c
+--- Lenovo-Yoga-c630-kernel/drivers/iommu/arm-smmu-impl.c	2019-11-01 23:03:29.832188850 +0000
++++ Linaro-linux/drivers/iommu/arm-smmu-impl.c	2019-11-01 23:41:06.492672069 +0000
+@@ -103,6 +103,7 @@
+ 	return &cs->smmu;
+ }
+ 
++
+ #define ARM_MMU500_ACTLR_CPRE		(1 << 1)
+ 
+ #define ARM_MMU500_ACR_CACHE_LOCK	(1 << 26)
+@@ -192,8 +193,10 @@
+ 				  "calxeda,smmu-secure-config-access"))
+ 		smmu->impl = &calxeda_impl;
+ 
+-	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500"))
+-		smmu->impl = &qcom_sdm845_smmu500_impl;
++	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500")) {
++		if (qcom_scm_qsmmu500_wait_safe_toggle(0))		
++			dev_warn(smmu->dev, "Failed to turn off SAFE logic\n");
++	}
+ 
+ 	return smmu;
+ }
