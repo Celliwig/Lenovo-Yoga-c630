@@ -1,0 +1,30 @@
+diff --git a/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt b/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt
+new file mode 100644
+index 000000000000..d2aeb5c58d30
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt
+@@ -0,0 +1,24 @@
++Bindings for Qualcomm WSA8810/WSA8815 Class-D Smart Speaker Amplifier
++
++WSA8810 is a class-D smart speaker amplifier and WSA8815 is a high-output
++power class-D smart speaker amplifier. This amplifier uses SoundWire
++digital audio as primary interface.
++
++Required properties with SoundWire Interface:
++
++- compatible:		Should be textual representation of SoundWire Enumeration
++			address.
++			Refer to soundwire/slave.txt for details.
++			Should be "sdw0110217201000" for WSA8810
++
++- pd-gpios: 		Should be phandle and gpio pair for
++			Powerdown/Shutdown pin.
++- #thermal-sensor-cells: Should be 0 
++
++Example:
++
++spkr_left:wsa8810-left{
++	compatible = "sdw0110217201000";
++	#thermal-sensor-cells = <0>;
++	...
++};

@@ -1,0 +1,46 @@
+From	Srinivas Kandagatla <>
+Subject	[PATCH v3 3/4] dt-bindings: ASoC: Add WSA881x bindings
+Date	Fri, 9 Aug 2019 14:34:06 +0100
+	
+
+This patch adds bindings for WSA8810/WSA8815 Class-D Smart Speaker
+Amplifier. This Amplifier also has a simple thermal sensor for
+over temperature and speaker protection.
+
+Signed-off-by: Srinivas Kandagatla <srinivas.kandagatla@linaro.org>
+---
+ .../bindings/sound/qcom,wsa881x.txt           | 24 +++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sound/qcom,wsa881x.txt
+
+diff --git a/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt b/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt
+new file mode 100644
+index 000000000000..d2aeb5c58d30
+--- /dev/null
++++ b/Documentation/devicetree/bindings/sound/qcom,wsa881x.txt
+@@ -0,0 +1,24 @@
++Bindings for Qualcomm WSA8810/WSA8815 Class-D Smart Speaker Amplifier
++
++WSA8810 is a class-D smart speaker amplifier and WSA8815 is a high-output
++power class-D smart speaker amplifier. This amplifier uses SoundWire
++digital audio as primary interface.
++
++Required properties with SoundWire Interface:
++
++- compatible:		Should be textual representation of SoundWire Enumeration
++			address.
++			Refer to soundwire/slave.txt for details.
++			Should be "sdw0110217201000" for WSA8810
++
++- pd-gpios: 		Should be phandle and gpio pair for
++			Powerdown/Shutdown pin.
++- #thermal-sensor-cells: Should be 0 
++
++Example:
++
++spkr_left:wsa8810-left{
++	compatible = "sdw0110217201000";
++	#thermal-sensor-cells = <0>;
++	...
++};
+-- 
