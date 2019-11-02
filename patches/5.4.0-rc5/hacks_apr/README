@@ -1,0 +1,9 @@
+HACK: qcom: apr: Wait for PD up notification
+Wait for PD up state before proceeding to probe the apr sub-devices.
+
+soc: qcom: apr: Release the QMI handle on failure
+Not releasing the QMI handle in the various failure cases will lead to a
+user after free if someone, e.g. qrtr-ns, sends a message after probe
+returns and free up the associated memory.
+
+Fixes: c44c557f2db7 ("HACK: qcom: apr: Wait for PD up notification")
