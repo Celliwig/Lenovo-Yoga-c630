@@ -1,0 +1,39 @@
+[PATCH v8 0/3] ASoC: codecs: Add WSA881x Smart Speaker amplifier support
+
+This patchset adds support to WSA8810/WSA8815 Class-D Smart Speaker
+Amplifier which is SoundWire interfaced.
+
+This patchset along with DB845c machine driver and WCD934x codec driver
+has been tested on SDM845 SoC based DragonBoard DB845c with two
+WSA8810 and Lenovo YOGA C630 Laptop based on SDM850 with WSA8815
+speaker amplifiers.
+
+Most of the code in this driver is rework of Qualcomm downstream drivers
+used in Andriod. Credits to Banajit Goswami and Patrick Lai's Team.
+
+TODO:
+        Add thermal sensor support in WSA881x.
+
+Thanks,
+srini
+
+Changes since v7:
+	- Added support to dai based on Discussion on mailing list.
+	- Moved readable array to proper switch statement.
+	- Remove unnecessary locks which can be added once tsens is supported.
+	- Suffix gain to Volume as suggested by Mark.
+
+Srinivas Kandagatla (3):
+  dt-bindings: ASoC: Add WSA881x bindings
+  dt-bindings: ASoC: WSA881x: Add missing #sound-dai-cells
+  ASoC: codecs: add wsa881x amplifier support
+
+ .../bindings/sound/qcom,wsa881x.yaml          |   68 +
+ sound/soc/codecs/Kconfig                      |   10 +
+ sound/soc/codecs/Makefile                     |    2 +
+ sound/soc/codecs/wsa881x.c                    | 1153 +++++++++++++++++
+ 4 files changed, 1233 insertions(+)
+ create mode 100644 Documentation/devicetree/bindings/sound/qcom,wsa881x.yaml
+ create mode 100644 sound/soc/codecs/wsa881x.c
+
+https://patchwork.kernel.org/cover/11185705/
