@@ -1,0 +1,5 @@
+Couple of soundwire hacks are defined in the Linaro 5.4-rc5 repository. 
+
+1. Seems to be related to [https://lkml.org/lkml/2019/7/25/1476] + hack to not setup interrupts.
+
+2. Know idea!
