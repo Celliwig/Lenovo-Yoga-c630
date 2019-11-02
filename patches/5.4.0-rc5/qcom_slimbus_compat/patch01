@@ -1,0 +1,14 @@
+diff --git a/drivers/slimbus/qcom-ngd-ctrl.c b/drivers/slimbus/qcom-ngd-ctrl.c
+index 29fbab55c3b3..9c498525f2fd 100644
+--- a/drivers/slimbus/qcom-ngd-ctrl.c
++++ b/drivers/slimbus/qcom-ngd-ctrl.c
+@@ -1316,6 +1316,9 @@ static const struct of_device_id qcom_slim_ngd_dt_match[] = {
+ 	{
+ 		.compatible = "qcom,slim-ngd-v1.5.0",
+ 		.data = &ngd_v1_5_offset_info,
++	},{
++		.compatible = "qcom,slim-ngd-v2.1.0",
++		.data = &ngd_v1_5_offset_info,
+ 	},
+ 	{}
+ };
