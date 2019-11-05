@@ -1,23 +1,24 @@
 --- 10_linux	2019-10-17 01:37:54.346030635 +0100
-+++ /etc/grub.d/10_linux	2019-10-17 02:41:30.824933423 +0100
-@@ -114,6 +114,7 @@
++++ /etc/grub.d/10_linux	2019-11-05 12:27:36.278756051 +0000
+@@ -114,6 +114,8 @@
    version="$2"
    type="$3"
    args="$4"
 +  devicetree_prefix="$5"
++  devicetree_version=`echo "${version}"|awk 'match($0, /[0-9.]+/, ary) {print ary[0]}'`
  
    if [ -z "$boot_device_id" ]; then
        boot_device_id="$(grub_get_device_id "${GRUB_DEVICE}")"
-@@ -227,6 +228,8 @@
+@@ -227,6 +229,8 @@
          fi
      fi
    fi
-+  echo "	devicetree ${devicetree_prefix}_${version}.dtb\n"
++  echo "	devicetree ${devicetree_prefix}_${devicetree_version}.dtb\n"
 +
    sed "s/^/$submenu_indentation/" << EOF
  }
  EOF
-@@ -365,7 +368,7 @@
+@@ -365,7 +369,7 @@
  
    if [ "x$is_top_level" = xtrue ] && [ "x${GRUB_DISABLE_SUBMENU}" != xy ]; then
      linux_entry "${OS}" "${version}" simple \
@@ -26,7 +27,7 @@
  
      submenu_indentation="$grub_tab"
      
-@@ -378,17 +381,17 @@
+@@ -378,17 +382,17 @@
    fi
  
    linux_entry "${OS}" "${version}" advanced \
@@ -47,4 +48,3 @@
    fi
  
    list=`echo $list | tr ' ' '\n' | fgrep -vx "$linux" | tr '\n' ' '`
-
