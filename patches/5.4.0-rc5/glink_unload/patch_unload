@@ -1,0 +1,14 @@
+--- Linaro-linux/drivers/rpmsg/qcom_glink_native.c	2019-11-01 20:18:37.686538431 +0000
++++ Lenovo-Yoga-c630-kernel/drivers/rpmsg/qcom_glink_native.c	2019-11-07 02:10:59.398684215 +0000
+@@ -1213,8 +1213,9 @@
+ 	channel->ept.cb = NULL;
+ 	spin_unlock_irqrestore(&channel->recv_lock, flags);
+ 
+-	/* Decouple the potential rpdev from the channel */
+-	channel->rpdev = NULL;
++// Disabled as this stops qcom_glink_rx_close from executing rpmsg_unregister_device
++//	/* Decouple the potential rpdev from the channel */
++//	channel->rpdev = NULL;
+ 
+ 	qcom_glink_send_close_req(glink, channel);
+ }

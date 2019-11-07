@@ -1,0 +1,1 @@
+Bug fix qcom_glink_destroy_ept. Channel device was nulled stopping qcom_glink_rx_close from executing rpmsg_unregister_device.
