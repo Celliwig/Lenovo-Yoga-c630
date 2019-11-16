@@ -1,0 +1,12 @@
+commit 275ea1b26f386b5575c83399bb94ff5269ad2d57
+Author: Tomislav Požega <pozega.tomislav@gmail.com>
+Date:   Mon Sep 23 21:49:22 2019 +0200
+
+    ath10k: print service ready returned channel range
+    
+    Displays lowest/highest supported channels for both 2ghz and 5ghz
+    bands as they're fetched within WMI service ready event.
+    These are shown in a frequency format.
+    
+    Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

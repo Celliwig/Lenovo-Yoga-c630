@@ -1,0 +1,12 @@
+commit 7b3087323faad85ee16f8f852810bb6500fefcb4
+Author: Tomislav Požega <pozega.tomislav@gmail.com>
+Date:   Mon Sep 23 21:49:24 2019 +0200
+
+    ath10k: change sw version print format to hex
+    
+    Software version within WMI event ready message was displayed
+    in a not very useful decimal format. Change this info to be shown
+    in a hexadecimal format instead.
+    
+    Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

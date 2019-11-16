@@ -1,0 +1,14 @@
+commit 93f9fefcf52835a2d886773bd6d06698279e114d
+Author: Anilkumar Kolli <akolli@codeaurora.org>
+Date:   Thu Sep 26 19:07:00 2019 +0530
+
+    ath10k: coredump: fix IRAM addr for QCA9984, QCA4019, QCA9888 and QCA99x0
+    
+    The IRAM start address in coredump was wrong for QCA9984, QCA4019, QCA9888 and
+    QCA99x0.
+    
+    Tested on: QCA9984, QCA4019
+    FW version: 10.4-3.9.0.2-00044
+    
+    Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

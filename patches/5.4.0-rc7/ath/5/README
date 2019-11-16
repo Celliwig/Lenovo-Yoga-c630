@@ -1,0 +1,15 @@
+commit f93bcf0ce6a144174292716f9a79330567a778b6
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Thu Jul 25 10:47:55 2019 -0700
+
+    ath10k: Use standard bulk clock API in snoc
+    
+    No frequency is currently specified for the single clock defined in the
+    snoc driver, so the clock wrappers reimplements the standard bulk API
+    provided by the clock framework. Change to this.
+    
+    The single clock defined is marked as optional so this version of the
+    get API is used, but might need to be reconsidered in the future.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

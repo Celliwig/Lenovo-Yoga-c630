@@ -1,0 +1,14 @@
+commit 9c44bf4c12550f1c3c1be0671e559477e70ab350
+Author: Tomislav Požega <pozega.tomislav@gmail.com>
+Date:   Sun Jul 28 11:11:58 2019 +0200
+
+    ath10k: use ath10k_pci_soc_ functions for all warm_reset instances
+    
+    Use ath10k_pci_soc_read32 / ath10k_pci_soc_write32 functions for
+    the rest of warm_reset functions. Until now these have been used
+    only for ath10k_pci_warm_reset_si0, but since they already exist
+    it makes sense to simplify code a bit.
+    Runtime tested with QCA9862.
+    
+    Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

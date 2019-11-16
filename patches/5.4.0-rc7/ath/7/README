@@ -1,0 +1,10 @@
+commit 7921ae0919078292bfa88adb812ad7cfb621f977
+Author: Vasyl Gomonovych <gomonovych@gmail.com>
+Date:   Thu Jul 18 22:30:32 2019 +0200
+
+    ath10k: Use ARRAY_SIZE
+    
+    fix coccinelle warning, use ARRAY_SIZE
+    
+    Signed-off-by: Vasyl Gomonovych <gomonovych@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

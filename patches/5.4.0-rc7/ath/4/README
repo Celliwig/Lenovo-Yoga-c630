@@ -1,0 +1,22 @@
+commit c56c7f24d7f88cac9aa9a30fe96adfec96c024bb
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Thu Jul 25 10:47:54 2019 -0700
+
+    ath10k: Use standard regulator bulk API in snoc
+    
+    The regulator_get_optional() exists for cases where the driver needs do
+    behave differently depending on some regulator supply being present or
+    not, as we don't use this we can use the standard regulator_get() and
+    rely on its handling of unspecified regulators.
+    
+    While the driver currently doesn't specify any loads the regulator
+    framework was updated last year to only account for load of enabled
+    regulators, so should the need appear it's better to apply load numbers
+    during initialization that dynamically.
+    
+    With this the regulator wrappers have been reduced the become identical
+    to the standard bulk API provided by the regulator framework, so use
+    these instead of rolling our own.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

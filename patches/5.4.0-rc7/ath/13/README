@@ -1,0 +1,22 @@
+commit 75f545e8574419a0f034e5a0b8b39fb8b8e88271
+Author: Govind Singh <govinds@codeaurora.org>
+Date:   Wed Sep 18 16:27:35 2019 +0300
+
+    ath10k: Add xo calibration support for wifi rf clock
+    
+    PMIC XO is the clock source for wifi rf clock in integrated wifi
+    chipset ex: WCN3990. Due to board layout errors XO frequency drifts
+    can cause wifi rf clock inaccuracy.
+    XO calibration test tree in Factory Test Mode is used to find the
+    best frequency offset(for example +/-2KHz )by programming XO trim
+    register. This ensure system clock stays within required 20 ppm
+    WLAN rf clock.
+    
+    Retrieve the xo trim offset via system firmware (e.g., device tree),
+    especially in the case where the device doesn't have a useful EEPROM
+    on which to store the calibrated XO offset (e.g., for integrated Wifi).
+    Calibrated XO offset is sent to fw, which compensate the clock drift
+    by programing the XO trim register.
+    
+    Signed-off-by: Govind Singh <govinds@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

@@ -1,0 +1,11 @@
+commit 73690c4843fb501b675d06b46d75a8e78ea482a2
+Author: Tomislav Požega <pozega.tomislav@gmail.com>
+Date:   Mon Sep 23 21:49:23 2019 +0200
+
+    ath10k: print supported MCS rates within service ready event
+    
+    Add vht_supp_mcs argument to service ready structure and print
+    supported MCS rates in WMI service ready debug message.
+    
+    Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

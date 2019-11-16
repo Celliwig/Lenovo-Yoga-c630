@@ -1,0 +1,17 @@
+commit f8914a14623a79b73f72b2b1ee4cd9b2cb91b735
+Author: Christian Lamparter <chunkeey@gmail.com>
+Date:   Fri Sep 6 23:54:23 2019 +0200
+
+    ath10k: restore QCA9880-AR1A (v1) detection
+    
+    This patch restores the old behavior that read
+    the chip_id on the QCA988x before resetting the
+    chip. This needs to be done in this order since
+    the unsupported QCA988x AR1A chips fall off the
+    bus when resetted. Otherwise the next MMIO Op
+    after the reset causes a BUS ERROR and panic.
+    
+    Cc: stable@vger.kernel.org
+    Fixes: 1a7fecb766c8 ("ath10k: reset chip before reading chip_id in probe")
+    Signed-off-by: Christian Lamparter <chunkeey@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

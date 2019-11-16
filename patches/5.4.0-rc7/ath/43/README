@@ -1,0 +1,18 @@
+commit 3b58d6a599ba8c42cb4a3df8080f459ce7edcaa7
+Author: Ikjoon Jang <ikjn@chromium.org>
+Date:   Wed Nov 6 20:04:45 2019 +0200
+
+    ath10k: disable cpuidle during downloading firmware
+    
+    Downloading ath10k firmware needs a large number of IOs and
+    cpuidle's miss predictions make it worse. In the worst case,
+    resume time can be three times longer than the average on sdio.
+    
+    This patch disables cpuidle during firmware downloading by
+    applying PM_QOS_CPU_DMA_LATENCY in ath10k_download_fw().
+    
+    Tested-on: QCA9880
+    Tested-on: QCA6174 hw3.2 SDIO WLAN.RMH.4.4.1-00029
+    
+    Signed-off-by: Ikjoon Jang <ikjn@chromium.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

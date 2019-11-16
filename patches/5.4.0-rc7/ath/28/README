@@ -1,0 +1,33 @@
+commit cc6df017e55764ffef9819dd9554053182535ffd
+Author: Ben Greear <greearb@candelatech.com>
+Date:   Tue Oct 17 17:03:12 2017 -0700
+
+    ath10k: fix offchannel tx failure when no ath10k_mac_tx_frm_has_freq
+    
+    Offchannel management frames were failing:
+    
+    [18099.253732] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3780
+    [18102.293686] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3780
+    [18105.333653] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3780
+    [18108.373712] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3780
+    [18111.413687] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e36c0
+    [18114.453726] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3f00
+    [18117.493773] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e36c0
+    [18120.533631] ath10k_pci 0000:01:00.0: timed out waiting for offchannel skb cf0e3f00
+    
+    This bug appears to have been added between 4.0 (which works for us),
+    and 4.4, which does not work.
+    
+    I think this is because the tx-offchannel logic gets in a loop when
+    ath10k_mac_tx_frm_has_freq(ar) is false, so pkt is never actually
+    sent to the firmware for transmit.
+    
+    This patch fixes the problem on 4.9 for me, and now HS20 clients
+    can work again with my firmware.
+    
+    Antonio: tested with 10.4-3.5.3-00057 on QCA4019 and QCA9888
+    
+    Signed-off-by: Ben Greear <greearb@candelatech.com>
+    Tested-by: Antonio Quartulli <antonio.quartulli@kaiwoo.ai>
+    [kvalo@codeaurora.org: improve commit log, remove unneeded parenthesis]
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

@@ -1,0 +1,34 @@
+commit d98ddae85a4a57124f87960047b1b6419312147f
+Author: Anilkumar Kolli <akolli@codeaurora.org>
+Date:   Thu Sep 26 19:07:01 2019 +0530
+
+    ath10k: fix backtrace on coredump
+    
+    In a multiradio board with one QCA9984 and one AR9987
+    after enabling the crashdump with module parameter
+    coredump_mask=7, below backtrace is seen.
+    
+    vmalloc: allocation failure: 0 bytes
+     kworker/u4:0: page allocation failure: order:0, mode:0x80d2
+     CPU: 0 PID: 6 Comm: kworker/u4:0 Not tainted 3.14.77 #130
+     Workqueue: ath10k_wq ath10k_core_register_work [ath10k_core]
+     (unwind_backtrace) from [<c021abf8>] (show_stack+0x10/0x14)
+     (dump_stack+0x80/0xa0)
+     (warn_alloc_failed+0xd0/0xfc)
+     (__vmalloc_node_range+0x1b4/0x1d8)
+     (__vmalloc_node+0x34/0x40)
+     (vzalloc+0x24/0x30)
+     (ath10k_coredump_register+0x6c/0x88 [ath10k_core])
+     (ath10k_core_register_work+0x350/0xb34 [ath10k_core])
+     (process_one_work+0x20c/0x32c)
+     (worker_thread+0x228/0x360)
+    
+    This is due to ath10k_hw_mem_layout is not defined for AR9987.
+    For coredump undefined hw ramdump_size is 0.
+    Check for the ramdump_size before allocation memory.
+    
+    Tested on: AR9987, QCA9984
+    FW version: 10.4-3.9.0.2-00044
+    
+    Signed-off-by: Anilkumar Kolli <akolli@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
