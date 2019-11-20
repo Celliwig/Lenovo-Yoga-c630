@@ -85,10 +85,10 @@ if [[ "${WIN_MNT_STS_RO}" != "true" ]]; then
 	exit
 fi
 
-PWD=`pwd`
+CWD=`pwd`
 COPY_ERR=0
 # Create directory to copy windows files into
-PATH_WIN_DRV="${PWD}/Windows Drivers"
+PATH_WIN_DRV="${CWD}/Windows Drivers"
 if [ -e "${PATH_WIN_DRV}" ]; then
 	echo "Deleting existing copy of Windows drivers..."
 	rm -rf "${PATH_WIN_DRV}"
@@ -153,8 +153,86 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	echo "Done"
 
+	# Create merged board file
+	echo "Creating merged board file..."
+	PATH_BRD_MAKE="${CWD}/creating-board-2.bin"
+	PATH_BRD_SRC="${CWD}/creating-board-2.bin/bdf"
+	if [ -e "${PATH_BRD_MAKE}" ]; then
+		echo "Deleting existing board file directory..."
+		rm -rf "${PATH_BRD_MAKE}"
+	fi
+	echo -n "Creating directory for merging board files: "
+	mkdir -p "${PATH_BRD_SRC}" &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo "Done"
+
+		echo -n "Copying individual board files: "
+		cp -a "${BRD_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
+		if [ $? -eq 0 ]; then
+			echo "Done"
+		else
+			echo "Failed"
+			exit
+		fi
+
+		cd "${PATH_BRD_MAKE}"
+
+###################################################################################################################################################
+# This section copied from: https://github.com/aarch64-laptops/build/blob/master/misc/lenovo-yoga-c630/wifi/create-board-2.bin/make-board-2.bin.sh
+###################################################################################################################################################
+
+		echo "Creating JSON board file...."
+
+		JSON="bdf/board-2.json"
+		iter=0
+		echo "[" > "${JSON}"
+		for file in bdf/bdwlan.*; do
+			[[ $file == *.txt ]] && continue
+
+			iter=$((iter+1))
+			[ $iter -ne 1 ] && echo "  }," >> "${JSON}"
+
+			echo "  {" >> "${JSON}"
+			echo "          \"data\": \"$file\"," >> "${JSON}"
+			if [[ $file == */bdwlan.bin ]]; then
+#				file_ext="0"
+				file_ext="ff"				# This was required for my install, don't know if this applies to everyone
+			else
+				file_ext="$(printf '%x\n' "$(basename "${file}" | sed -E 's:^.*\.b?([0-9a-f]*)$:0x\1:')")"
+			fi
+			echo "          \"names\": [\"bus=snoc,qmi-board-id=${file_ext}\"]" >> "${JSON}"
+		done
+
+		echo "  }" >> "${JSON}"
+		echo "]" >> "${JSON}"
+
+		echo -n "Fetching Qualcomm Atheros tools: "
+		git clone https://github.com/qca/qca-swiss-army-knife.git &> /dev/null
+		if [ $? -eq 0 ]; then
+			echo "Done"
+		else
+			echo "Failed"
+			exit
+		fi
+
+		echo -n "Creating merged board file: "
+		python2 qca-swiss-army-knife/tools/scripts/ath10k/ath10k-bdencoder -c "${JSON}" -o board-2.bin &> /dev/null
+		if [ $? -eq 0 ]; then
+			echo "Done"
+		else
+			echo "Failed"
+			exit
+		fi
+
+###################################################################################################################################################
+	else
+		echo "Failed"
+		exit
+	fi
+	cd "${CWD}"
+
 	# Create linux dsp directory
-	PATH_FW_C630="${PWD}/c630"
+	PATH_FW_C630="${CWD}/c630"
 	if [ -e "${PATH_FW_C630}" ]; then
 		echo "Deleting existing copy of linux DSP files..."
 		rm -rf "${PATH_FW_C630}"
