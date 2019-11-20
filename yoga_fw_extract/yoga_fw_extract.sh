@@ -4,6 +4,22 @@
 # from the systems windows partion
 ###################################################################################################################################################
 
+# Create a hashtable of firmware md5s
+declare -A firmware_md5
+firmware_md5=(\
+["b073f0e9ad512f83696f68fb2ac82319"]="2019v1"\		# board-2.bin, (U.S. 02/19, includes bdwlan.b31)
+["e321e669ecff5738231a2bcc6a8ecbcd"]="2019v1"\		# board-2.bin, (U.S. 02/19)
+["d16e3444f68ee48c548a891b9f9279e1"]="2019v1"\		# firmware-5.bin
+["cfc4461b69eca41048fe6a3f3d183579"]="2019v1"\		# qcadsp850.mbn (U.S. 03/19)
+["1dedde8123594b5a0f2542c4a7574d65"]="2019v1"\		# qccdsp850.mbn (U.S. 03/19)
+["a21a205d953447c6067bfd77525e3bd3"]="2019v1"\		# qcdsp1v2850.mbn (U.S. 03/19)
+["af495b137bd41086887897fc4c535c99"]="2019v1"\		# qcdsp2850.mbn (U.S. 03/19)
+["af495b137bd41086887897fc4c535c99"]="2019v1"\		# modem.mdt (U.S. 03/19)
+["30d0887d2e1a5d856531b01a97119731"]="2019v1"\		# wlanmdsp.mbn (U.S. 03/19)
+)
+
+###################################################################################################################################################
+
 URL_FW_FIRMWARE5BIN="https://github.com/kvalo/ath10k-firmware/raw/master/WCN3990/hw1.0/HL2.0/WLAN.HL.2.0-01387-QCAHLSWMTPLZ-1/firmware-5.bin"
 
 TXT_UNDERLINE="\033[1m\033[4m"
@@ -15,6 +31,9 @@ if [ ${UID} -eq 0 ]; then
 	exit
 fi
 
+###################################################################################################################################################
+# Find the relevant firmware directories, and make a working copy
+###################################################################################################################################################
 WIN_PART=""									# Windows partition path
 # Try to automatically identify windows partition
 echo -e "${TXT_UNDERLINE}Getting Windows drivers...${TXT_NORMAL}"
@@ -141,6 +160,9 @@ fi
 
 # Process copied files
 if [ ${COPY_ERR} -eq 0 ]; then
+###################################################################################################################################################
+# Select directories with the latest respective firmwares
+###################################################################################################################################################
 	echo -e "\n${TXT_UNDERLINE}Processing found drivers.${TXT_NORMAL}"
 	echo -n "Scanning copied files: "
 	# Get path to latest DSP files
@@ -161,6 +183,9 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	echo "Done"
 
+###################################################################################################################################################
+# Merged board file
+###################################################################################################################################################
 	# Create merged board file
 	echo -e "\n${TXT_UNDERLINE}Merged board file:${TXT_NORMAL}"
 	PATH_BRD_MAKE="${CWD}/creating-board-2.bin"
@@ -240,6 +265,9 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	cd "${CWD}"
 
+###################################################################################################################################################
+# Atheros ath10k firmware
+###################################################################################################################################################
 	# Create ath10k fw directory
 	echo -e "\n${TXT_UNDERLINE}Atheros ath10k firmware${TXT_NORMAL}"
 	PATH_FW_ATH10K="${CWD}/WCN3990/hw1.0"
@@ -261,6 +289,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			exit
 		fi
 
+		cd "${PATH_FW_ATH10K}"
 		echo -n "Fetching firmware-5.bin: "
 		wget "${URL_FW_FIRMWARE5BIN}" &> /dev/null
 		if [ $? -eq 0 ]; then
@@ -269,13 +298,15 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			echo "Failed"
 			exit
 		fi
-
 	else
 		echo "Failed"
 		exit
 	fi
 	cd "${CWD}"
 
+###################################################################################################################################################
+# Qualcomm DSP files
+###################################################################################################################################################
 	# Create linux dsp directory
 	echo -e "\n${TXT_UNDERLINE}Qualcomm DSP firmware${TXT_NORMAL}"
 	PATH_FW_C630="${CWD}/c630"
@@ -296,7 +327,97 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			echo "Failed"
 			exit
 		fi
+
+		cd "${PATH_FW_C630}"
+		echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
+		ln -s qcdsp2850.mbn modem.mdt &> /dev/null
+		if [ $? -eq 0 ]; then
+			echo "Done"
+		else
+			echo "Failed"
+			exit
+		fi
 	else
 		echo "Failed"
 	fi
+	cd "${CWD}"
+
+###################################################################################################################################################
+# Check files
+###################################################################################################################################################
+	echo -e "\n${TXT_UNDERLINE}Checking firmware...${TXT_NORMAL}"
+	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	echo "!!!This checks your generated firmware directories against known MD5 hashes!!!"
+	echo "!!!If it passes great!                                                     !!!"
+	echo "!!!If it fails, well, there could be regional differences... I don't know  !!!"
+	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+	echo -n "Checking ${PATH_FW_ATH10K}/board-2.bin: "
+	MD5_BOARD2=`md5sum "${PATH_FW_ATH10K}"/board-2.bin |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_BOARD2}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_ATH10K}/firmware-5.bin: "
+	MD5_FIRMWARE5=`md5sum "${PATH_FW_ATH10K}"/firmware-5.bin |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_FIRMWARE5}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/qcadsp850.mbn: "
+	MD5_QCADSP850=`md5sum "${PATH_FW_C630}"/qcadsp850.mbn |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_QCADSP850}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/qccdsp850.mbn: "
+	MD5_QCCDSP850=`md5sum "${PATH_FW_C630}"/qccdsp850.mbn |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_QCCDSP850}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/qcdsp1v2850.mbn: "
+	MD5_QCDSP1V2850=`md5sum "${PATH_FW_C630}"/qcdsp1v2850.mbn |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_QCDSP1V2850}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/qcdsp2850.mbn: "
+	MD5_QCDSP2850=`md5sum "${PATH_FW_C630}"/qcdsp2850.mbn |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_QCDSP2850}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/modem.mdt: "
+	MD5_MODEM=`md5sum "${PATH_FW_C630}"/modem.mdt |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_MODEM}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+	echo -n "Checking ${PATH_FW_C630}/wlanmdsp.mbn: "
+	MD5_WLANMDSP=`md5sum "${PATH_FW_C630}"/wlanmdsp.mbn |awk '{print $1}'`
+	if [ -z "${firmware_md5[${MD5_WLANMDSP}]}" ]; then
+		echo "Failed"
+	else
+		echo "Passed"
+	fi
+
+###################################################################################################################################################
+# INSTALL
+###################################################################################################################################################
+	echo -e "\n${TXT_UNDERLINE}Install firmware...${TXT_NORMAL}"
 fi
