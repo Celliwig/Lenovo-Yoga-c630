@@ -38,7 +38,7 @@ WIN_PART=""									# Windows partition path
 # Try to automatically identify windows partition
 echo -e "${TXT_UNDERLINE}Getting Windows drivers...${TXT_NORMAL}"
 echo "Searching for Windows partition..."
-WIN_PART_LABEL="Windows4"
+WIN_PART_LABEL="Windows"
 WIN_PART_TMP=`blkid -L "${WIN_PART_LABEL}"`
 if [ $? -eq 0 ]; then
 	echo "	Found Windows partition: ${WIN_PART_TMP}"
@@ -270,18 +270,19 @@ if [ ${COPY_ERR} -eq 0 ]; then
 ###################################################################################################################################################
 	# Create ath10k fw directory
 	echo -e "\n${TXT_UNDERLINE}Atheros ath10k firmware${TXT_NORMAL}"
-	PATH_FW_ATH10K="${CWD}/WCN3990/hw1.0"
-	if [ -e "${PATH_FW_ATH10K}" ]; then
+	PATH_FW_ATH10K="${CWD}/WCN3990"
+	PATH_FW_ATH10K_HW="${PATH_FW_ATH10K}/hw1.0"
+	if [ -e "${PATH_FW_ATH10K_HW}" ]; then
 		echo "Deleting existing copy of ath10k firmware files..."
-		rm -rf "${PATH_FW_ATH10K}"
+		rm -rf "${PATH_FW_ATH10K_HW}"
 	fi
 	echo -n "Creating directory for ath10k firmware files: "
-	mkdir -p "${PATH_FW_ATH10K}" &> /dev/null
+	mkdir -p "${PATH_FW_ATH10K_HW}" &> /dev/null
 	if [ $? -eq 0 ]; then
 		echo "Done"
 
 		echo -n "Copying merged board file: "
-		cp "${PATH_BRD_MAKE}"/"${PATH_BRD_MFILE}" "${PATH_FW_ATH10K}" &> /dev/null
+		cp "${PATH_BRD_MAKE}"/"${PATH_BRD_MFILE}" "${PATH_FW_ATH10K_HW}" &> /dev/null
 		if [ $? -eq 0 ]; then
 			echo "Done"
 		else
@@ -289,7 +290,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			exit
 		fi
 
-		cd "${PATH_FW_ATH10K}"
+		cd "${PATH_FW_ATH10K_HW}"
 		echo -n "Fetching firmware-5.bin: "
 		wget "${URL_FW_FIRMWARE5BIN}" &> /dev/null
 		if [ $? -eq 0 ]; then
@@ -352,16 +353,16 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	echo "!!!If it fails, well, there could be regional differences... I don't know  !!!"
 	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
-	echo -n "Checking ${PATH_FW_ATH10K}/board-2.bin: "
-	MD5_BOARD2=`md5sum "${PATH_FW_ATH10K}"/board-2.bin |awk '{print $1}'`
+	echo -n "Checking ${PATH_FW_ATH10K_HW}/board-2.bin: "
+	MD5_BOARD2=`md5sum "${PATH_FW_ATH10K_HW}"/board-2.bin |awk '{print $1}'`
 	if [ -z "${firmware_md5[${MD5_BOARD2}]}" ]; then
 		echo "Failed"
 	else
 		echo "Passed"
 	fi
 
-	echo -n "Checking ${PATH_FW_ATH10K}/firmware-5.bin: "
-	MD5_FIRMWARE5=`md5sum "${PATH_FW_ATH10K}"/firmware-5.bin |awk '{print $1}'`
+	echo -n "Checking ${PATH_FW_ATH10K_HW}/firmware-5.bin: "
+	MD5_FIRMWARE5=`md5sum "${PATH_FW_ATH10K_HW}"/firmware-5.bin |awk '{print $1}'`
 	if [ -z "${firmware_md5[${MD5_FIRMWARE5}]}" ]; then
 		echo "Failed"
 	else
@@ -419,5 +420,73 @@ if [ ${COPY_ERR} -eq 0 ]; then
 ###################################################################################################################################################
 # INSTALL
 ###################################################################################################################################################
+	BKUP_DATETIME=`date +'%Y%m%dT%H%M%S'`
+	PATH_LIBFW_ATH10K="/lib/firmware/ath10k"
 	echo -e "\n${TXT_UNDERLINE}Install firmware...${TXT_NORMAL}"
+	if [ -e "${PATH_LIBFW_ATH10K}/WCN3990" ]; then
+		echo -n "Backup existing ath10k firmware (Y/N): "
+		read BKUP_FW_ATH10K
+		if [[ "${BKUP_FW_ATH10K}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
+			echo -n "Moving ${PATH_LIBFW_ATH10K}/WCN3990 to ${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}: "
+			sudo mv "${PATH_LIBFW_ATH10K}/WCN3990" "${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}" &> /dev/null
+			if [ $? -eq 0 ]; then
+				echo "Done"
+			else
+				echo "Failed"
+				exit
+			fi
+		else
+			echo -n "Deleting old Atheros firmware: "
+			sudo rm -rf ${PATH_LIBFW_ATH10K}/WCN3990
+			if [ $? -eq 0 ]; then
+				echo "Done"
+			else
+				echo "Failed"
+				exit
+			fi
+		fi
+	fi
+	echo -n "Copying new Atheros ath10k firmware: "
+	sudo cp -r "${PATH_FW_ATH10K}" "${PATH_LIBFW_ATH10K}" &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo "Done"
+	else
+		echo "Failed"
+		exit
+	fi
+	sudo chown -R root:root "${PATH_LIBFW_ATH10K}"				# Reset ownership
+
+	PATH_LIBFW_QCOM="/lib/firmware/qcom"
+	if [ -e "${PATH_LIBFW_QCOM}/c630" ]; then
+		echo -n "Backup existing Qualcomm DSP firmware (Y/N): "
+		read BKUP_FW_QCDSP
+		if [[ "${BKUP_FW_QCDSP}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
+			echo -n "Moving ${PATH_LIBFW_QCOM}/c630 to ${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}: "
+			sudo mv "${PATH_LIBFW_QCOM}/c630" "${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}" &> /dev/null
+			if [ $? -eq 0 ]; then
+				echo "Done"
+			else
+				echo "Failed"
+				exit
+			fi
+		else
+			echo -n "Deleting old Qualcomm DSP firmware: "
+			sudo rm -rf ${PATH_LIBFW_QCOM}/c630
+			if [ $? -eq 0 ]; then
+				echo "Done"
+			else
+				echo "Failed"
+				exit
+			fi
+		fi
+	fi
+	echo -n "Copying new Qualcomm DSP firmware: "
+	sudo cp -r "${PATH_FW_C630}" "${PATH_LIBFW_QCOM}" &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo "Done"
+	else
+		echo "Failed"
+		exit
+	fi
+	sudo chown -R root:root "${PATH_LIBFW_QCOM}"				# Reset ownership
 fi
