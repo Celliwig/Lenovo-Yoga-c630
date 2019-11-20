@@ -59,7 +59,34 @@ if [[ $WIN_MNT == "" ]]; then
 	done < /proc/mounts
 	echo "No"
 
-	## Mount windows partition
-	#echo "Mounting Windows (${WIN_PART})"
-	##mount -o ro -t ntfs ${WIN_PART} /mnt
+	# Mount windows partition
+	echo "Mounting Windows partition: ${WIN_PART}"
+	sudo mount -o ro -t ntfs ${WIN_PART} /mnt
+	if [ $? -eq 0 ]; then
+		WIN_MNT_UNMNT='/mnt'						# Flag that we need to umount /mnt
+	else
+		echo "	Error: Mount failed."
+		exit
+	fi
+fi
+
+# Check mounted readonly
+WIN_MNT_STS_RO=""
+echo -n "Checking Windows FS is read only: "
+while read pmount
+do
+	if [[ "${pmount}" =~ "${WIN_PART} " ]]; then
+		WIN_MNT_STS_RO=`echo "${pmount}"|awk '$4 ~ /^ro,/ {print "true"}; $4 ~ /^rw,/ {print "false"}'`
+	fi
+done < /proc/mounts
+echo "${WIN_MNT_STS_RO}"
+if [[ "${WIN_MNT_STS_RO}" != "true" ]]; then
+	echo "	Error: Windows filesystem not mounted read-only."
+	exit
+fi
+
+# Umount Windows partition if we mounted it
+if [[ "${WIN_MNT_UNMNT}" != "" ]]; then
+	echo "Unmounting /mnt."
+	sudo umount /mnt
 fi
