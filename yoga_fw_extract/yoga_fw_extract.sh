@@ -3,7 +3,7 @@
 # This script tries to extract the firmware files needed to enable the DSPs/audio/wifi on the Lenovo Yoga
 # from the systems windows partion
 
-# Don't run as root
+# Don't run as root to avoid doing anything monumentally stupid
 if [ ${UID} -eq 0 ]; then
 	echo "Error: This script won't run as root."
 	exit
@@ -86,6 +86,7 @@ if [[ "${WIN_MNT_STS_RO}" != "true" ]]; then
 fi
 
 PWD=`pwd`
+COPY_ERR=0
 # Create directory to copy windows files into
 PATH_WIN_DRV="${PWD}/Windows Drivers"
 if [ -e "${PATH_WIN_DRV}" ]; then
@@ -97,13 +98,12 @@ mkdir "${PATH_WIN_DRV}" &> /dev/null
 if [ $? -eq 0 ]; then
 	echo "Done"
 
-	COPY_ERR=0
 	# Copying Window's driver file
 	echo -n "Copying Window's driver files: "
 	# Copy DSP files
 	for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcadsp850.mbn`; do
 		DSP_PATH=`dirname "${DSP_FILE}"`
-		cp -r "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+		cp -a "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
 		if [ $? -ne 0 ]; then
 			COPY_ERR=$((COPY_ERR+1))
 		fi
@@ -111,7 +111,7 @@ if [ $? -eq 0 ]; then
 	# Copy board files
 	for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
 		BRD_PATH=`dirname "${BRD_FILE}"`
-		cp -r "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+		cp -a "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
 		if [ $? -ne 0 ]; then
 			COPY_ERR=$((COPY_ERR+1))
 		fi
@@ -130,4 +130,49 @@ fi
 if [[ "${WIN_MNT_UNMNT}" != "" ]]; then
 	echo "Unmounting /mnt."
 	sudo umount /mnt
+fi
+
+# Process copied files
+if [ ${COPY_ERR} -eq 0 ]; then
+	echo -n "Scanning copied files: "
+	# Get path to latest DSP files
+	DSP_FILE_CUR=`find Windows\ Drivers/ -type f -name qcadsp850.mbn -exec ls -t {} +|head -n1`
+	if [[ "${DSP_FILE_CUR}" == "" ]]; then
+		echo "Failed to find any DSP files."
+		exit
+	else
+		DSP_PATH=`dirname "${DSP_FILE_CUR}"`
+	fi
+	# Get path to latest board files
+	BRD_FILE_CUR=`find Windows\ Drivers/ -type f -name bdwlan.bin -exec ls -t {} +|head -n1`
+	if [[ "${BRD_FILE_CUR}" == "" ]]; then
+		echo "Failed to find any board files."
+		exit
+	else
+		BRD_PATH=`dirname "${BRD_FILE_CUR}"`
+	fi
+	echo "Done"
+
+	# Create linux dsp directory
+	PATH_FW_C630="${PWD}/c630"
+	if [ -e "${PATH_FW_C630}" ]; then
+		echo "Deleting existing copy of linux DSP files..."
+		rm -rf "${PATH_FW_C630}"
+	fi
+	echo -n "Creating directory for linux DSP files: "
+	mkdir "${PATH_FW_C630}" &> /dev/null
+	if [ $? -eq 0 ]; then
+		echo "Done"
+
+		echo -n "Copying linux DSP files: "
+		cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
+		if [ $? -eq 0 ]; then
+			echo "Done"
+		else
+			echo "Failed"
+			exit
+		fi
+	else
+		echo "Failed"
+	fi
 fi
