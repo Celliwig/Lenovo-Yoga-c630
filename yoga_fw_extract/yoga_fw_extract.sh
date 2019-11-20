@@ -85,6 +85,47 @@ if [[ "${WIN_MNT_STS_RO}" != "true" ]]; then
 	exit
 fi
 
+PWD=`pwd`
+# Create directory to copy windows files into
+PATH_WIN_DRV="${PWD}/Windows Drivers"
+if [ -e "${PATH_WIN_DRV}" ]; then
+	echo "Deleting existing copy of Windows drivers..."
+	rm -rf "${PATH_WIN_DRV}"
+fi
+echo -n "Creating directory for Windows drivers: "
+mkdir "${PATH_WIN_DRV}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Done"
+
+	COPY_ERR=0
+	# Copying Window's driver file
+	echo -n "Copying Window's driver files: "
+	# Copy DSP files
+	for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcadsp850.mbn`; do
+		DSP_PATH=`dirname "${DSP_FILE}"`
+		cp -r "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+		if [ $? -ne 0 ]; then
+			COPY_ERR=$((COPY_ERR+1))
+		fi
+	done
+	# Copy board files
+	for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
+		BRD_PATH=`dirname "${BRD_FILE}"`
+		cp -r "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+		if [ $? -ne 0 ]; then
+			COPY_ERR=$((COPY_ERR+1))
+		fi
+	done
+
+	if [ ${COPY_ERR} -eq 0 ]; then
+		echo "Done"
+	else
+		echo "Failed"
+	fi
+else
+	echo "Failed"
+fi
+
 # Umount Windows partition if we mounted it
 if [[ "${WIN_MNT_UNMNT}" != "" ]]; then
 	echo "Unmounting /mnt."
