@@ -133,32 +133,26 @@ if [ -e "${PATH_WIN_DRV}" ]; then
 fi
 echo -n "Creating directory for Windows drivers: "
 mkdir "${PATH_WIN_DRV}" &> /dev/null
-if [ $? -eq 0 ]; then
-	echo "Done"
-
-	# Copying Window's driver file
-	echo -n "Copying Window's driver files: "
-	# Copy DSP files
-	for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcadsp850.mbn`; do
-		DSP_PATH=`dirname "${DSP_FILE}"`
-		cp -a "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
-		if [ $? -ne 0 ]; then
-			COPY_ERR=$((COPY_ERR+1))
-		fi
-	done
-	# Copy board files
-	for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
-		BRD_PATH=`dirname "${BRD_FILE}"`
-		cp -a "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
-		if [ $? -ne 0 ]; then
-			COPY_ERR=$((COPY_ERR+1))
-		fi
-	done
-
-	done_failedexit ${COPY_ERR}
-else
-	echo "Failed"
-fi
+done_failedexit $?
+# Copying Window's driver file
+echo -n "Copying Window's driver files: "
+# Copy DSP files
+for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcadsp850.mbn`; do
+	DSP_PATH=`dirname "${DSP_FILE}"`
+	cp -a "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	if [ $? -ne 0 ]; then
+		COPY_ERR=$((COPY_ERR+1))
+	fi
+done
+# Copy board files
+for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
+	BRD_PATH=`dirname "${BRD_FILE}"`
+	cp -a "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	if [ $? -ne 0 ]; then
+		COPY_ERR=$((COPY_ERR+1))
+	fi
+done
+done_failedexit ${COPY_ERR}
 
 # Umount Windows partition if we mounted it
 if [[ "${WIN_MNT_UNMNT}" != "" ]]; then
@@ -205,57 +199,48 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	echo -n "Creating directory for merging board files: "
 	mkdir -p "${PATH_BRD_SRC}" &> /dev/null
-	if [ $? -eq 0 ]; then
-		echo "Done"
+	done_failedexit $?
+	echo -n "Copying individual board files: "
+	cp -a "${BRD_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
+	done_failedexit $?
 
-		echo -n "Copying individual board files: "
-		cp -a "${BRD_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
-		done_failedexit $?
-
-		cd "${PATH_BRD_MAKE}"
-
+	cd "${PATH_BRD_MAKE}"
 ###################################################################################################################################################
 # This section copied from: https://github.com/aarch64-laptops/build/blob/master/misc/lenovo-yoga-c630/wifi/create-board-2.bin/make-board-2.bin.sh
 ###################################################################################################################################################
+	echo "Creating JSON board file...."
 
-		echo "Creating JSON board file...."
+	JSON="bdf/board-2.json"
+	iter=0
+	echo "[" > "${JSON}"
+	for file in bdf/bdwlan.*; do
+		[[ $file == *.txt ]] && continue
 
-		JSON="bdf/board-2.json"
-		iter=0
-		echo "[" > "${JSON}"
-		for file in bdf/bdwlan.*; do
-			[[ $file == *.txt ]] && continue
+		iter=$((iter+1))
+		[ $iter -ne 1 ] && echo "  }," >> "${JSON}"
 
-			iter=$((iter+1))
-			[ $iter -ne 1 ] && echo "  }," >> "${JSON}"
+		echo "  {" >> "${JSON}"
+		echo "          \"data\": \"$file\"," >> "${JSON}"
+		if [[ $file == */bdwlan.bin ]]; then
+#			file_ext="0"
+			file_ext="ff"				# This was required for my install, don't know if this applies to everyone
+		else
+			file_ext="$(printf '%x\n' "$(basename "${file}" | sed -E 's:^.*\.b?([0-9a-f]*)$:0x\1:')")"
+		fi
+		echo "          \"names\": [\"bus=snoc,qmi-board-id=${file_ext}\"]" >> "${JSON}"
+	done
 
-			echo "  {" >> "${JSON}"
-			echo "          \"data\": \"$file\"," >> "${JSON}"
-			if [[ $file == */bdwlan.bin ]]; then
-#				file_ext="0"
-				file_ext="ff"				# This was required for my install, don't know if this applies to everyone
-			else
-				file_ext="$(printf '%x\n' "$(basename "${file}" | sed -E 's:^.*\.b?([0-9a-f]*)$:0x\1:')")"
-			fi
-			echo "          \"names\": [\"bus=snoc,qmi-board-id=${file_ext}\"]" >> "${JSON}"
-		done
+	echo "  }" >> "${JSON}"
+	echo "]" >> "${JSON}"
 
-		echo "  }" >> "${JSON}"
-		echo "]" >> "${JSON}"
+	echo -n "Fetching Qualcomm Atheros tools: "
+	git clone https://github.com/qca/qca-swiss-army-knife.git &> /dev/null
+	done_failedexit $?
 
-		echo -n "Fetching Qualcomm Atheros tools: "
-		git clone https://github.com/qca/qca-swiss-army-knife.git &> /dev/null
-		done_failedexit $?
-
-		echo -n "Creating merged board file: "
-		python2 qca-swiss-army-knife/tools/scripts/ath10k/ath10k-bdencoder -c "${JSON}" -o "${PATH_BRD_MFILE}" &> /dev/null
-		done_failedexit $?
-
+	echo -n "Creating merged board file: "
+	python2 qca-swiss-army-knife/tools/scripts/ath10k/ath10k-bdencoder -c "${JSON}" -o "${PATH_BRD_MFILE}" &> /dev/null
+	done_failedexit $?
 ###################################################################################################################################################
-	else
-		echo "Failed"
-		exit
-	fi
 	cd "${CWD}"
 
 ###################################################################################################################################################
@@ -271,21 +256,14 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	echo -n "Creating directory for ath10k firmware files: "
 	mkdir -p "${PATH_FW_ATH10K_HW}" &> /dev/null
-	if [ $? -eq 0 ]; then
-		echo "Done"
-
-		echo -n "Copying merged board file: "
-		cp "${PATH_BRD_MAKE}"/"${PATH_BRD_MFILE}" "${PATH_FW_ATH10K_HW}" &> /dev/null
-		done_failedexit $?
-
-		cd "${PATH_FW_ATH10K_HW}"
-		echo -n "Fetching firmware-5.bin: "
-		wget "${URL_FW_FIRMWARE5BIN}" &> /dev/null
-		done_failedexit $?
-	else
-		echo "Failed"
-		exit
-	fi
+	done_failedexit $?
+	echo -n "Copying merged board file: "
+	cp "${PATH_BRD_MAKE}"/"${PATH_BRD_MFILE}" "${PATH_FW_ATH10K_HW}" &> /dev/null
+	done_failedexit $?
+	cd "${PATH_FW_ATH10K_HW}"
+	echo -n "Fetching firmware-5.bin: "
+	wget "${URL_FW_FIRMWARE5BIN}" &> /dev/null
+	done_failedexit $?
 	cd "${CWD}"
 
 ###################################################################################################################################################
@@ -300,20 +278,14 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	echo -n "Creating directory for linux DSP files: "
 	mkdir "${PATH_FW_C630}" &> /dev/null
-	if [ $? -eq 0 ]; then
-		echo "Done"
-
-		echo -n "Copying linux DSP files: "
-		cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
-		done_failedexit $?
-
-		cd "${PATH_FW_C630}"
-		echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
-		ln -s qcdsp2850.mbn modem.mdt &> /dev/null
-		done_failedexit $?
-	else
-		echo "Failed"
-	fi
+	done_failedexit $?
+	echo -n "Copying linux DSP files: "
+	cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
+	done_failedexit $?
+	cd "${PATH_FW_C630}"
+	echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
+	ln -s qcdsp2850.mbn modem.mdt &> /dev/null
+	done_failedexit $?
 	cd "${CWD}"
 
 ###################################################################################################################################################
