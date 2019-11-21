@@ -43,6 +43,19 @@ function done_failedexit {
 	fi
 }
 
+function check_file_md5 {
+	local file_name=$1
+	echo -n "Checking ${file_name}: "
+	local file_md5=`md5sum "${file_name}" |awk '{print $1}'`
+	if [ -z "${firmware_md5[${file_md5}]}" ]; then
+		echo "Failed"
+		return 1
+	else
+		echo "Passed"
+		return 0
+	fi
+}
+
 ###################################################################################################################################################
 # Find the relevant firmware directories, and make a working copy
 ###################################################################################################################################################
@@ -302,69 +315,15 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	echo "!!!If it fails, well, there could be regional differences... I don't know  !!!"
 	echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
-	echo -n "Checking ${PATH_FW_ATH10K_HW}/board-2.bin: "
-	MD5_BOARD2=`md5sum "${PATH_FW_ATH10K_HW}"/board-2.bin |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_BOARD2}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
+	check_file_md5 "${PATH_FW_ATH10K_HW}"/board-2.bin
+	check_file_md5 "${PATH_FW_ATH10K_HW}"/firmware-5.bin
 
-	echo -n "Checking ${PATH_FW_ATH10K_HW}/firmware-5.bin: "
-	MD5_FIRMWARE5=`md5sum "${PATH_FW_ATH10K_HW}"/firmware-5.bin |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_FIRMWARE5}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/qcadsp850.mbn: "
-	MD5_QCADSP850=`md5sum "${PATH_FW_C630}"/qcadsp850.mbn |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_QCADSP850}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/qccdsp850.mbn: "
-	MD5_QCCDSP850=`md5sum "${PATH_FW_C630}"/qccdsp850.mbn |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_QCCDSP850}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/qcdsp1v2850.mbn: "
-	MD5_QCDSP1V2850=`md5sum "${PATH_FW_C630}"/qcdsp1v2850.mbn |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_QCDSP1V2850}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/qcdsp2850.mbn: "
-	MD5_QCDSP2850=`md5sum "${PATH_FW_C630}"/qcdsp2850.mbn |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_QCDSP2850}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/modem.mdt: "
-	MD5_MODEM=`md5sum "${PATH_FW_C630}"/modem.mdt |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_MODEM}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
-
-	echo -n "Checking ${PATH_FW_C630}/wlanmdsp.mbn: "
-	MD5_WLANMDSP=`md5sum "${PATH_FW_C630}"/wlanmdsp.mbn |awk '{print $1}'`
-	if [ -z "${firmware_md5[${MD5_WLANMDSP}]}" ]; then
-		echo "Failed"
-	else
-		echo "Passed"
-	fi
+	check_file_md5 "${PATH_FW_C630}"/qcadsp850.mbn
+	check_file_md5 "${PATH_FW_C630}"/qccdsp850.mbn
+	check_file_md5 "${PATH_FW_C630}"/qcdsp1v2850.mbn
+	check_file_md5 "${PATH_FW_C630}"/qcdsp2850.mbn
+	check_file_md5 "${PATH_FW_C630}"/modem.mdt
+	check_file_md5 "${PATH_FW_C630}"/wlanmdsp.mbn
 
 ###################################################################################################################################################
 # INSTALL
