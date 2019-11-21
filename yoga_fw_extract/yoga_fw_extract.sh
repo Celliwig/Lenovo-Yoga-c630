@@ -32,6 +32,18 @@ if [ ${UID} -eq 0 ]; then
 fi
 
 ###################################################################################################################################################
+# Functions
+###################################################################################################################################################
+function done_failedexit {
+	if [ $1 -eq 0 ]; then
+		echo "Done"
+	else
+		echo "Failed"
+		exit
+	fi
+}
+
+###################################################################################################################################################
 # Find the relevant firmware directories, and make a working copy
 ###################################################################################################################################################
 WIN_PART=""									# Windows partition path
@@ -143,11 +155,7 @@ if [ $? -eq 0 ]; then
 		fi
 	done
 
-	if [ ${COPY_ERR} -eq 0 ]; then
-		echo "Done"
-	else
-		echo "Failed"
-	fi
+	done_failedexit ${COPY_ERR}
 else
 	echo "Failed"
 fi
@@ -202,12 +210,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 
 		echo -n "Copying individual board files: "
 		cp -a "${BRD_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 
 		cd "${PATH_BRD_MAKE}"
 
@@ -242,21 +245,11 @@ if [ ${COPY_ERR} -eq 0 ]; then
 
 		echo -n "Fetching Qualcomm Atheros tools: "
 		git clone https://github.com/qca/qca-swiss-army-knife.git &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 
 		echo -n "Creating merged board file: "
 		python2 qca-swiss-army-knife/tools/scripts/ath10k/ath10k-bdencoder -c "${JSON}" -o "${PATH_BRD_MFILE}" &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 
 ###################################################################################################################################################
 	else
@@ -283,22 +276,12 @@ if [ ${COPY_ERR} -eq 0 ]; then
 
 		echo -n "Copying merged board file: "
 		cp "${PATH_BRD_MAKE}"/"${PATH_BRD_MFILE}" "${PATH_FW_ATH10K_HW}" &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 
 		cd "${PATH_FW_ATH10K_HW}"
 		echo -n "Fetching firmware-5.bin: "
 		wget "${URL_FW_FIRMWARE5BIN}" &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 	else
 		echo "Failed"
 		exit
@@ -322,22 +305,12 @@ if [ ${COPY_ERR} -eq 0 ]; then
 
 		echo -n "Copying linux DSP files: "
 		cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 
 		cd "${PATH_FW_C630}"
 		echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
 		ln -s qcdsp2850.mbn modem.mdt &> /dev/null
-		if [ $? -eq 0 ]; then
-			echo "Done"
-		else
-			echo "Failed"
-			exit
-		fi
+		done_failedexit $?
 	else
 		echo "Failed"
 	fi
@@ -429,31 +402,16 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		if [[ "${BKUP_FW_ATH10K}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
 			echo -n "Moving ${PATH_LIBFW_ATH10K}/WCN3990 to ${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}: "
 			sudo mv "${PATH_LIBFW_ATH10K}/WCN3990" "${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}" &> /dev/null
-			if [ $? -eq 0 ]; then
-				echo "Done"
-			else
-				echo "Failed"
-				exit
-			fi
+			done_failedexit $?
 		else
 			echo -n "Deleting old Atheros firmware: "
 			sudo rm -rf ${PATH_LIBFW_ATH10K}/WCN3990
-			if [ $? -eq 0 ]; then
-				echo "Done"
-			else
-				echo "Failed"
-				exit
-			fi
+			done_failedexit $?
 		fi
 	fi
 	echo -n "Copying new Atheros ath10k firmware: "
 	sudo cp -r "${PATH_FW_ATH10K}" "${PATH_LIBFW_ATH10K}" &> /dev/null
-	if [ $? -eq 0 ]; then
-		echo "Done"
-	else
-		echo "Failed"
-		exit
-	fi
+	done_failedexit $?
 	sudo chown -R root:root "${PATH_LIBFW_ATH10K}"				# Reset ownership
 
 	PATH_LIBFW_QCOM="/lib/firmware/qcom"
@@ -463,30 +421,15 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		if [[ "${BKUP_FW_QCDSP}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
 			echo -n "Moving ${PATH_LIBFW_QCOM}/c630 to ${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}: "
 			sudo mv "${PATH_LIBFW_QCOM}/c630" "${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}" &> /dev/null
-			if [ $? -eq 0 ]; then
-				echo "Done"
-			else
-				echo "Failed"
-				exit
-			fi
+			done_failedexit $?
 		else
 			echo -n "Deleting old Qualcomm DSP firmware: "
 			sudo rm -rf ${PATH_LIBFW_QCOM}/c630
-			if [ $? -eq 0 ]; then
-				echo "Done"
-			else
-				echo "Failed"
-				exit
-			fi
+			done_failedexit $?
 		fi
 	fi
 	echo -n "Copying new Qualcomm DSP firmware: "
 	sudo cp -r "${PATH_FW_C630}" "${PATH_LIBFW_QCOM}" &> /dev/null
-	if [ $? -eq 0 ]; then
-		echo "Done"
-	else
-		echo "Failed"
-		exit
-	fi
+	done_failedexit $?
 	sudo chown -R root:root "${PATH_LIBFW_QCOM}"				# Reset ownership
 fi
