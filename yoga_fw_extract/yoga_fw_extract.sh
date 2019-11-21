@@ -129,7 +129,8 @@ COPY_ERR=0
 PATH_WIN_DRV="${CWD}/Windows Drivers"
 if [ -e "${PATH_WIN_DRV}" ]; then
 	echo "Deleting existing copy of Windows drivers..."
-	rm -rf "${PATH_WIN_DRV}"
+	rm -rf "${PATH_WIN_DRV}" &> /dev/null
+	done_failedexit $?
 fi
 echo -n "Creating directory for Windows drivers: "
 mkdir "${PATH_WIN_DRV}" &> /dev/null
@@ -195,7 +196,8 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	PATH_BRD_MFILE="board-2.bin"
 	if [ -e "${PATH_BRD_MAKE}" ]; then
 		echo "Deleting existing board file directory..."
-		rm -rf "${PATH_BRD_MAKE}"
+		rm -rf "${PATH_BRD_MAKE}" &> /dev/null
+		done_failedexit $?
 	fi
 	echo -n "Creating directory for merging board files: "
 	mkdir -p "${PATH_BRD_SRC}" &> /dev/null
@@ -252,7 +254,8 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	PATH_FW_ATH10K_HW="${PATH_FW_ATH10K}/hw1.0"
 	if [ -e "${PATH_FW_ATH10K_HW}" ]; then
 		echo "Deleting existing copy of ath10k firmware files..."
-		rm -rf "${PATH_FW_ATH10K_HW}"
+		rm -rf "${PATH_FW_ATH10K_HW}" &> /dev/null
+		done_failedexit $?
 	fi
 	echo -n "Creating directory for ath10k firmware files: "
 	mkdir -p "${PATH_FW_ATH10K_HW}" &> /dev/null
@@ -274,7 +277,8 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	PATH_FW_C630="${CWD}/c630"
 	if [ -e "${PATH_FW_C630}" ]; then
 		echo "Deleting existing copy of linux DSP files..."
-		rm -rf "${PATH_FW_C630}"
+		rm -rf "${PATH_FW_C630}" &> /dev/null
+		done_failedexit $?
 	fi
 	echo -n "Creating directory for linux DSP files: "
 	mkdir "${PATH_FW_C630}" &> /dev/null
@@ -377,7 +381,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			done_failedexit $?
 		else
 			echo -n "Deleting old Atheros firmware: "
-			sudo rm -rf ${PATH_LIBFW_ATH10K}/WCN3990
+			sudo rm -rf ${PATH_LIBFW_ATH10K}/WCN3990 &> /dev/null
 			done_failedexit $?
 		fi
 	fi
@@ -396,7 +400,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 			done_failedexit $?
 		else
 			echo -n "Deleting old Qualcomm DSP firmware: "
-			sudo rm -rf ${PATH_LIBFW_QCOM}/c630
+			sudo rm -rf ${PATH_LIBFW_QCOM}/c630 &> /dev/null
 			done_failedexit $?
 		fi
 	fi
