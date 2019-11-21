@@ -56,6 +56,26 @@ function check_file_md5 {
 	fi
 }
 
+function backup_or_delete {
+	local response
+	local name=$1
+	local dir=$2
+	local suffix=$3
+	read -r -p "Backup existing ${name} firmware (Y/n): " response
+	case "$response" in
+		[Nn])								# Delete directory
+			echo -n "Deleting old ${name} firmware: "
+			sudo rm -rf ${dir} &> /dev/null
+			done_failedexit $?
+			;;
+		*)								# Default: backup directory
+			echo -n "Moving ${dir} to ${dir}.${suffix}: "
+			sudo mv "${dir}" "${dir}.${suffix}" &> /dev/null
+			done_failedexit $?
+			;;
+	esac
+}
+
 ###################################################################################################################################################
 # Find the relevant firmware directories, and make a working copy
 ###################################################################################################################################################
@@ -328,21 +348,11 @@ if [ ${COPY_ERR} -eq 0 ]; then
 ###################################################################################################################################################
 # INSTALL
 ###################################################################################################################################################
+	echo -e "\n${TXT_UNDERLINE}Install firmware...${TXT_NORMAL}"
 	BKUP_DATETIME=`date +'%Y%m%dT%H%M%S'`
 	PATH_LIBFW_ATH10K="/lib/firmware/ath10k"
-	echo -e "\n${TXT_UNDERLINE}Install firmware...${TXT_NORMAL}"
 	if [ -e "${PATH_LIBFW_ATH10K}/WCN3990" ]; then
-		echo -n "Backup existing ath10k firmware (Y/N): "
-		read BKUP_FW_ATH10K
-		if [[ "${BKUP_FW_ATH10K}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
-			echo -n "Moving ${PATH_LIBFW_ATH10K}/WCN3990 to ${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}: "
-			sudo mv "${PATH_LIBFW_ATH10K}/WCN3990" "${PATH_LIBFW_ATH10K}/WCN3990.${BKUP_DATETIME}" &> /dev/null
-			done_failedexit $?
-		else
-			echo -n "Deleting old Atheros firmware: "
-			sudo rm -rf ${PATH_LIBFW_ATH10K}/WCN3990 &> /dev/null
-			done_failedexit $?
-		fi
+		backup_or_delete "Atheros" "${PATH_LIBFW_ATH10K}/WCN3990" "${BKUP_DATETIME}"
 	fi
 	echo -n "Copying new Atheros ath10k firmware: "
 	sudo cp -r "${PATH_FW_ATH10K}" "${PATH_LIBFW_ATH10K}" &> /dev/null
@@ -351,17 +361,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 
 	PATH_LIBFW_QCOM="/lib/firmware/qcom"
 	if [ -e "${PATH_LIBFW_QCOM}/c630" ]; then
-		echo -n "Backup existing Qualcomm DSP firmware (Y/N): "
-		read BKUP_FW_QCDSP
-		if [[ "${BKUP_FW_QCDSP}" == "Y" ]] || [[ "${BKUP_FW_ATH10K}" == "y" ]]; then
-			echo -n "Moving ${PATH_LIBFW_QCOM}/c630 to ${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}: "
-			sudo mv "${PATH_LIBFW_QCOM}/c630" "${PATH_LIBFW_QCOM}/c630.${BKUP_DATETIME}" &> /dev/null
-			done_failedexit $?
-		else
-			echo -n "Deleting old Qualcomm DSP firmware: "
-			sudo rm -rf ${PATH_LIBFW_QCOM}/c630 &> /dev/null
-			done_failedexit $?
-		fi
+		backup_or_delete "Qualcomm DSP" "${PATH_LIBFW_QCOM}/c630" "${BKUP_DATETIME}"
 	fi
 	echo -n "Copying new Qualcomm DSP firmware: "
 	sudo cp -r "${PATH_FW_C630}" "${PATH_LIBFW_QCOM}" &> /dev/null
