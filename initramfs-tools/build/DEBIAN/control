@@ -1,0 +1,9 @@
+Package: initramfs-tools-firmware
+Version: 0.1
+Architecture: all
+Maintainer: Charles Burgoyne <celliwig@nym.hush.com>
+Installed-Size: 20
+Section: utils
+Priority: optional
+Description: force initramfs-tools to include selected firmare files
+ Force selected firmware files to be included when building initrd.img.

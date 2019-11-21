@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+CONFFILE="/etc/initramfs-tools/firmware"
+if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
+	# Add header
+	echo "# This file contains a list of firmware files to include in an initrd.img when it's generated" > "${CONFFILE}"
+
+	# Scan the devicetree for firmware filenames, add them to config file
+	for fw_file in `find /sys/firmware/devicetree/ -type f -name \*firmware-name\*`; do
+		awk -F "\0" '{for (i=1; i<=(NF-1); i++) print $i}' "${fw_file}" >> "${CONFFILE}"
+	done
+fi
