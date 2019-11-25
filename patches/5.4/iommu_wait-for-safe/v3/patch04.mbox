@@ -1,0 +1,28 @@
+From	Vivek Gautam <>
+Subject	[PATCH v3 4/4] arm64: dts/sdm845: Enable FW implemented safe sequence handler on MTP
+Date	Wed, 12 Jun 2019 12:45:54 +0530
+	
+
+Indicate on MTP SDM845 that firmware implements handler to
+TLB invalidate erratum SCM call where SAFE sequence is toggled
+to achieve optimum performance on real-time clients, such as
+display and camera.
+
+Signed-off-by: Vivek Gautam <vivek.gautam@codeaurora.org>
+---
+ arch/arm64/boot/dts/qcom/sdm845.dtsi | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm64/boot/dts/qcom/sdm845.dtsi b/arch/arm64/boot/dts/qcom/sdm845.dtsi
+index 78ec373a2b18..6a73d9744a71 100644
+--- a/arch/arm64/boot/dts/qcom/sdm845.dtsi
++++ b/arch/arm64/boot/dts/qcom/sdm845.dtsi
+@@ -2368,6 +2368,7 @@
+ 			compatible = "qcom,sdm845-smmu-500", "arm,mmu-500";
+ 			reg = <0 0x15000000 0 0x80000>;
+ 			#iommu-cells = <2>;
++			qcom,smmu-500-fw-impl-safe-errata;
+ 			#global-interrupts = <1>;
+ 			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL_HIGH>,
+ 				     <GIC_SPI 96 IRQ_TYPE_LEVEL_HIGH>,
+-- 

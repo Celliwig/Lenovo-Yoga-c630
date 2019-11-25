@@ -1,0 +1,48 @@
+diff --git a/drivers/iommu/arm-smmu.c b/drivers/iommu/arm-smmu.c
+index 0ad086da399c..3c3ad43eda97 100644
+--- a/drivers/iommu/arm-smmu.c
++++ b/drivers/iommu/arm-smmu.c
+@@ -39,6 +39,7 @@
+ #include <linux/pci.h>
+ #include <linux/platform_device.h>
+ #include <linux/pm_runtime.h>
++#include <linux/qcom_scm.h>
+ #include <linux/slab.h>
+ #include <linux/spinlock.h>
+ 
+@@ -177,6 +178,7 @@ struct arm_smmu_device {
+ 	u32				features;
+ 
+ #define ARM_SMMU_OPT_SECURE_CFG_ACCESS (1 << 0)
++#define ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA (1 << 1)
+ 	u32				options;
+ 	enum arm_smmu_arch_version	version;
+ 	enum arm_smmu_implementation	model;
+@@ -262,6 +264,7 @@ static bool using_legacy_binding, using_generic_binding;
+ 
+ static struct arm_smmu_option_prop arm_smmu_options[] = {
+ 	{ ARM_SMMU_OPT_SECURE_CFG_ACCESS, "calxeda,smmu-secure-config-access" },
++	{ ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA, "qcom,smmu-500-fw-impl-safe-errata" },
+ 	{ 0, NULL},
+ };
+ 
+@@ -2292,6 +2295,19 @@ static int arm_smmu_device_probe(struct platform_device *pdev)
+ 	arm_smmu_device_reset(smmu);
+ 	arm_smmu_test_smr_masks(smmu);
+ 
++	/*
++	 * To address performance degradation in non-real time clients,
++	 * such as USB and UFS, turn off wait-for-safe on sdm845 platforms,
++	 * such as MTP, whose firmwares implement corresponding secure monitor
++	 * call handlers.
++	 */
++	if (of_device_is_compatible(smmu->dev->of_node, "qcom,sdm845-smmu-500") &&
++	    smmu->options & ARM_SMMU_OPT_QCOM_FW_IMPL_SAFE_ERRATA) {
++		err = qcom_scm_qsmmu500_wait_safe_toggle(0);
++		if (err)
++			dev_warn(dev, "Failed to turn off SAFE logic\n");
++	}
++
+ 	/*
+ 	 * We want to avoid touching dev->power.lock in fastpaths unless
+ 	 * it's really going to do something useful - pm_runtime_enabled()
