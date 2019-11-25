@@ -1,0 +1,23 @@
+From	Bjorn Andersson <>
+Subject	[PATCH 0/4] Bluetooth: hci_qca: Regulator usage cleanup
+Date	Thu, 17 Oct 2019 22:24:00 -0700
+	
+
+Clean up the regulator usage in hci_qca and in particular don't
+regulator_set_voltage() for fixed voltages. It cleans up the driver, but more
+important it makes bluetooth work on my Lenovo Yoga C630, where the regulator
+for vddch0 is defined with a voltage range that doesn't overlap the values in
+the driver.
+
+Bjorn Andersson (4):
+  Bluetooth: hci_qca: Update regulator_set_load() usage
+  Bluetooth: hci_qca: Don't vote for specific voltage
+  Bluetooth: hci_qca: Use regulator bulk enable/disable
+  Bluetooth: hci_qca: Split qca_power_setup()
+
+ drivers/bluetooth/hci_qca.c | 135 +++++++++++++++---------------------
+ 1 file changed, 55 insertions(+), 80 deletions(-)
+
+-- 
+
+https://lkml.org/lkml/2019/10/18/100
