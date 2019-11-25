@@ -1,0 +1,19 @@
+commit 224776520ead69e9e85e33e5eb8c705c3552c4e1
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Nov 15 09:21:01 2019 +0200
+
+    ath10k: change max RX bundle size from 8 to 32 for sdio
+    
+    The max bundle size support by firmware is 32, change it from 8 to 32
+    will help performance. This results in significant performance
+    improvement on RX path.
+    
+    The real max rx bundle is decided in ath10k_htc_wait_target(),
+    it is the min value of HTC_HOST_MAX_MSG_PER_RX_BUNDLE and the value reported
+    from firmware. So this change shouldn't cause any regressions with other
+    hardware supported by ath10k.
+    
+    Tested with QCA6174 SDIO with firmware WLAN.RMH.4.4.1-00017-QCARMSWPZ-1.
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

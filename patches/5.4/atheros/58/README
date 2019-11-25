@@ -1,0 +1,19 @@
+commit ea0c3e2a470271573d480f48a67e74633566a317
+Author: Linus Lüssing <ll@simonwunderlich.de>
+Date:   Fri Nov 15 11:56:12 2019 +0100
+
+    ath10k: fix RX of frames with broken FCS in monitor mode
+    
+    So far, frames were forwarded regardless of the FCS correctness leading
+    to userspace applications listening on the monitor mode interface to
+    receive potentially broken frames, even with the "fcsfail" flag unset.
+    
+    By default, with the "fcsfail" flag of a monitor mode interface
+    unset, frames with FCS errors should be dropped. With this patch, the
+    fcsfail flag is taken into account correctly.
+    
+    Tested-on: QCA4019 firmware-5-ct-full-community-12.bin-lede.011
+    
+    Cc: Simon Wunderlich <sw@simonwunderlich.de>
+    Signed-off-by: Linus Lüssing <ll@simonwunderlich.de>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

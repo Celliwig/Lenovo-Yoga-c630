@@ -1,0 +1,19 @@
+commit cc78dc3b790619aa05f22a86a9152986bd73698c
+Author: Abhishek Ambure <aambure@codeaurora.org>
+Date:   Thu Oct 3 16:45:22 2019 +0300
+
+    ath10k: enable transmit data ack RSSI for QCA9884
+    
+    For all data packets transmitted, host gets htt tx completion event. Some QCA9984
+    firmware releases support WMI_SERVICE_TX_DATA_ACK_RSSI, which gives data
+    ack rssi values to host through htt event of data tx completion. Data ack rssi
+    values are valid if A0 bit is set in HTT rx message. So enable the feature also
+    for QCA9884.
+    
+    Tested HW: QCA9984
+    Tested FW: 10.4-3.9.0.2-00044
+    
+    Signed-off-by: Abhishek Ambure <aambure@codeaurora.org>
+    Signed-off-by: Balaji Pothunoori <bpothuno@codeaurora.org>
+    [kvalo@codeaurora.org: improve commit log]
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

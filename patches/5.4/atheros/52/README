@@ -1,0 +1,17 @@
+commit d58f466a5dee814b7820aff9aaa393b3782559d9
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Nov 15 09:21:35 2019 +0200
+
+    ath10k: add large size for BMI download data for SDIO
+    
+    Download firmware time cost of SDIO is too long, it is about 480ms,
+    add large size 2048 bytes for BMI download for SDIO chip, its time
+    cost will reduced to 240ms.
+    
+    This will optimize the download firmware time cost.
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00017-QCARMSWP-1.
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

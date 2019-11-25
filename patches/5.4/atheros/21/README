@@ -1,0 +1,11 @@
+commit fa879490e41283c8d59e7a0c751c375875390cf2
+Author: Tomislav Požega <pozega.tomislav@gmail.com>
+Date:   Mon Sep 23 21:49:21 2019 +0200
+
+    ath10k: add 2ghz channel arguments to service ready structure
+    
+    Add lowest/highest 2ghz channel arguments for use within WMI service
+    ready structure.
+    
+    Signed-off-by: Tomislav Požega <pozega.tomislav@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

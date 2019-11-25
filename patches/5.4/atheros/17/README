@@ -1,0 +1,11 @@
+commit 8da96730331dab78e7194c5af48efbcf90264d02
+Author: Kangjie Lu <kjlu@umn.edu>
+Date:   Fri Mar 15 00:19:03 2019 -0500
+
+    ath10k: fix missing checks for bmi reads and writes
+    
+    ath10k_bmi_write32 and ath10k_bmi_read32 can fail. The fix
+    checks their statuses to avoid potential undefined behaviors.
+    
+    Signed-off-by: Kangjie Lu <kjlu@umn.edu>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

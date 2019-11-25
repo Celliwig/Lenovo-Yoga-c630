@@ -1,0 +1,15 @@
+commit 501d4152b0184b7f0a4df03a1dc748b381410a11
+Author: Jeffrey Hugo <jeffrey.l.hugo@gmail.com>
+Date:   Fri Nov 15 09:21:43 2019 +0200
+
+    ath10k: Handle when FW doesn't support QMI_WLFW_HOST_CAP_REQ_V01
+    
+    Firmware with the build id QC_IMAGE_VERSION_STRING=WLAN.HL.1.0.2-XXXX does
+    not support the QMI_WLFW_HOST_CAP_REQ_V01 message and will return the
+    QMI not supported error to the ath10k driver.  Since not supporting this
+    message is not fatal to the firmware nor the ath10k driver, lets catch
+    this particular scenario and ignore it so that we can still bring up
+    wifi services successfully.
+    
+    Signed-off-by: Jeffrey Hugo <jeffrey.l.hugo@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

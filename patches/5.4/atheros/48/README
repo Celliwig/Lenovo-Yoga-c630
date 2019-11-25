@@ -1,0 +1,23 @@
+commit 67654b26c903de9949202f23f4864a74a09e22d5
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Nov 15 09:21:03 2019 +0200
+
+    ath10k: add workqueue for RX path of sdio
+    
+    For RX, it has two parts, one is to read data from sdio, another
+    is to indicate the packets to upper stack. Recently it has only
+    one thread to do all RX things, it results that it is sequential
+    for RX and low throughout, change RX to parallel for the two parts
+    will increase throughout.
+    
+    This patch move the indication to a workqueue, it results in
+    significant performance improvement on RX path.
+    
+    Udp rx throughout is 200Mbps without this patch, and it arrives
+    400Mbps with this patch.
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00017-QCARMSWPZ-1
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

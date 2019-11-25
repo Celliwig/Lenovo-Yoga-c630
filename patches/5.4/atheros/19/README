@@ -1,0 +1,14 @@
+commit 35cc054d944e8c9a7e9a31f32bbf360feb01a301
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Sep 6 18:55:01 2019 +0800
+
+    ath10k: remove the warning of sdio not full support
+    
+    Recently, it has the basic feature of sdio tested success, so remove
+    it.
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00017-QCARMSWP-1.
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

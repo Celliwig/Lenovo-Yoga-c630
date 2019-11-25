@@ -1,0 +1,10 @@
+commit 09764659003d9e208b8f558d164c8f5005b43ab7
+Author: Colin Ian King <colin.king@canonical.com>
+Date:   Fri Sep 13 08:43:39 2019 +0100
+
+    ath10k: fix spelling mistake "eanble" -> "enable"
+    
+    There is a spelling mistake in a ath10k_warn warning message. Fix it.
+    
+    Signed-off-by: Colin Ian King <colin.king@canonical.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

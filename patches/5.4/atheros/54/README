@@ -1,0 +1,21 @@
+commit 23b5156a856b6342c8a1ef7045d387c00cdb17c5
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Nov 8 17:27:06 2019 +0800
+
+    ath10k: add NL80211_FEATURE_ND_RANDOM_MAC_ADDR for NLO
+    
+    Add NL80211_FEATURE_ND_RANDOM_MAC_ADDR for NLO will enable the random
+    mac address for netdetect case.
+    iw command:
+    iw phy0 wowlan enable net-detect net-detect
+    randomize=AA:7B:A1:AC:B2:41/FF:FF:FF:FF:FF:FF interval 5000 delay 30
+    freqs 2412 matches ssid foo.
+    After suspend, DUT will send probe request with mac AA:7B:A1:AC:B2:41.
+    
+    WCN3990, QCA9377, QCA6174 PCI also support this feature.
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00029.
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

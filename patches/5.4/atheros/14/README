@@ -1,0 +1,15 @@
+commit 3f14b73c38431a6a1ed24de568e18ed89b7082e2
+Author: Govind Singh <govinds@codeaurora.org>
+Date:   Wed Sep 18 16:27:49 2019 +0300
+
+    ath10k: Enable MSA region dump support for WCN3990
+    
+    MSA memory region caries the hw descriptors information.
+    Dump MSA region in core dump as this is very helpful in debugging
+    hw issues.
+    
+    Testing: Tested on WCN3990 HW
+    Tested FW: WLAN.HL.3.1-00959-QCAHLSWMTPLZ-1
+    
+    Signed-off-by: Govind Singh <govinds@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

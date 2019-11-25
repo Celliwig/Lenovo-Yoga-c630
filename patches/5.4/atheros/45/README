@@ -1,0 +1,13 @@
+commit b70b3a36ec33a2c8d3292f3b33fe2047a8f57b9a
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Nov 13 15:35:58 2019 -0800
+
+    ath10k: qmi: Sleep for a while before assigning MSA memory
+    
+    Unless we sleep for a while before transitioning the MSA memory to WLAN
+    the MPSS.AT.4.0.c2-01184-SDM845_GEN_PACK-1 firmware triggers a security
+    violation fairly reliably. Unforutnately recovering from this failure
+    always results in the entire system freezing.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

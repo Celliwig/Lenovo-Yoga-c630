@@ -1,0 +1,63 @@
+commit 7005eafc1f1cb0a525631c2214f760d6fb636ebb
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Thu Nov 14 19:19:31 2019 +0800
+
+    ath10k: report rssi of each chain to mac80211 for sdio
+    
+    iw command only show rssi without each chain's rssi on sdio
+    iw wlan0 station dump
+    Station a0:40:a0:93:3e:de (on wlan0)
+    signal:         -82 dBm
+    signal avg:     -82 dBm
+    
+    after this patch, it will show each chain's rssi on sdio
+    Station a0:40:a0:93:3e:de (on wlan0)
+    signal:         -82 [-84, -88] dBm
+    signal avg:     -82 [-84, -87] dBm
+    
+    For QCA6174 PCIe, the ppdu have the correct rssi of each chain, it
+    indicate rssi of rx data by ath10k_htt_rx_h_signal. For sdio chip, the
+    rssi of each chain stored in rx management reported by firmware, the
+    ath10k_wmi_tlv_op_pull_mgmt_rx_ev which used for tlv wmi will get the
+    rssi of each chain and stored them in wmi_mgmt_rx_ev_arg, then indicate
+    them to mac80211. For non-tlv wmi chip, it will not get the rssi of each
+    chain and not indicate to mac80211, for non-tlv wmi chip, this patch will
+    not have impact. For tlv wmi chip, if the rssi of chain in mgmt is valid,
+    it will be indicate to mac80211, tested with QCA6174 PCIe/SDIO, the rssi
+    of 2 chain in mgmt is valid.
+    
+    rssi of chains in mgmt of QCA6174 SDIO:
+    92096.652780: ath10k:ath10k_log_warn: ath10k_sdio mmc1:0001:1 rssi[0]:70
+    92096.657324: ath10k:ath10k_log_warn: ath10k_sdio mmc1:0001:1 rssi[1]:68
+    92096.662009: ath10k:ath10k_log_warn: ath10k_sdio mmc1:0001:1 rssi[2]:128
+    92096.666647: ath10k:ath10k_log_warn: ath10k_sdio mmc1:0001:1 rssi[3]:128
+    
+    rssi of chains in mgmt of QCA6174 PCIe:
+    [ 1581.049816] ath10k_pci 0000:02:00.0: mgmt rssi[0]:17
+    [ 1581.049818] ath10k_pci 0000:02:00.0: mgmt rssi[1]:22
+    [ 1581.049821] ath10k_pci 0000:02:00.0: mgmt rssi[2]:128
+    [ 1581.049823] ath10k_pci 0000:02:00.0: mgmt rssi[3]:128
+    
+    after apply this patch, the iw's rssi of PCIe do not changed, result is
+    same with before.
+    
+    iw wlan0 station dump of QCA6174 PCIe:
+    Station 6c:e8:73:b8:92:dc (on wlan0)
+            signal:         -70 [-77, -72] dBm
+            signal avg:     -69 [-78, -72] dBm
+    
+    iw wlan-5000mhz station dump of QCA9984 PCIe
+    connected with 2 client which has 2 chain:
+    Station 70:48:0f:1f:1a:b2 (on wlan-5000mhz)
+            signal:         -47 [-55, -48, -87, -88] dBm
+            signal avg:     -42 [-50, -43, -83, -86] dBm
+    Station ac:c1:ee:39:e3:83 (on wlan-5000mhz)
+            signal:         -43 [-46, -45, -79, -84] dBm
+            signal avg:     -43 [-46, -46, -82, -83] dBm
+    
+    Tested with QCA6174 SDIO with firmware WLAN.RMH.4.4.1-00017-QCARMSWP-1.
+    Tested with QCA6174 PCIe with firmware WLAN.RM.4.4.1-00110-QCARMSWP-1.
+    Tested with QCA9984 PCIe with firmware 10.4-3.9.0.2-00040.
+    
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

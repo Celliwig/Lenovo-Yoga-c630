@@ -1,0 +1,20 @@
+commit 306547608c84378084d718be4cc1be03200aabfd
+Author: Erik Stromdahl <erik.stromdahl@gmail.com>
+Date:   Mon Jun 17 22:01:40 2019 +0200
+
+    ath10k: switch to ieee80211_tx_dequeue_ni
+    
+    Since ath10k_mac_tx_push_txq() can be called from process context, we
+    must explicitly disable softirqs before the call into mac80211.
+    
+    By calling ieee80211_tx_dequeue_ni() instead of ieee80211_tx_dequeue()
+    we make sure softirqs are always disabled even in the case when
+    ath10k_mac_tx_push_txq() is called from process context.
+    
+    Calling ieee80211_tx_dequeue_ni() with softirq's already disabled
+    (e.g., from softirq context) should be safe as the local_bh_disable()
+    and local_bh_enable() functions (called from ieee80211_tx_dequeue_ni)
+    are fully reentrant.
+    
+    Signed-off-by: Erik Stromdahl <erik.stromdahl@gmail.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

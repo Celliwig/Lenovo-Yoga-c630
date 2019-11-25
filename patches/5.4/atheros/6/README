@@ -1,0 +1,19 @@
+commit 0227ff3656f2c68b44002de0a17cec56cbdac631
+Author: Sven Eckelmann <seckelmann@datto.com>
+Date:   Wed Jul 3 16:19:49 2019 +0200
+
+    ath10k: avoid leaving .bss_info_changed prematurely
+    
+    ath10k_bss_info_changed() handles various events from the upper layers. It
+    parses the changed bitfield and then configures the driver/firmware
+    accordingly. Each detected event is handled in a separate scope which is
+    independent of each other - but in the same function.
+    
+    The commit f279294e9ee2 ("ath10k: add support for configuring management
+    packet rate") changed this behavior by returning from this function
+    prematurely when some precondition was not fulfilled. All new event
+    handlers added after the BSS_CHANGED_BASIC_RATES event handler would then
+    also be skipped.
+    
+    Signed-off-by: Sven Eckelmann <seckelmann@datto.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

@@ -1,0 +1,31 @@
+commit 8d985555ddaa6735c5d1f3d6e4d4d9cb47f27878
+Author: Alagu Sankar <alagusankar@silex-india.com>
+Date:   Fri Nov 15 09:20:58 2019 +0200
+
+    ath10k: enable RX bundle receive for sdio
+    
+    The existing implementation of initiating multiple sdio transfers for
+    receive bundling is slowing down the receive speed. Combining the
+    transfers using a bundle method would be ideal.
+    
+    The transmission utilization ratio for sdio bus for small packet is
+    slow, because the space and time cost for sdio bus is same for large
+    length packet and small length packet. So the speed of data for large
+    length packet is higher than small length.
+    
+    Test result of different length of data:
+    data packet(byte)   cost time(us)   calculated rate(Mbps)
+          256               28                73
+          512               33               124
+         1024               35               234
+         1792               45               318
+        14336              168               682
+        28672              333               688
+        57344              660               695
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00017-QCARMSWPZ-1
+    
+    Signed-off-by: Alagu Sankar <alagusankar@silex-india.com>
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

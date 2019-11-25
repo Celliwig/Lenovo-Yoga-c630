@@ -1,0 +1,25 @@
+commit 1382993f882b6b96c99837fd8b705300a208de3a
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Tue Oct 1 15:04:56 2019 +0300
+
+    ath10k: add support for hardware rfkill
+    
+    When hardware rfkill is enabled in the firmware it will report the
+    capability via using WMI_TLV_SYS_CAP_INFO_RFKILL bit in the WMI_SERVICE_READY
+    event to the host. ath10k will check the capability, and if it is enabled then
+    ath10k will set the GPIO information to firmware using WMI_PDEV_SET_PARAM. When
+    the firmware detects hardware rfkill is enabled by the user, it will report it
+    via WMI_RFKILL_STATE_CHANGE_EVENTID. Once ath10k receives the event it will
+    send wmi command WMI_PDEV_SET_PARAM to the firmware to enable/disable the radio
+    and also notifies cfg80211.
+    
+    We can't power off the device when rfkill is enabled, as otherwise the
+    firmware would not be able to detect GPIO changes and report them to the
+    host. So when rfkill is enabled, we need to keep the firmware running.
+    
+    Tested with QCA6174 PCI with firmware
+    WLAN.RM.4.4.1-00109-QCARMSWPZ-1.
+    
+    Signed-off-by: Alan Liu <alanliu@codeaurora.org>
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

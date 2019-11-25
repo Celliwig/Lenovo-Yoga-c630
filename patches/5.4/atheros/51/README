@@ -1,0 +1,16 @@
+commit e01cc82c4d1ec3bddcbb7cd991cf5dc0131ed9a1
+Author: Wen Gong <wgong@codeaurora.org>
+Date:   Fri Nov 15 09:21:32 2019 +0200
+
+    ath10k: correct the tlv len of ath10k_wmi_tlv_op_gen_config_pno_start
+    
+    the tlv len is set to the total len of the wmi cmd, it will trigger
+    firmware crash, correct the tlv len.
+    
+    Tested with QCA6174 SDIO with firmware
+    WLAN.RMH.4.4.1-00017-QCARMSWP-1 and QCA6174
+    PCIE with firmware WLAN.RM.4.4.1-00110-QCARMSWPZ-1.
+    
+    Fixes: ce834e280f2f875 ("ath10k: support NET_DETECT WoWLAN feature")
+    Signed-off-by: Wen Gong <wgong@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

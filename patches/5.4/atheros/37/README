@@ -1,0 +1,13 @@
+commit 868ad21496020ef83d41fdeed3b0a63de2a3caa5
+Author: Markus Elfring <elfring@users.sourceforge.net>
+Date:   Thu Aug 22 10:20:10 2019 +0200
+
+    net/wireless: Delete unnecessary checks before the macro call “dev_kfree_skb”
+    
+    The dev_kfree_skb() function performs also input parameter validation.
+    Thus the test around the shown calls is not needed.
+    
+    This issue was detected by using the Coccinelle software.
+    
+    Signed-off-by: Markus Elfring <elfring@users.sourceforge.net>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

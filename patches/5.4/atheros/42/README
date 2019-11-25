@@ -1,0 +1,11 @@
+commit 402838a05def2e23736cec834752f3edcc38dda7
+Author: Zhi Chen <zhichen@codeaurora.org>
+Date:   Wed Nov 6 20:04:42 2019 +0200
+
+    ath10k: fix potential issue of peer stats allocation
+    
+    STA number was not restored if OOM happened.
+    
+    Tested: QCA9984 with firmware ver 10.4-3.9.0.1-00018
+    Signed-off-by: Zhi Chen <zhichen@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

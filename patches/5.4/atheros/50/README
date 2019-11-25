@@ -1,0 +1,9 @@
+commit 2246c215659060b214c9cc7fcd4abec95874ae5a
+Author: Kalle Valo <kvalo@codeaurora.org>
+Date:   Fri Nov 15 09:21:11 2019 +0200
+
+    ath10k: sdio: remove struct ath10k_sdio_rx_data::status
+    
+    It seems to be unused.
+    
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

@@ -1,0 +1,16 @@
+commit c41305993ff5a399775da54232b30ff2d6c9576e
+Author: Govind Singh <govinds@codeaurora.org>
+Date:   Wed Jul 31 17:12:20 2019 +0530
+
+    ath10k: revalidate the msa region coming from firmware
+    
+    driver sends QMI_WLFW_MSA_INFO_REQ_V01 QMI request to firmware
+    and in response expects range of addresses and size to be mapped.
+    Add condition to check whether addresses in response falls
+    under valid range otherwise return failure.
+    
+    Testing: Tested on WCN3990 HW
+    Tested FW: WLAN.HL.3.1-01040-QCAHLSWMTPLZ-1
+    
+    Signed-off-by: Govind Singh <govinds@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

@@ -1,0 +1,22 @@
+commit 40f4ef5e92326ab127bdeb6f024855c8c91de608
+Author: Surabhi Vishnoi <svishnoi@codeaurora.org>
+Date:   Mon Feb 25 18:18:46 2019 +0530
+
+    ath10k: Add support to provide higher range mem chunks in wmi init command
+    
+    With the current implementation of wmi init command,
+    there is no provision for the host driver to provide mem
+    chunks addresses with more than 32-bit, to the firmware.
+    WCN3990 is a 35-bit target and can accept mem chunks addresses
+    which are above 32-bit.
+    
+    If firmware supports address range more than 32 bit, it
+    advertises the support by setting the WMI_SERVICE_EXTEND_ADDRESS
+    service. Based on this service fill the upper bits of paddr while
+    providing the mem chunks in the wmi init command.
+    
+    Tested HW: WCN3990
+    Tested FW: WLAN.HL.3.1-00784-QCAHLSWMTPLZ-1
+    
+    Signed-off-by: Surabhi Vishnoi <svishnoi@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

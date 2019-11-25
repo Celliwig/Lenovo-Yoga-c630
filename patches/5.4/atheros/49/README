@@ -1,0 +1,9 @@
+commit efd2f4c5016bd24f33357487adcf873359116e9a
+Author: Kalle Valo <kvalo@codeaurora.org>
+Date:   Fri Nov 15 09:21:09 2019 +0200
+
+    ath10k: sdio: cosmetic cleanup
+    
+    Do some cosmetic cleanup while reviewing the files. No functional changes.
+    
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

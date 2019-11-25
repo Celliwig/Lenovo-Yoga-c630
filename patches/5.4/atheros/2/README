@@ -1,0 +1,26 @@
+commit 7165ef890a4c44cf16db66b82fd78448f4bde6ba
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Jul 24 23:31:08 2019 -0700
+
+    ath10k: Fix HOST capability QMI incompatibility
+    
+    The introduction of 768ec4c012ac ("ath10k: update HOST capability QMI
+    message") served the purpose of supporting the new and extended HOST
+    capability QMI message.
+    
+    But while the new message adds a slew of optional members it changes the
+    data type of the "daemon_support" member, which means that older
+    versions of the firmware will fail to decode the incoming request
+    message.
+    
+    There is no way to detect this breakage from Linux and there's no way to
+    recover from sending the wrong message (i.e. we can't just try one
+    format and then fallback to the other), so a quirk is introduced in
+    DeviceTree to indicate to the driver that the firmware requires the 8bit
+    version of this message.
+    
+    Cc: stable@vger.kernel.org
+    Fixes: 768ec4c012ac ("ath10k: update HOST capability qmi message")
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Acked-by: Rob Herring <robh@kernel.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

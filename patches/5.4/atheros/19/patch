@@ -1,0 +1,28 @@
+From 35cc054d944e8c9a7e9a31f32bbf360feb01a301 Mon Sep 17 00:00:00 2001
+From: Wen Gong <wgong@codeaurora.org>
+Date: Fri, 6 Sep 2019 18:55:01 +0800
+Subject: [PATCH] ath10k: remove the warning of sdio not full support
+
+Recently, it has the basic feature of sdio tested success, so remove
+it.
+
+Tested with QCA6174 SDIO with firmware
+WLAN.RMH.4.4.1-00017-QCARMSWP-1.
+
+Signed-off-by: Wen Gong <wgong@codeaurora.org>
+Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
+
+diff --git a/drivers/net/wireless/ath/ath10k/sdio.c b/drivers/net/wireless/ath/ath10k/sdio.c
+index 9870d2d095c8..120200a93bcc 100644
+--- a/drivers/net/wireless/ath/ath10k/sdio.c
++++ b/drivers/net/wireless/ath/ath10k/sdio.c
+@@ -2086,9 +2086,6 @@ static int ath10k_sdio_probe(struct sdio_func *func,
+ 		goto err_free_wq;
+ 	}
+ 
+-	/* TODO: remove this once SDIO support is fully implemented */
+-	ath10k_warn(ar, "WARNING: ath10k SDIO support is work-in-progress, problems may arise!\n");
+-
+ 	return 0;
+ 
+ err_free_wq:

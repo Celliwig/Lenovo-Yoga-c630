@@ -1,0 +1,20 @@
+commit c0e33fe6fb0fe392ebfab14127d210679c413192
+Author: Rakesh Pillai <pillair@codeaurora.org>
+Date:   Tue Feb 19 11:39:36 2019 +0530
+
+    ath10k: Add peer param map for tlv and non-tlv
+    
+    The peer param id for PEER_PARAM_USE_FIXED_PWR
+    is different for tlv and non-tlv firmware. This
+    causes incorrect peer param to be set by the driver
+    to the firmware(tlv/non-tlv).
+    
+    Create seperate peer param map for tlv and non-tlv
+    firmware and attach the peer param id based on the
+    firmware type during the init.
+    
+    Tested HW: WCN3990
+    Tested FW: WLAN.HL.3.1-00784-QCAHLSWMTPLZ-1
+    
+    Signed-off-by: Rakesh Pillai <pillair@codeaurora.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

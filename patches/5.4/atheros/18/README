@@ -1,0 +1,11 @@
+commit 80ce8ca7a6473730a6847046651aab81cdb96898
+Author: Colin Ian King <colin.king@canonical.com>
+Date:   Tue Jul 2 13:39:04 2019 +0100
+
+    ath: fix various spelling mistakes
+    
+    There are a bunch of spelling mistakes in two ath drivers, fix
+    these.
+    
+    Signed-off-by: Colin Ian King <colin.king@canonical.com>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

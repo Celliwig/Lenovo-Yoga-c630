@@ -1,0 +1,17 @@
+commit b003e7f1974eaaefcca12be56dff592481052864
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Thu Jul 25 10:47:53 2019 -0700
+
+    ath10k: snoc: skip regulator operations
+    
+    The regulator operations is trying to set a voltage to a fixed value, by
+    giving some wiggle room. But some board designs specifies regulator
+    voltages outside this limited range. One such example is the Lenovo Yoga
+    C630, with vdd-3.3-ch0 in particular specified at 3.1V.
+    
+    But consumers with fixed voltage requirements should just rely on the
+    board configuration to provide the power at the required level, so this
+    code should be removed.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>

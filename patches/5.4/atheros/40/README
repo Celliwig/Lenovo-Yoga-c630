@@ -1,0 +1,12 @@
+commit 83e3a6729d5c501be1e59ba61434831aa0407e5c
+Merge: a3ead21d6eec 6dea30b4fd54
+Author: Kalle Valo <kvalo@codeaurora.org>
+Date:   Wed Nov 6 19:49:28 2019 +0200
+
+    Merge ath-next from git://git.kernel.org/pub/scm/linux/kernel/git/kvalo/ath.git
+    
+    ath.git patches for 5.5. Major changes:
+    
+    wil6210
+    
+    * add SPDX license identifiers

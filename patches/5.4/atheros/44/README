@@ -1,0 +1,17 @@
+commit f4fe2e53349f1072d33c69f484dbf9d77bb8f45a
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Nov 13 12:26:44 2019 -0800
+
+    ath10k: Revert "ath10k: add cleanup in ath10k_sta_state()"
+    
+    This reverts commit 334f5b61a6f29834e881923b98d1e27e5ce9620d.
+    
+    This caused ath10k_snoc on Qualcomm MSM8998, SDM845 and QCS404 platforms to
+    trigger an assert in the firmware:
+    
+    err_qdi.c:456:EF:wlan_process:1:cmnos_thread.c:3900:Asserted in wlan_vdev.c:_wlan_vdev_up:3219
+    
+    Revert the offending commit for now.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+    Signed-off-by: Kalle Valo <kvalo@codeaurora.org>
