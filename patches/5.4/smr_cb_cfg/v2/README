@@ -1,0 +1,1 @@
+This patch was derived directly from a diff between a clean 5.4-rc5 (except for iommu patch), and Linaro 5.4-rc5 audio checkout.

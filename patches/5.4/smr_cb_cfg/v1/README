@@ -1,0 +1,36 @@
+From	Bjorn Andersson <>
+Subject	[RFC 0/2] iommu: arm-smmu: Inherit SMR and CB config during init
+Date	Wed, 5 Jun 2019 14:08:54 -0700
+	
+
+Qualcomm devices typically boot with some sort of splash screen on the display,
+or for some devices (i.e. recent Qualcomm laptops) an EFI framebuffer. For this
+the bootloader allocates a static framebuffer, configures the display hardware
+to output this on the display, sets up the SMMU for the display hardware and
+jumps to the kernel.
+
+But as the arm-smmu disables all SMRs the display hardware will no longer be
+able to access the framebuffer and the result is that the device resets.
+
+The given proposal reads back the SMR state at boot and for marks these
+contexts as busy. This ensures that the display hardware will have continued
+access to the framebuffer. Once a device is attached we try to match it to the
+predefined stream mapping, so that e.g. the display driver will inherit the
+particular SMRs/CBs.
+
+
+This has the positive side effect that on some Qualcomm platforms, e.g. QCS404,
+writes to the SMR registers are ignored. But as we inherit the preconfigured
+mapping from the bootloader we can use the arm-smmu driver on these platforms.
+
+Bjorn Andersson (2):
+  iommu: arm-smmu: Handoff SMR registers and context banks
+  iommu: arm-smmu: Don't blindly use first SMR to calculate mask
+
+ drivers/iommu/arm-smmu-regs.h |   2 +
+ drivers/iommu/arm-smmu.c      | 100 +++++++++++++++++++++++++++++++---
+ 2 files changed, 93 insertions(+), 9 deletions(-)
+
+-- 
+
+https://lkml.org/lkml/2019/6/5/892
