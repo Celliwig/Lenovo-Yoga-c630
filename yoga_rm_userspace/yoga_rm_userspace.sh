@@ -37,7 +37,8 @@ STS_QRTRNS=`systemctl status "${NAME_QRTRNS}" &> /dev/null; echo $?`
 if [ "${STS_QRTRNS}" -eq 0 ]; then
 	echo -n "Found ${NAME_QRTRNS}.service: "
 	PATH_QRTRNS=`awk -F "${NAME_QRTRNS}" '{ print $1 }' /proc/${PID_QRTRNS}/cmdline`
-	echo "${PATH_QRTRNS}${NAME_QRTRNS}"
+	PATH_QRTRNS=`readlink -f "${PATH_QRTRNS}///${NAME_QRTRNS}"`
+	echo "${PATH_QRTRNS}"
 else
 	echo "Error getting status of ${NAME_QRTRNS}.service: ${STS_QRTRNS}"
 	exit
@@ -46,7 +47,8 @@ STS_PDMAPPER=`systemctl status "${NAME_PDMAPPER}" &> /dev/null; echo $?`
 if [ "${STS_PDMAPPER}" -eq 0 ]; then
 	echo -n "Found ${NAME_PDMAPPER}.service: "
 	PATH_PDMAPPER=`awk -F "${NAME_PDMAPPER}" '{ print $1 }' /proc/${PID_PDMAPPER}/cmdline`
-	echo "${PATH_PDMAPPER}${NAME_PDMAPPER}"
+	PATH_PDMAPPER=`readlink -f "${PATH_PDMAPPER}///${NAME_PDMAPPER}"`
+	echo "${PATH_PDMAPPER}"
 else
 	echo "Error getting status of ${NAME_PDMAPPER}.service: ${STS_PDMAPPER}"
 	exit
@@ -55,7 +57,8 @@ STS_RMTFS=`systemctl status "${NAME_RMTFS}" &> /dev/null; echo $?`
 if [ "${STS_RMTFS}" -eq 0 ]; then
 	echo -n "Found ${NAME_RMTFS}.service: "
 	PATH_RMTFS=`awk -F "${NAME_RMTFS}" '{ print $1 }' /proc/${PID_RMTFS}/cmdline`
-	echo "${PATH_RMTFS}${NAME_RMTFS}"
+	PATH_RMTFS=`readlink -f "${PATH_RMTFS}///${NAME_RMTFS}"`
+	echo "${PATH_RMTFS}"
 else
 	echo "Error getting status of ${NAME_RMTFS}.service: ${STS_RMTFS}"
 	exit
@@ -64,8 +67,19 @@ STS_TQFTPSERV=`systemctl status "${NAME_TQFTPSERV}" &> /dev/null; echo $?`
 if [ "${STS_TQFTPSERV}" -eq 0 ]; then
 	echo -n "Found ${NAME_TQFTPSERV}.service: "
 	PATH_TQFTPSERV=`awk -F "${NAME_TQFTPSERV}" '{ print $1 }' /proc/${PID_TQFTPSERV}/cmdline`
-	echo "${PATH_TQFTPSERV}${NAME_TQFTPSERV}"
+	PATH_TQFTPSERV=`readlink -f "${PATH_TQFTPSERV}///${NAME_TQFTPSERV}"`
+	echo "${PATH_TQFTPSERV}"
 else
 	echo "Error getting status of ${NAME_TQFTPSERV}.service: ${STS_TQFTPSERV}"
+	exit
+fi
+
+echo -n "Getting library path: "
+PATH_LIBQRTR=`ldd "${PATH_PDMAPPER}"| grep libqrtr| awk '{ print $3 }'`
+PATH_LIBQRTR=`readlink -f "${PATH_LIBQRTR}"`
+if [ -f "${PATH_LIBQRTR}" ]; then
+	echo "${PATH_LIBQRTR}"
+else
+	echo "Error locating libqrtr."
 	exit
 fi
