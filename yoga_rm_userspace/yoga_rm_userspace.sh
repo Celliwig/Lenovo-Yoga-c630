@@ -83,3 +83,45 @@ else
 	echo "Error locating libqrtr."
 	exit
 fi
+
+echo "Checking for existing packages:"
+echo -n "Checking ${PATH_QRTRNS}: "
+dpkg -S "${PATH_QRTRNS}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Failed"
+	exit
+else
+	echo "None"
+fi
+echo -n "Checking ${PATH_PDMAPPER}: "
+dpkg -S "${PATH_PDMAPPER}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Failed"
+	exit
+else
+	echo "None"
+fi
+echo -n "Checking ${PATH_RMTFS}: "
+dpkg -S "${PATH_RMTFS}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Failed"
+	exit
+else
+	echo "None"
+fi
+echo -n "Checking ${PATH_TQFTPSERV}: "
+dpkg -S "${PATH_TQFTPSERV}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Failed"
+	exit
+else
+	echo "None"
+fi
+echo -n "Checking ${PATH_LIBQRTR}: "
+dpkg -S "${PATH_LIBQRTR}" &> /dev/null
+if [ $? -eq 0 ]; then
+	echo "Failed"
+	exit
+else
+	echo "None"
+fi
