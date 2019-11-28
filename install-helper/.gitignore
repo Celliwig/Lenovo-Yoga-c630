@@ -1,1 +1,2 @@
 initrd/*
+makejail/install-helper-initrd.py

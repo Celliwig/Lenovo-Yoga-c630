@@ -1,6 +1,6 @@
 # makejail config to create a chroot suitable for turning in to an initrd.img
 
-chroot="/projects/Lenovo/Lenovo-Yoga-c630/install-helper/initrd"
+chroot="###PROJECT_DIR###"
 
 cleanJailFirst=1
 
