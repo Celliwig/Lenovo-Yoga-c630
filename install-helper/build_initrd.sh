@@ -1,26 +1,12 @@
 #!/bin/bash
 
-###################################################################################################################################################
-# Functions
-###################################################################################################################################################
-function okay_failedexit {
-	if [ $1 -eq 0 ]; then
-		echo "Okay"
-	else
-		echo "Failed"
-		exit
-	fi
-}
-
-###################################################################################################################################################
-
-TXT_UNDERLINE="\033[1m\033[4m"
-TXT_NORMAL="\033[0m"
+. ./shared_functions
 
 CWD=$PWD
 DIR_INITRD="${CWD}/initrd"
 DIR_MAKEJAIL="${CWD}/makejail"
 DIR_FILES="${CWD}/files"
+KERNEL_PACKAGE=$1
 
 echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 
@@ -41,6 +27,11 @@ if [ ! -d "${DIR_FILES}" ]; then
 	echo -n "	Creating output directory: "
 	mkdir "${DIR_FILES}" &> /dev/null
 	okay_failedexit $?
+fi
+
+if [[ "${KERNEL_PACKAGE}" != "" ]]; then
+	KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
+	echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
 fi
 
 echo -n "	Generating cpio image: "
