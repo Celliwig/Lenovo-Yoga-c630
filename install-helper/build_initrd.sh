@@ -2,11 +2,7 @@
 
 . ./shared_functions
 
-CWD=$PWD
-DIR_INITRD="${CWD}/initrd"
-DIR_MAKEJAIL="${CWD}/makejail"
-DIR_FILES="${CWD}/files"
-KERNEL_PACKAGE=$1
+KERNEL_PACKAGE="${1}"
 
 echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 
@@ -51,14 +47,18 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	esac
 fi
 
-if [ ! -d "${DIR_FILES}" ]; then
+if [ ! -d "${DIR_USBKEY_BOOT}" ]; then
 	echo -n "	Creating output directory: "
-	mkdir "${DIR_FILES}" &> /dev/null
+	mkdir -p "${DIR_USBKEY_BOOT}" &> /dev/null
 	okay_failedexit $?
 fi
 
+echo -n "	Copying scripts: "
+sudo cp -a "${DIR_SCRIPTS}"/* "${DIR_INITRD}"
+okay_failedexit $?
+
 echo -n "	Generating cpio image: "
-INITRD_PATH="${DIR_FILES}/initrd"
+INITRD_PATH="${DIR_USBKEY_BOOT}/initrd"
 cd "${DIR_INITRD}"
 sudo find . | sudo cpio -H newc -o 2> /dev/null 1> "${INITRD_PATH}"
 okay_failedexit $?
