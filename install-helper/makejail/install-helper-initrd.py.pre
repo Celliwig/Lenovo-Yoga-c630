@@ -3,6 +3,7 @@
 chroot="###PROJECT_DIR###"
 
 cleanJailFirst=1
+maxRemove=1000
 
 forceCopy=[
 # Create basic directories
