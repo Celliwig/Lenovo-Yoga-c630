@@ -22,6 +22,41 @@ identify_package_type () {
 
 # DEB
 ###################################################################################################################################################
+deb_package_extract () {
+	local kernel_package="${1}"
+	local extract_dir="${2}"
+	sudo dpkg -x "${kernel_package}" "${extract_dir}" &> /dev/null
+	return $?
+}
 
 # RPM
 ###################################################################################################################################################
+rpm_package_extract () {
+	local cwd="${PWD}"
+	local extract_dir="${2}"
+	local kernel_package=`realpath "${1}"`
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+	local tmp_dir=`mktemp -d`
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+	cd "${tmp_dir}" &> /dev/null
+	if [ $? -ne 0 ]; then
+		return $?
+	fi
+	rpm2cpio "${kernel_package}" |sudo cpio -idm &> /dev/null
+	retval=$?
+	cd "${cwd}"
+	if [ "${retval}" -ne 0 ]; then
+		return "${retval}"
+	fi
+	sudo rsync -a "${tmp_dir}"/* "${extract_dir}" &> /dev/null
+	retval=$?
+# Check that this won't do something stupid
+	if [[ "${tmp_dir}" =~ ^/tmp/tmp ]]; then
+		sudo rm -rf "${tmp_dir}" &> /dev/null
+	fi
+	return "${retval}"
+}

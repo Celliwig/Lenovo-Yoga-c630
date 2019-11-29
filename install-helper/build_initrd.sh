@@ -19,19 +19,42 @@ MAKEJAIL_CFG_PRE="${DIR_MAKEJAIL}/install-helper-initrd.py.pre"
 sed "s|###PROJECT_DIR###|${DIR_INITRD}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"
 okay_failedexit $?
 
+if [ ! -d "${DIR_INITRD}" ]; then
+	echo -n "	Creating initrd image directory: "
+	mkdir "${DIR_INITRD}" &> /dev/null
+	okay_failedexit $?
+fi
+
 echo -n "	Running makejail: "
 sudo makejail "${MAKEJAIL_CFG}" &> /dev/null
 okay_failedexit $?
+
+if [[ "${KERNEL_PACKAGE}" != "" ]]; then
+	KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
+	echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
+
+	KERNEL_PACKAGE_NAME=`basename "${KERNEL_PACKAGE}"`
+	case "${KERNEL_PACKAGE_TYPE}" in
+		"debian")
+			echo -n "	Extracting ${KERNEL_PACKAGE_NAME} to initrd dir: "
+			deb_package_extract "${KERNEL_PACKAGE}" "${DIR_INITRD}"
+			okay_failedexit $?
+			;;
+		"redhat")
+			echo -n "	Extracting ${KERNEL_PACKAGE_NAME} to initrd dir: "
+			rpm_package_extract "${KERNEL_PACKAGE}" "${DIR_INITRD}"
+			okay_failedexit $?
+			;;
+		*)
+			exit -1
+			;;
+	esac
+fi
 
 if [ ! -d "${DIR_FILES}" ]; then
 	echo -n "	Creating output directory: "
 	mkdir "${DIR_FILES}" &> /dev/null
 	okay_failedexit $?
-fi
-
-if [[ "${KERNEL_PACKAGE}" != "" ]]; then
-	KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
-	echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
 fi
 
 echo -n "	Generating cpio image: "
