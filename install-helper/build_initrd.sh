@@ -32,19 +32,21 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	KERNEL_PACKAGE_NAME=`basename "${KERNEL_PACKAGE}"`
 	case "${KERNEL_PACKAGE_TYPE}" in
 		"debian")
-			echo -n "	Extracting ${KERNEL_PACKAGE_NAME} to initrd dir: "
-			deb_package_extract "${KERNEL_PACKAGE}" "${DIR_INITRD}"
+			echo -n "	Extracting ${KERNEL_PACKAGE_NAME}: "
+			KERNEL_PACKAGE_TEMPDIR=`deb_package_extract "${KERNEL_PACKAGE}"`
 			okay_failedexit $?
 			;;
 		"redhat")
-			echo -n "	Extracting ${KERNEL_PACKAGE_NAME} to initrd dir: "
-			rpm_package_extract "${KERNEL_PACKAGE}" "${DIR_INITRD}"
+			echo -n "	Extracting ${KERNEL_PACKAGE_NAME}: "
+			KERNEL_PACKAGE_TEMPDIR=`rpm_package_extract "${KERNEL_PACKAGE}"`
 			okay_failedexit $?
 			;;
 		*)
 			exit -1
 			;;
 	esac
+
+echo "tmpdir - ${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
 if [ ! -d "${DIR_USBKEY_BOOT}" ]; then

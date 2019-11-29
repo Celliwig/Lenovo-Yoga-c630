@@ -32,41 +32,55 @@ identify_package_type () {
 
 # DEB
 ###################################################################################################################################################
+# Pass path to kernel package
+# Creates temp directory for the contents, unpacks package, and echos that path
 deb_package_extract () {
+	local cwd="${PWD}"
 	local kernel_package="${1}"
-	local extract_dir="${2}"
-	sudo dpkg -x "${kernel_package}" "${extract_dir}" &> /dev/null
-	return $?
+	local tmp_dir=`mktemp -d -p "${cwd}"`					# Create temporary directory
+	if [ $? -ne 0 ]; then							# Check that was created okay
+		return 1							# Return if it failed
+	fi
+	sudo dpkg -x "${kernel_package}" "${tmp_dir}" &> /dev/null		# Extract debian package
+	if [ $? -eq 0 ]; then							# Check if extraction went okay
+		echo "${tmp_dir}"						# Pass temp directory path if it was
+	else
+		sudo rm -rf "${tmp_dir}" &> /dev/null				# Delete temp directory otherwise
+		return 1							# Flag this failed
+	fi
+	return 0								# Flag this passed
 }
 
 # RPM
 ###################################################################################################################################################
+# Pass path to kernel package
+# Creates temp directory for the contents, unpacks package, and echos that path
 rpm_package_extract () {
 	local cwd="${PWD}"
-	local extract_dir="${2}"
-	local kernel_package=`realpath "${1}"`
-	if [ $? -ne 0 ]; then
-		return $?
+	local kernel_package=`realpath "${1}"`					# Get kernel package absolute path (we're changing directories later)
+	if [ $? -ne 0 ]; then							# Check that ran okay
+		return 1							# Return if not
 	fi
-	local tmp_dir=`mktemp -d`
-	if [ $? -ne 0 ]; then
-		return $?
+	local tmp_dir=`mktemp -d -p "${cwd}"`					# Create temporary directory
+	if [ $? -ne 0 ]; then							# Check that was created okay
+		return 1							# Return if it failed
 	fi
-	cd "${tmp_dir}" &> /dev/null
-	if [ $? -ne 0 ]; then
-		return $?
+	cd "${tmp_dir}" &> /dev/null						# Change to temp directory
+	if [ $? -ne 0 ]; then							# Check that was fine
+		return 1							# Why it would fail...
 	fi
-	rpm2cpio "${kernel_package}" |sudo cpio -idm &> /dev/null
-	retval=$?
-	cd "${cwd}"
-	if [ "${retval}" -ne 0 ]; then
-		return "${retval}"
+	rpm2cpio "${kernel_package}" |sudo cpio -idm &> /dev/null		# Extract redhat package
+	local retval=$?								# Save extraction status
+	cd "${cwd}" &> /dev/null						# Change back to working directory
+	if [ $? -ne 0 ]; then							# Check that worked
+		echo "!!!Something bad happened here!!!"			# This is non recoverable
+		exit
 	fi
-	sudo rsync -a "${tmp_dir}"/* "${extract_dir}" &> /dev/null
-	retval=$?
-# Check that this won't do something stupid
-	if [[ "${tmp_dir}" =~ ^/tmp/tmp ]]; then
-		sudo rm -rf "${tmp_dir}" &> /dev/null
+	if [ "${retval}" -eq 0 ]; then						# Check if extraction went okay
+		echo "${tmp_dir}"						# Pass temp directory path if it was
+	else
+		sudo rm -rf "${tmp_dir}"					# Delete temp directory otherwise
+		return 1							# Flag this failed
 	fi
-	return "${retval}"
+	return 0								# Flag this passed
 }
