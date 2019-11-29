@@ -4,7 +4,7 @@
 CWD=$PWD
 DIR_INITRD="${CWD}/initrd"
 DIR_MAKEJAIL="${CWD}/makejail"
-DIR_SCRIPTS="${CWD}/scripts"
+DIR_EXTRAS="${CWD}/extras"
 DIR_USBKEY="${CWD}/usb_key"
 DIR_USBKEY_BOOT="${DIR_USBKEY}/boot"
 

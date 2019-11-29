@@ -54,7 +54,7 @@ if [ ! -d "${DIR_USBKEY_BOOT}" ]; then
 fi
 
 echo -n "	Copying scripts: "
-sudo cp -a "${DIR_SCRIPTS}"/* "${DIR_INITRD}"
+sudo cp -a "${DIR_EXTRAS}"/* "${DIR_INITRD}"
 okay_failedexit $?
 
 echo -n "	Generating cpio image: "
