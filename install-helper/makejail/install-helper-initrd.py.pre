@@ -5,15 +5,43 @@ chroot="###PROJECT_DIR###"
 cleanJailFirst=1
 maxRemove=1000
 
+users=[]
+groups=[]
+
 forceCopy=[
 # Create basic directories
 		"/dev/null",
 		"/dev/zero",
-		"/etc",
 		"/mnt",
 		"/proc",
 		"/root",
+		"/run",
 		"/sys",
+		"/var",
+# /etc
+		"/etc",
+		"/etc/console-setup/cached_UTF-8_del.kmap.gz",
+		"/etc/console-setup/Lat15-VGA16.psf.gz",
+		"/etc/default/keyboard",
+		"/etc/default/console-setup",
+		"/etc/ld.so.cache",
+		"/etc/ld.so.conf",
+		"/etc/ld.so.conf.d/aarch64-linux-gnu.conf",
+		"/etc/ld.so.conf.d/libc.conf",
+		"/etc/ld.so.conf.d/fakeroot-aarch64-linux-gnu.conf",
+		"/etc/modprobe.d/blacklist.conf",
+		"/etc/modprobe.d/blacklist-ath_pci.conf",
+		"/etc/modprobe.d/blacklist-firewire.conf",
+		"/etc/modprobe.d/blacklist-framebuffer.conf",
+		"/etc/modprobe.d/blacklist-rare-network.conf",
+		"/etc/modprobe.d/iwlwifi.conf",
+		"/etc/modprobe.d/local.conf",
+		"/etc/modprobe.d/mdadm.conf",
+		"/etc/motd",
+		"/etc/nsswitch.conf",
+		"/etc/os-release",
+		"/etc/plymouth",
+		"/etc/udev/udev.conf",
 # /bin
 		"/bin/awk",
 		"/bin/basename",
@@ -77,6 +105,7 @@ forceCopy=[
 		"/bin/tail",
 		"/bin/tar",
 		"/bin/tr",
+		"/bin/udevadm",
 		"/bin/umount",
 		"/bin/uname",
 		"/bin/uniq",
