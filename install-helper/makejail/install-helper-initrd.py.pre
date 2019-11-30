@@ -3,7 +3,7 @@
 chroot="###PROJECT_DIR###"
 
 cleanJailFirst=1
-maxRemove=1000
+maxRemove=1200
 
 users=[]
 groups=[]
@@ -42,6 +42,8 @@ forceCopy=[
 		"/etc/os-release",
 		"/etc/plymouth",
 		"/etc/udev/udev.conf",
+# Terminfo
+		"/usr/share/terminfo/*",
 # /bin
 		"/bin/awk",
 		"/bin/basename",
