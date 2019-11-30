@@ -59,6 +59,7 @@ forceCopy=[
 		"/bin/date",
 		"/bin/dd",
 		"/bin/df",
+		"/bin/dialog",
 		"/bin/diff",
 		"/bin/dmesg",
 		"/bin/du",
