@@ -2,7 +2,43 @@
 
 . ./shared_functions
 
-KERNEL_PACKAGE="${1}"
+print_usage() {
+	cat << EOF
+Usage: build_initrd.sh [OPTIONS]
+Utility to build an install-helper initrd.img.
+
+Kernel package (Debian/RedHat supported) is optional.
+If the kernel package is specified it is included in the initrd image.
+
+Options:
+	-k <kernel package>	- Kernel package to include.
+	-m <module name>	- Load named module on startup.
+
+'-m' can be specified multiple times.
+EOF
+	exit 1
+}
+
+KERNEL_PACKAGE=""
+MODULE_LIST=()
+# Pass arguments
+while getopts ":k:m:" opt; do
+	case $opt in
+		k)
+			if [[ "${KERNEL_PACKAGE}" == "" ]]; then
+				KERNEL_PACKAGE="${OPTARG}"
+			else
+				print_usage
+			fi
+			;;
+		m)
+			MODULE_LIST+=("${OPTARG}")
+			;;
+		\?)
+			print_usage
+			;;
+	esac
+done
 
 echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 
@@ -61,6 +97,14 @@ fi
 echo -n "	Copying scripts: "
 sudo cp -a "${DIR_EXTRAS}"/* "${DIR_INITRD}"
 okay_failedexit $?
+
+if [ "${#MODULE_LIST[@]}" -ne 0 ]; then
+	echo "	Modules to load on boot:"
+	for tmp_module in "${MODULE_LIST[@]}"; do
+		echo "		${tmp_module}"
+		echo "${tmp_module}" | sudo tee -a "${DIR_INITRD}"/conf/modules &> /dev/null
+	done
+fi
 
 echo -n "	Generating cpio image: "
 INITRD_PATH="${DIR_USBKEY_BOOT}/initrd"
