@@ -1,0 +1,8 @@
+/scripts/local-top/cryptopensc "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-top/iscsi "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-top/lvm2 "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-top/cryptroot "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf

@@ -1,0 +1,10 @@
+/scripts/init-top/all_generic_ide "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-top/blacklist "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-top/udev "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-top/framebuffer "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-top/console_setup "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf

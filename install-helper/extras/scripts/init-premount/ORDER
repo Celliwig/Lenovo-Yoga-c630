@@ -1,0 +1,6 @@
+/scripts/init-premount/plymouth "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-premount/lvm2 "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/init-premount/cloud-initramfs-dyn-netconf "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf

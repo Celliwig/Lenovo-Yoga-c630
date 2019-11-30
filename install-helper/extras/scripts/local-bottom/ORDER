@@ -1,0 +1,10 @@
+/scripts/local-bottom/cryptgnupg-sc "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-bottom/cryptopensc "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-bottom/iscsi "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-bottom/mdadm "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
+/scripts/local-bottom/ntfs_3g "$@"
+[ -e /conf/param.conf ] && . /conf/param.conf
