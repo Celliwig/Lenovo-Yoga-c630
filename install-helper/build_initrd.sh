@@ -46,7 +46,10 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 			;;
 	esac
 
-echo "tmpdir - ${KERNEL_PACKAGE_TEMPDIR}"
+	echo -n "	Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to initrd image: "
+	copy_source_2_target "${KERNEL_PACKAGE_TEMPDIR}" "${DIR_INITRD}"
+	okay_failedexit $?
+	sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
 if [ ! -d "${DIR_USBKEY_BOOT}" ]; then

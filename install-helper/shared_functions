@@ -30,6 +30,35 @@ identify_package_type () {
 	file -0 -F "" "${1}" |awk -F "\0" 'BEGIN {RTN="unknown"}; /Debian binary package/ {RTN="debian"}; /RPM/ {RTN="redhat"}; END {print RTN}'
 }
 
+# Copies the contents of one directory to another
+# This is done in a way to be mindful of symlinks in the target directory
+copy_source_2_target () {
+	local dir_source="${1}"
+	local dir_target="${2}"
+
+	for tmp_item_source in `ls "${dir_source}"`; do							# Cycle through the source directory contents
+		local path_item_source="${dir_source}"/"${tmp_item_source}"
+		local path_item_target="${dir_target}"/"${tmp_item_source}"
+		if [ -e "${path_item_target}" ]; then							# Check if the destination exists
+			local path_item_target_abs=`realpath "${path_item_target}"`			# Follow any symlinks
+			if [ $? -ne 0 ]; then								# Check realpath status code
+				return 1								# It failed, so this failed
+			fi
+			sudo cp -a "${path_item_source}"/* "${path_item_target_abs}" &> /dev/null	# Copy the contents of the directory, to the 'realpath'
+			if [ $? -ne 0 ]; then								# Check copy status code
+				return 1								# It failed, so this failed
+			fi
+		else
+			sudo cp -a "${path_item_source}" "${dir_target}" &> /dev/null			# Item doesn't exist, just copy
+			if [ $? -ne 0 ]; then								# Check copy status code
+				return 1								# It failed, so this failed
+			fi
+		fi
+	done
+
+	return 0											# Return okay
+}
+
 # DEB
 ###################################################################################################################################################
 # Pass path to kernel package
