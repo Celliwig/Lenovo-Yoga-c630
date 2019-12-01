@@ -21,3 +21,29 @@
 : ${SIG_QUIT=3}
 : ${SIG_KILL=9}
 : ${SIG_TERM=15}
+
+show_msg() {
+	local message="${1}"
+	local rows="${2}"
+	local columns="${3}"
+	$DIALOG --stdout --title "install-helper" --msgbox "${message}" "${rows}" "${columns}"
+}
+
+show_select_blockdevice() {
+	while true; do
+		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a block device" "$@" --fselect /dev/ 14 48`
+		retval="${?}"
+		if [ "${retval}" -eq 0 ]; then
+			local blockdevice_name=`basename "${tmp_dselect}"`
+			if [ -e /sys/block/"${blockdevice_name}" ]; then
+				echo "${tmp_dselect}"
+				return 0
+			else
+				show_msg "Error: Please select block device parent." 5 45
+			fi
+		else
+			echo ''
+			return "${retval}"
+		fi
+	done
+}

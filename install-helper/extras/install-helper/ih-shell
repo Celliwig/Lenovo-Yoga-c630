@@ -4,7 +4,7 @@ ih_path=`dirname "${BASH_SOURCE[0]}"`
 if [ -z "${ih_path}" ]; then
 	ih_path="."
 fi
-. "${ih_path}"/setup-vars
+. "${ih_path}"/ih-functions
 
 dialog  --stdout --title "Execute shell" --yesno "This will execute a shell. 'exit' will return to the menu system." 7 60
 retval="${?}"

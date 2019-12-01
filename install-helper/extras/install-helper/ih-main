@@ -4,7 +4,7 @@ ih_path=`dirname "${BASH_SOURCE[0]}"`
 if [ -z "${ih_path}" ]; then
 	ih_path="."
 fi
-. "${ih_path}"/setup-vars
+. "${ih_path}"/ih-functions
 
 show_menu_main() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
