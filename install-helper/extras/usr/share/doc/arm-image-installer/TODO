@@ -1,0 +1,13 @@
+ToDo
+
+The mighty todo list. Some of these are things that should be implemented, some 
+just ideas that might, or might not work.
+
+- Resizing of root partition
+- Flashing an image over USB using dfu-util
+- Menu system to group systems by SoC to scale list as device support grows
+- Support for tegrarcm to write out uboot for tegra devices over USB
+- Duplicating a currently running system from a SD card to an onboard eMMC
+- Dynamic list of devices supported based on available u-boot firmwares and/or known means of writing out SoC options
+- Support writing images with hosts that support uEFI
+- Support writing u-boot to NAND devices like C.H.I.P.

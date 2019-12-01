@@ -1,0 +1,2 @@
+echo "= Raspberry Pi 2 Uboot is already in place, no changes needed."
+SYSCON="ttyAMA0,115200"

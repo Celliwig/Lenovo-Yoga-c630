@@ -1,0 +1,3 @@
+# write uboot
+echo "= Writing u-boot-spl.kwb ...."
+dd if=$PREFIX/usr/share/uboot/$TARGET/u-boot-spl.kwb of=$MEDIA bs=512 seek=1; sync; sleep 5

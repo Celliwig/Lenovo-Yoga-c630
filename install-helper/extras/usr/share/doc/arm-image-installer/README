@@ -1,0 +1,47 @@
+ARM Tools for writing disk images
+=================================
+
+arm-image-installer
+-------------------
+
+This script will automate the process of preparing a Fedora
+ARM disk image for use with various hardware targets.
+
+ - Write the selected disk image to media (optional)
+ - customize media with platform specific U-Boot file(s)
+ - Turn SE Linux on and off
+ - Remove the root password
+ - Update U-Boot for another Target
+ 
+To add additional support, create a code snippet file 
+(bash script) in the "boards.d" subdirectory with the commands 
+needed to write U-Boot for the target board. 
+
+Usage: arm-image-installer <options>
+
+	--addconsole    - Add system console to extlinux.conf
+	--addkey=       - /path/to/ssh-public-key
+	--image=IMAGE	- xz compressed image file name
+	--media=DEVICE	- media device file (/dev/[sdX|mmcblkX])
+	--norootpass	- Remove the root password
+	--resizefs	- Resize root filesystem to fill media device
+	--supported	- List of supported hardware
+	--target=TARGET	- target board
+	--version	- Display version and exit
+	-y		- Assumes yes, will not wait for confirmation
+
+Example: arm-image-installer --image=Fedora-Rawhide.xz --target=panda --media=/dev/mmcblk0 --selinux=OFF
+
+update-uboot
+------------
+
+Update to a new u-boot on a disk image from a local host install. Optionally download a specified
+newer u-boot from koji by specifying a koji tag.
+
+Usage: update-uboot <options>
+
+	--media=DEVICE	- media device file (/dev/[sdX|mmcblkX])
+	--tag=KOJI TAG	- koji tag to download build
+	--target=TARGET	- target board
+
+Example: update-uboot --target=panda --media=/dev/mmcblk0

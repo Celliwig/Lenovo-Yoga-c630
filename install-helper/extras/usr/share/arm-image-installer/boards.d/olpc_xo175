@@ -1,0 +1,74 @@
+#!/bin/bash
+
+SYSCON=ttyS2,115200
+
+echo "= Copying loader scripts to boot partition"
+
+mkdir -p /tmp/boot/boot
+cat > /tmp/boot/boot/olpc.fth <<'EOF'
+\ OLPC XO boot script
+
+: check-ofw-version ( -- )
+   " /" find-device " compatible" get-property
+   abort" No compatible property on /" ( -- compatible$ )
+   " mrvl,mmp2" 2swap substring? not  if
+     cr
+     ." Firmware Q4E00 or newer is needed to boot a Devicetree enabled kernel." cr
+     cr
+     ." One way to update is to copy http://dev.laptop.org/~quozl/q4e00ja.rom" cr
+     ." to a FAT partition on a USB flash stick and run ""flash u:\q4e00ja.rom""" cr
+     cr
+     ." Aborting boot." cr
+     show-sad
+     abort
+   then
+;
+
+: unix-to-ofw-path ( $ -- $ )
+   " last:" 2swap $cat2
+   2dup
+   begin dup 0<> while
+      1 -
+      2dup + dup c@
+      ascii / = if ascii \ swap c! else drop then
+   repeat
+   2drop
+;
+
+: load-extlinux-conf ( $ -- )
+   $read-file if exit then
+   2dup
+
+   0 0 to boot-device
+   0 0 to ramdisk
+   0 0 to boot-file
+
+   begin
+      linefeed left-parse-string
+
+      -leading bl left-parse-string
+      2dup " label" $=  if
+         4drop
+         \ If we see a label, but already have boot-device set, then
+         \ we drop the rest instead of proceeding to read another entry
+         boot-device and 0<>  if  drop 0  then
+      else
+         2dup " kernel" $=  if  2over unix-to-ofw-path to boot-device  else
+         2dup " linux"  $=  if  2over unix-to-ofw-path to boot-device  else
+         2dup " initrd" $=  if  2over unix-to-ofw-path to ramdisk      else
+         2dup " append" $=  if  2over                  to boot-file
+         then then then then
+         4drop
+      then
+
+      dup 0 =
+   until
+   2drop
+   free-mem
+;
+
+visible unfreeze
+check-ofw-version
+" last:\extlinux\extlinux.conf" load-extlinux-conf
+boot
+EOF

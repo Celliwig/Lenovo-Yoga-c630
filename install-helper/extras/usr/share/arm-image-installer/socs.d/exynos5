@@ -1,0 +1,13 @@
+# get arndale pre-bootloader
+curl -o /tmp/arndale-bl1.bin https://pwhalen.fedorapeople.org/arndale/arndale-bl1.bin
+
+cat $PREFIX/usr/share/uboot/$TARGET/u-boot.bin $PREFIX/usr/share/uboot/$TARGET/u-boot.dtb > /tmp/u-boot-dtb.bin
+
+dd if=/tmp/arndale-bl1.bin of=$MEDIA seek=1
+dd if=$PREFIX/usr/share/uboot/$TARGET/arndale-spl.bin of=$MEDIA seek=17
+dd if=/tmp/u-boot-dtb.bin of=$MEDIA seek=49
+
+# set console
+SYSCON=ttySAC2,115200n8
+
+

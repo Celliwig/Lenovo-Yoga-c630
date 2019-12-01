@@ -1,0 +1,2 @@
+echo "= Raspberry Pi 3 Uboot is already in place, no changes needed."
+SYSCON="ttyS1,115200"

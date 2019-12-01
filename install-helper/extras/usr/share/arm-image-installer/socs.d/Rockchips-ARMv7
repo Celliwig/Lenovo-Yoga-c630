@@ -1,0 +1,5 @@
+# write uboot
+echo "= Writing u-boot ...."
+dd if=$PREFIX/usr/share/uboot/$TARGET/rk3288_idb.img of=$MEDIA seek=64; sync; sleep 5
+# set console for Rockchips
+SYSCON=ttyS2,115200

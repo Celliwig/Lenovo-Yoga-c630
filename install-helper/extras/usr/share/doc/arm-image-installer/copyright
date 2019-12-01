@@ -1,0 +1,29 @@
+This package was debianized by the alien program by converting
+a binary .rpm package on Sun, 01 Dec 2019 17:33:06 +0000
+
+Copyright: GPLv2+
+
+Information from the binary package:
+Name        : arm-image-installer
+Version     : 2.13
+Release     : 1.fc29
+Architecture: noarch
+Install Date: (not installed)
+Group       : Unspecified
+Size        : 83697
+License     : GPLv2+
+Signature   : RSA/SHA256, Wed 26 Jun 2019 18:54:23 UTC, Key ID a20aa56b429476b4
+Source RPM  : arm-image-installer-2.13-1.fc29.src.rpm
+Build Date  : Wed 26 Jun 2019 18:40:28 UTC
+Build Host  : buildvm-08.phx2.fedoraproject.org
+Relocations : (not relocatable)
+Packager    : Fedora Project
+Vendor      : Fedora Project
+URL         : https://pagure.io/arm-image-installer
+Bug URL     : https://bugz.fedoraproject.org/arm-image-installer
+Summary     : Writes binary image files to any specified block device
+Description :
+Allows one to first select a source image (local or remote). The image must be
+a binary file containing: [MBR + Partitions + File Systems + Data]. A
+destination block device should then be selected for final installation.
+

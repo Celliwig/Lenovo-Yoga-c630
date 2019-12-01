@@ -1,0 +1,44 @@
+#!/bin/bash
+
+cleanup()
+{
+	rmdir /tmp/firmware &> /dev/null
+	return
+}
+
+echo "= Copying Primary BootLoader (PBL) scripts to firmware partition"
+if [ "$FIRMPART" == "" ] ; then
+	echo "ERROR: Firmware partition not available - wrong image?"
+	return
+fi
+
+mkdir /tmp/firmware
+
+mount "$FIRMPART" /tmp/firmware
+if [ $? != 0 ] ; then
+	cleanup
+fi
+
+mkdir /tmp/firmware/b2260
+
+cat > /tmp/firmware/b2260/u-bootrom.script <<EOF
+# u-boot shall be loaded 10MB before the begining of the last 32MB of the DDR.
+setexpr.l uboot_addr \$dram_base + \$dram_size
+setexpr.l uboot_addr \$uboot_addr - 0x02000000
+setexpr.l uboot_addr \$uboot_addr - 0x00A00000
+uboot_path="b2260-u-boot.bin"
+# load images
+\$script_fsload \$script_dev \$uboot_addr \$uboot_path
+# boot images
+dcache flush;
+hpen prepare 0x094100A4
+hpen kick hpen
+go \$uboot_addr
+EOF
+
+cp /tmp/root/usr/share/uboot/stih410-b2260/u-boot.bin /tmp/firmware/b2260-u-boot.bin
+
+sync
+umount $FIRMPART &> /dev/null
+SYSCON=ttyAS1,115200
+cleanup

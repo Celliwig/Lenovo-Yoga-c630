@@ -1,0 +1,35 @@
+AllWinner Devices:
+A10-OLinuXino-Lime A10s-OLinuXino-M A13-OLinuXino A13-OLinuXinoM A20-OLinuXino-Lime A20-OLinuXino-Lime2 
+A20-OLinuXino-Lime2-eMMC A20-OLinuXino_MICRO A20-Olimex-SOM-EVB Ampe_A76 Auxtek-T003 Auxtek-T004 Bananapi 
+Bananapi_M2_Ultra Bananapi_m2m Bananapro CHIP CSQ_CS908 Chuwi_V7_CW0825 Colombus Cubieboard Cubieboard2 
+Cubieboard4 Cubietruck Cubietruck_plus Hummingbird_A31 Hyundai_A7HD Itead_Ibox_A20 Lamobo_R1 
+Linksprite_pcDuino Linksprite_pcDuino3 Linksprite_pcDuino3_Nano MK808C MSI_Primo73 MSI_Primo81 
+Marsboard_A10 Mele_A1000 Mele_A1000G_quad Mele_I7 Mele_M3 Mele_M5 Mele_M9 Mini-X Orangepi Orangepi_mini 
+Sinlinx_SinA31s Sinovoip_BPI_M2_Plus UTOO_P66 Wexler_TAB7200 Wits_Pro_A20_DKT Yones_Toptech_BS1078_V2 
+ba10_tv_box bananapi_m1_plus bananapi_m2_berry bananapi_m2_plus_h3 bananapi_m2_zero colorfly_e708_q1 
+difrnce_dit4350 dserve_dsrv9703c i12-tvbox icnova-a20-swac inet86dz jesurun_q5 libretech_all_h3_cc_h2_plus 
+mk802 mk802_a10s mk802ii nanopi_m1 nanopi_m1_plus nanopi_neo nanopi_neo_air orangepi_2 orangepi_lite 
+orangepi_one orangepi_pc orangepi_pc_plus orangepi_plus orangepi_plus2e orangepi_r1 orangepi_zero 
+polaroid_mid2809pxe04 pov_protab2_ips9 q8_a13_tablet q8_a23_tablet_800x480 q8_a33_tablet_1024x600 
+q8_a33_tablet_800x480 r7-tv-dongle sunxi_Gemei_G9 
+
+AllWinner-A64 Devices:
+a64-olinuxino amarula_a64_relic bananapi_m2_plus_h5 bananapi_m64 libretech_all_h3_cc_h5 nanopi_a64 
+nanopi_neo2 nanopi_neo_plus2 orangepi_lite2 orangepi_one_plus orangepi_pc2 orangepi_prime orangepi_win 
+orangepi_zero_plus orangepi_zero_plus2 pine64-lts pine64_plus pine_h64 pinebook sopine_baseboard 
+
+MX6 Devices:
+cm_fx6 liteboard marsboard mx6cuboxi novena riotboard udoo udoo_neo usbarmory wandboard warp warp7 
+
+TI Devices:
+am335x_evm am57xx_evm kc1 omap3_beagle omap5_uevm omap4_panda
+
+MVEBU Devices:
+clearfog helios4 
+
+ST Devices:
+stih410-b2260 
+
+Other Devices:
+arndale chiliboard cl-som-am57x rpi2 rpi3 olpc_xo175
+
