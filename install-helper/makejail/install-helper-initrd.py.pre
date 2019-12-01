@@ -59,6 +59,7 @@ forceCopy=[
 		"/bin/chgrp",
 		"/bin/chmod",
 		"/bin/chown",
+		"/bin/chvt",
 		"/bin/clear",
 		"/bin/cut",
 		"/bin/date",
