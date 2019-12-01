@@ -23,7 +23,7 @@ EOF
 }
 
 BLOCK_DEVICE=""
-BUILD_GRUB=false
+INSTALL_GRUB=false
 KERNEL_PACKAGE=""
 MODULE_LIST=()
 # Pass arguments
@@ -37,7 +37,7 @@ while getopts ":d:gk:m:" opt; do
 			fi
 			;;
 		g)
-			BUILD_GRUB=true
+			INSTALL_GRUB=true
 			;;
 		k)
 			if [[ "${KERNEL_PACKAGE}" == "" ]]; then
@@ -85,5 +85,42 @@ if [ -n "${KERNEL_PACKAGE}" ]; then
 	fi
 fi
 echo
+
+#if "${INSTALL_GRUB}"; then
+#	echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
+#	if [ -d "${DIR_GRUB}" ]; then
+#		echo "	${DIR_GRUB} already exist..."
+#		read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
+#		if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
+#			cd "${DIR_GRUB}"
+#			git pull &> /dev/null
+#			retval="${?}"
+#			cd "${CWD}"
+#			if [ "${retval}" -ne 0 ]; then
+#				echo "	git pull failed!!!"
+#				exit 1
+#			fi
+#		fi
+#	else
+#		echo "	No GRUB repo."
+#		read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
+#		if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
+#			git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
+#			retval="${?}"
+#			if [ "${retval}" -ne 0 ]; then
+#				echo "	git clone failed!!!"
+#				exit 1
+#			fi
+#		fi
+#	fi
+#	if [ -d "${DIR_GRUB}" ]; then
+#		cd "${DIR_GRUB}"
+#		./autogen.sh
+#		./configure --with-platform=efi --target=aarch64
+#		export EFI_ARCH=
+#		cd "${CWD}"
+#	fi
+#	echo
+#fi
 
 echo -e "${TXT_UNDERLINE}Create an EFI compatible USB key...${TXT_NORMAL}"
