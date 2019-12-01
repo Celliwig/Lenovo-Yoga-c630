@@ -282,93 +282,101 @@ log_begin_msg "Mounting root file system"
 # Always load local and nfs (since these might be needed for /etc or
 # /usr, irrespective of the boot script used to mount the rootfs).
 . /scripts/local
-. /scripts/nfs
+#. /scripts/nfs
 . /scripts/${BOOT}
 parse_numeric "${ROOT}"
 maybe_break mountroot
 mount_top
 mount_premount
-mountroot
-log_end_msg
 
-if read_fstab_entry /usr; then
-	log_begin_msg "Mounting /usr file system"
-	mountfs /usr
-	log_end_msg
-fi
+# Delay to settle system
+sleep 10
 
-# Mount cleanup
-mount_bottom
-nfs_bottom
-local_bottom
+# Configure console
+PATH=$PATH:/install-helper
+ih-start
 
-maybe_break bottom
-[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"
-# We expect udev's init-bottom script to move /dev to ${rootmnt}/dev
-run_scripts /scripts/init-bottom
-[ "$quiet" != "y" ] && log_end_msg
-
-# Move /run to the root
-mount -n -o move /run ${rootmnt}/run
-
-validate_init() {
-	run-init -n "${rootmnt}" "${1}"
-}
-
-# Check init is really there
-if ! validate_init "$init"; then
-	echo "Target filesystem doesn't have requested ${init}."
-	init=
-	for inittest in /sbin/init /etc/init /bin/init /bin/sh; do
-		if validate_init "${inittest}"; then
-			init="$inittest"
-			break
-		fi
-	done
-fi
-
-# No init on rootmount
-if ! validate_init "${init}" ; then
-	panic "No init found. Try passing init= bootarg."
-fi
-
-maybe_break init
-
-# don't leak too much of env - some init(8) don't clear it
-# (keep init, rootmnt, drop_caps)
-unset debug
-unset MODPROBE_OPTIONS
-unset DPKG_ARCH
-unset ROOTFLAGS
-unset ROOTFSTYPE
-unset ROOTDELAY
-unset ROOT
-unset IP
-unset IP6
-unset VLAN
-unset BOOT
-unset BOOTIF
-unset DEVICE
-unset UBIMTD
-unset blacklist
-unset break
-unset noresume
-unset panic
-unset quiet
-unset readonly
-unset resume
-unset resume_offset
-unset noresume
-unset fastboot
-unset forcefsck
-unset fsckfix
-
-# Move virtual filesystems over to the real filesystem
-mount -n -o move /sys ${rootmnt}/sys
-mount -n -o move /proc ${rootmnt}/proc
-
-# Chain to real filesystem
-# shellcheck disable=SC2086,SC2094
-exec run-init ${drop_caps} "${rootmnt}" "${init}" "$@" <"${rootmnt}/dev/console" >"${rootmnt}/dev/console" 2>&1
-echo "Something went badly wrong in the initramfs."
-panic "Please file a bug on initramfs-tools."
+#mountroot
+#log_end_msg
+#
+#if read_fstab_entry /usr; then
+#	log_begin_msg "Mounting /usr file system"
+#	mountfs /usr
+#	log_end_msg
+#fi
+#
+## Mount cleanup
+#mount_bottom
+#nfs_bottom
+#local_bottom
+#
+#maybe_break bottom
+#[ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-bottom"
+## We expect udev's init-bottom script to move /dev to ${rootmnt}/dev
+#run_scripts /scripts/init-bottom
+#[ "$quiet" != "y" ] && log_end_msg
+#
+## Move /run to the root
+#mount -n -o move /run ${rootmnt}/run
+#
+#validate_init() {
+#	run-init -n "${rootmnt}" "${1}"
+#}
+#
+## Check init is really there
+#if ! validate_init "$init"; then
+#	echo "Target filesystem doesn't have requested ${init}."
+#	init=
+#	for inittest in /sbin/init /etc/init /bin/init /bin/sh; do
+#		if validate_init "${inittest}"; then
+#			init="$inittest"
+#			break
+#		fi
+#	done
+#fi
+#
+## No init on rootmount
+#if ! validate_init "${init}" ; then
+#	panic "No init found. Try passing init= bootarg."
+#fi
+#
+#maybe_break init
+#
+## don't leak too much of env - some init(8) don't clear it
+## (keep init, rootmnt, drop_caps)
+#unset debug
+#unset MODPROBE_OPTIONS
+#unset DPKG_ARCH
+#unset ROOTFLAGS
+#unset ROOTFSTYPE
+#unset ROOTDELAY
+#unset ROOT
+#unset IP
+#unset IP6
+#unset VLAN
+#unset BOOT
+#unset BOOTIF
+#unset DEVICE
+#unset UBIMTD
+#unset blacklist
+#unset break
+#unset noresume
+#unset panic
+#unset quiet
+#unset readonly
+#unset resume
+#unset resume_offset
+#unset noresume
+#unset fastboot
+#unset forcefsck
+#unset fsckfix
+#
+## Move virtual filesystems over to the real filesystem
+#mount -n -o move /sys ${rootmnt}/sys
+#mount -n -o move /proc ${rootmnt}/proc
+#
+## Chain to real filesystem
+## shellcheck disable=SC2086,SC2094
+#exec run-init ${drop_caps} "${rootmnt}" "${init}" "$@" <"${rootmnt}/dev/console" >"${rootmnt}/dev/console" 2>&1
+#echo "Something went badly wrong in the initramfs."
+#panic "Please file a bug on initramfs-tools."
