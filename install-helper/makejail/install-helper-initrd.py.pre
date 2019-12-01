@@ -134,6 +134,7 @@ forceCopy=[
 		"/bin/zgrep",
 # /sbin
 		"/sbin/blkid",
+		"/sbin/cfdisk",
 		"/sbin/chroot",
 		"/sbin/depmod",
 		"/sbin/dmidecode",
