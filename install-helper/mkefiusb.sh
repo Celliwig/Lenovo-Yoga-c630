@@ -86,6 +86,15 @@ if [ -n "${KERNEL_PACKAGE}" ]; then
 fi
 echo
 
+read -r -p "ARE YOU SURE YOU WISH TO CONTINUE? THIS WILL ERASE: "${BLOCK_DEVICE}". (y/N): " BLOCK_DEVICE_CONFIRM
+if [[ $BLOCK_DEVICE_CONFIRM = [Yy] ]]; then
+	echo
+	echo -e "${TXT_UNDERLINE}Create an EFI compatible USB key...${TXT_NORMAL}"
+else
+	echo "Operation canceled"
+	exit 1
+fi
+
 #if "${INSTALL_GRUB}"; then
 #	echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
 #	if [ -d "${DIR_GRUB}" ]; then
@@ -122,5 +131,3 @@ echo
 #	fi
 #	echo
 #fi
-
-echo -e "${TXT_UNDERLINE}Create an EFI compatible USB key...${TXT_NORMAL}"
