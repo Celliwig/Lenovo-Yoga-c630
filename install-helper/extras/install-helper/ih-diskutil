@@ -1,0 +1,66 @@
+#!/bin/bash
+
+ih_path=`dirname "${BASH_SOURCE[0]}"`
+if [ -z "${ih_path}" ]; then
+	ih_path="."
+fi
+. "${ih_path}"/ih-functions
+
+show_menu_partitioners() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Select partitioner:\n\n" 10 51 5 \
+		"fdisk"  "Classic partitioner." \
+		"cfdisk"  "Ncurses partitioner." \
+		"parted" "Parted partitioner."`
+	retval="${?}"
+	echo "${tmp_mselect}"
+	return "${retval}"
+}
+
+partitioner_run_fdisk() {
+	tmp_blockdevice_select=`show_select_blockdevice`
+	ih_retval="${?}"
+	if [ "${ih_retval}" -eq 0 ]; then
+		/sbin/fdisk "${tmp_blockdevice_select}"
+	fi
+}
+
+partitioner_run_cfdisk() {
+	tmp_blockdevice_select=`show_select_blockdevice`
+	ih_retval="${?}"
+	if [ "${ih_retval}" -eq 0 ]; then
+		/sbin/cfdisk "${tmp_blockdevice_select}"
+	fi
+}
+
+partitioner_run_parted() {
+	tmp_blockdevice_select=`show_select_blockdevice`
+	ih_retval="${?}"
+	if [ "${ih_retval}" -eq 0 ]; then
+		/sbin/parted "${tmp_blockdevice_select}"
+	fi
+}
+
+ih_menu_partitioner_select=""
+while true; do
+	tmp_menu_select=`show_menu_partitioners --default-item "${ih_menu_partitioner_select}"`
+	ih_retval="${?}"
+
+	if [ "${ih_retval}" -eq 0 ]; then
+		ih_menu_partitioner_select="${tmp_menu_select}"
+
+		case "${ih_menu_partitioner_select}" in
+			fdisk)
+				partitioner_run_fdisk
+				;;
+			cfdisk)
+				partitioner_run_cfdisk
+				;;
+			parted)
+				partitioner_run_parted
+				;;
+		esac
+	else
+		exit
+	fi
+done
