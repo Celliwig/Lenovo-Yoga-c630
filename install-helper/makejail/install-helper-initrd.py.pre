@@ -67,6 +67,7 @@ forceCopy=[
 		"/bin/df",
 		"/bin/dialog",
 		"/bin/diff",
+		"/bin/dirname",
 		"/bin/dmesg",
 		"/bin/du",
 		"/bin/echo",
