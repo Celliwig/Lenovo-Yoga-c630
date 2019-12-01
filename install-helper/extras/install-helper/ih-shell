@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. ./setup-vars
+
+dialog --title "Execute shell" \
+--yesno "This will execute a shell. 'exit' will return to the menu system." 7 60
+retval="${?}"
+
+if [ "${retval}" -eq 0 ]; then
+	PS1='ih-shell:\[\033[01;34m\]\w\[\033[00m\]\$ ' /bin/bash --norc --noprofile
+fi

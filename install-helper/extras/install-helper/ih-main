@@ -1,0 +1,46 @@
+#!/bin/bash
+
+. ./setup-vars
+
+ih_menu_main_select=""
+show_menu_main() {
+	tmp_menu_select=$($DIALOG --default-item "${ih_menu_main_select}" --clear --title "install-helper" "$@" \
+		--menu "Select option:\n\n" 12 51 5 \
+		"DiskUtil"  "Disk partitioners." \
+		"Install"  "Install system." \
+		"Rescue" "Rescue system." \
+		"Shell" "Launch a console." \
+		"Reboot" "Restart system." 2>&1 1>&3);					# stderr->stdout, and stdout->fd(3)
+	retval="${?}"
+	if [ "${retval}" -eq 0 ]; then
+		ih_menu_main_select="${tmp_menu_select}"
+		return 0
+	else
+		return "${retval}"
+	fi
+} 3>&1											# fd(3)->stdout
+
+while true; do
+	show_menu_main
+	ih_retval="${?}"
+
+	if [ "${ih_retval}" -eq 0 ]; then
+		case "${ih_menu_main_select}" in
+			DiskUtil)
+				ih-diskutil
+				;;
+			Install)
+				ih-install
+				;;
+			Rescue)
+				ih-rescue
+				;;
+			Shell)
+				ih-shell
+				;;
+			Reboot)
+				echo b > /proc/sysrq-trigger
+				;;
+		esac
+	fi
+done
