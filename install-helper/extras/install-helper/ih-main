@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./setup-vars
+. /install-helper/setup-vars
 
 ih_menu_main_select=""
 show_menu_main() {
