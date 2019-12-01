@@ -7,7 +7,7 @@ fi
 . "${ih_path}"/setup-vars
 
 show_menu_main() {
-	tmp_menu_select=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
 		--menu "Select option:\n\n" 12 51 5 \
 		"DiskUtil"  "Disk partitioners." \
 		"Install"  "Install system." \
@@ -15,16 +15,18 @@ show_menu_main() {
 		"Shell" "Launch a console." \
 		"Reboot" "Restart system."`
 	retval="${?}"
-	echo "${tmp_menu_select}"
+	echo "${tmp_mselect}"
 	return "${retval}"
 }
 
 ih_menu_main_select=""
 while true; do
-	ih_menu_main_select=`show_menu_main --default-item "${ih_menu_main_select}"`
+	tmp_menu_select=`show_menu_main --default-item "${ih_menu_main_select}"`
 	ih_retval="${?}"
 
 	if [ "${ih_retval}" -eq 0 ]; then
+		ih_menu_main_select="${tmp_menu_select}"
+
 		case "${ih_menu_main_select}" in
 			DiskUtil)
 				ih-diskutil
