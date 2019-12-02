@@ -132,33 +132,33 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		okay_failedexit $?
 	fi
 
-#	if "${INSTALL_GRUB}"; then
-#		echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
-#		if [ -d "${DIR_GRUB}" ]; then
-#			echo "	${DIR_GRUB} already exist..."
-#			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
-#			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
-#				cd "${DIR_GRUB}"
-#				git pull &> /dev/null
-#				retval="${?}"
-#				cd "${CWD}"
-#				if [ "${retval}" -ne 0 ]; then
-#					echo "	git pull failed!!!"
-#					exit 1
-#				fi
-#			fi
-#		else
-#			echo "	No GRUB repo."
-#			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
-#			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
-#				git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
-#				retval="${?}"
-#				if [ "${retval}" -ne 0 ]; then
-#					echo "	git clone failed!!!"
-#					exit 1
-#				fi
-#			fi
-#		fi
+	if "${INSTALL_GRUB}"; then
+		echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
+		if [ -d "${DIR_GRUB}" ]; then
+			echo "	${DIR_GRUB} already exist..."
+			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
+			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
+				cd "${DIR_GRUB}"
+				git pull &> /dev/null
+				retval="${?}"
+				cd "${CWD}"
+				if [ "${retval}" -ne 0 ]; then
+					echo "	git pull failed!!!"
+					exit 1
+				fi
+			fi
+		else
+			echo "	No GRUB repo."
+			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
+			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
+				git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
+				retval="${?}"
+				if [ "${retval}" -ne 0 ]; then
+					echo "	git clone failed!!!"
+					exit 1
+				fi
+			fi
+		fi
 #		if [ -d "${DIR_GRUB}" ]; then
 #			cd "${DIR_GRUB}"
 #			./autogen.sh
@@ -166,8 +166,8 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 #			export EFI_ARCH=
 #			cd "${CWD}"
 #		fi
-#		echo
-#	fi
+		echo
+	fi
 
 	echo -n "	UnMounting EFI System partition: "
 	sudo umount "${DIR_USBKEY}" &> /dev/null
