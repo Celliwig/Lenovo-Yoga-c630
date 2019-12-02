@@ -8,6 +8,7 @@ GIT_REPO="https://git.savannah.gnu.org/git/grub.git"
 # Paths
 ###################################################################################################################################################
 CWD=$PWD
+
 DIR_INITRD="${CWD}/initrd"
 DIR_MAKEJAIL="${CWD}/makejail"
 DIR_EXTRAS="${CWD}/extras"
@@ -18,6 +19,9 @@ EFI_GRUB="/EFI/grub"
 DIR_EFI_GRUB="${DIR_USBKEY}/${EFI_GRUB}"
 DIR_EFI_GRUBMODS="${DIR_EFI_GRUB}/modules"
 DIR_GRUB="${CWD}/grub"
+
+FILE_EFI_GRUBBOOT="${DIR_EFI_GRUB}/BOOTAA64.EFI"
+FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
 
 ###################################################################################################################################################
 # Defines
