@@ -95,9 +95,10 @@ else
 	exit 1
 fi
 
-read -r -p "Partition and format: ${BLOCK_DEVICE} (y/N)" BLOCK_DEVICE_PARTITION
+echo -e "${TXT_UNDERLINE}Partition and format: ${BLOCK_DEVICE}${TXT_NORMAL}"
+read -r -p "	Partition device (y/N): " BLOCK_DEVICE_PARTITION
 if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
-	echo -e "${TXT_UNDERLINE}Creating an EFI compatible USB key...${TXT_NORMAL}"
+	echo -n "	Creating an EFI compatible USB key."
 	echo -n "	Wiping partition table: "
 	sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
 	okay_failedexit $?
@@ -117,7 +118,7 @@ if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
 fi
 
 if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
-	echo -e "${TXT_UNDERLINE}Copying system files...${TXT_NORMAL}"
+	echo -e "${TXT_UNDERLINE}Copying system files${TXT_NORMAL}"
 	if [ ! -d "${DIR_USBKEY}" ]; then
 		echo -n "       Creating output directory: "
 		mkdir -p "${DIR_USBKEY}" &> /dev/null
@@ -133,9 +134,9 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	fi
 
 	if "${INSTALL_GRUB}"; then
-		echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
+		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
 		if [ -d "${DIR_GRUB}" ]; then
-			echo "	${DIR_GRUB} already exists..."
+			echo "	${DIR_GRUB} already exists"
 			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
 			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
 				cd "${DIR_GRUB}"
