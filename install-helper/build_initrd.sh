@@ -61,6 +61,7 @@ echo -n "	Running makejail: "
 sudo makejail "${MAKEJAIL_CFG}" &> /dev/null
 okay_failedexit $?
 
+INITRD_SUFFIX=""
 if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
 	echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
@@ -81,6 +82,9 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 			exit -1
 			;;
 	esac
+
+	# Get the kernel version to apply to the initrd filename
+	INITRD_SUFFIX=`ls "${KERNEL_PACKAGE_TEMPDIR}"/boot/vmlinuz-*|awk -F 'vmlinuz' '{ print $2 }'`
 
 	echo -n "	Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to initrd image: "
 	copy_source_2_target "${KERNEL_PACKAGE_TEMPDIR}" "${DIR_INITRD}"
@@ -107,7 +111,7 @@ if [ "${#MODULE_LIST[@]}" -ne 0 ]; then
 fi
 
 echo -n "	Generating cpio image: "
-INITRD_PATH="${DIR_USBKEY_BOOT}/initrd"
+INITRD_PATH="${DIR_USBKEY_BOOT}/initrd${INITRD_SUFFIX}"
 cd "${DIR_INITRD}"
 sudo find . | sudo cpio -H newc -o 2> /dev/null 1> "${INITRD_PATH}"
 okay_failedexit $?
