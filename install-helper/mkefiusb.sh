@@ -98,7 +98,7 @@ fi
 echo -e "${TXT_UNDERLINE}Partition and format: ${BLOCK_DEVICE}${TXT_NORMAL}"
 read -r -p "	Partition device (y/N): " BLOCK_DEVICE_PARTITION
 if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
-	echo -n "	Creating an EFI compatible USB key."
+	echo "	Creating an EFI compatible USB key."
 	echo -n "	Wiping partition table: "
 	sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
 	okay_failedexit $?
@@ -116,6 +116,9 @@ if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
 	okay_failedexit $?
 	echo
 fi
+
+# Wait a little time so that /dev/disk is updated
+sleep 5
 
 if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	echo -e "${TXT_UNDERLINE}Copying system files${TXT_NORMAL}"
@@ -152,7 +155,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 			echo "	No GRUB repo."
 			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
 			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
-				git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
+				git clone "${GIT_REPO}" "${DIR_GRUB}" &> /dev/null
 				retval="${?}"
 				if [ "${retval}" -ne 0 ]; then
 					echo "	git clone failed!!!"
