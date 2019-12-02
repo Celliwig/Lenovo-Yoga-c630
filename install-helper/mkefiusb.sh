@@ -14,6 +14,7 @@ If the kernel package is specified it is included on the EFI partition, and in t
 Options:
 	-d <device name>	- Target device (mandatory).
 	-g			- Build grub (optional).
+	-i			- Build initrd (optional).
 	-k <kernel package>	- Kernel package to include (optional).
 	-m <module name>	- Load named module on startup (optional).
 
@@ -23,11 +24,12 @@ EOF
 }
 
 BLOCK_DEVICE=""
+INITRD_BUILD=false
 INSTALL_GRUB=false
 KERNEL_PACKAGE=""
 MODULE_LIST=()
 # Pass arguments
-while getopts ":d:gk:m:" opt; do
+while getopts ":d:gik:m:" opt; do
 	case $opt in
 		d)
 			if [[ "${BLOCK_DEVICE}" == "" ]]; then
@@ -38,6 +40,9 @@ while getopts ":d:gk:m:" opt; do
 			;;
 		g)
 			INSTALL_GRUB=true
+			;;
+		i)
+			INITRD_BUILD=true
 			;;
 		k)
 			if [[ "${KERNEL_PACKAGE}" == "" ]]; then
@@ -139,17 +144,17 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 		echo -e "${TXT_UNDERLINE}Install kernel${TXT_NORMAL}"
 		KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
-		echo "  Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
+		echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
 
 		KERNEL_PACKAGE_NAME=`basename "${KERNEL_PACKAGE}"`
 		case "${KERNEL_PACKAGE_TYPE}" in
 			"debian")
-				echo -n "       Extracting ${KERNEL_PACKAGE_NAME}: "
+				echo -n "	Extracting ${KERNEL_PACKAGE_NAME}: "
 				KERNEL_PACKAGE_TEMPDIR=`deb_package_extract "${KERNEL_PACKAGE}"`
 				okay_failedexit $?
 				;;
 			"redhat")
-				echo -n "       Extracting ${KERNEL_PACKAGE_NAME}: "
+				echo -n "	Extracting ${KERNEL_PACKAGE_NAME}: "
 				KERNEL_PACKAGE_TEMPDIR=`rpm_package_extract "${KERNEL_PACKAGE}"`
 				okay_failedexit $?
 				;;
@@ -158,10 +163,20 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 				;;
 		esac
 
-		echo -n "       Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to USB key: "
+		echo -n "	Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to USB key: "
 		cp -a "${KERNEL_PACKAGE_TEMPDIR}"/* "${DIR_USBKEY}"
 		okay_failedexit $?
 		sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
+	fi
+
+	if "${INITRD_BUILD}"; then
+		MODULE_LIST_TXT=""
+		if [ "${#MODULE_LIST[@]}" -ne 0 ]; then
+			for tmp_module in "${MODULE_LIST[@]}"; do
+				MODULE_LIST_TXT="${MODULE_LIST_TXT} -m \"${tmp_module}\""
+			done
+		fi
+		./build_initrd.sh -k "${KERNEL_PACKAGE}" ${MODULE_LIST_TXT}
 	fi
 
 	if "${INSTALL_GRUB}"; then
