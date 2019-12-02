@@ -135,7 +135,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	if "${INSTALL_GRUB}"; then
 		echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
 		if [ -d "${DIR_GRUB}" ]; then
-			echo "	${DIR_GRUB} already exist..."
+			echo "	${DIR_GRUB} already exists..."
 			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
 			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
 				cd "${DIR_GRUB}"
@@ -159,13 +159,27 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 				fi
 			fi
 		fi
-#		if [ -d "${DIR_GRUB}" ]; then
-#			cd "${DIR_GRUB}"
-#			./autogen.sh
-#			./configure --with-platform=efi --target=aarch64
-#			export EFI_ARCH=
-#			cd "${CWD}"
-#		fi
+		if [ -d "${DIR_GRUB}" ]; then
+			cd "${DIR_GRUB}"
+
+			echo -n "	GRUB - Running bootstrap: "
+			./bootstrap &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Running autogen: "
+			./autogen.sh &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Running configure: "
+			GRUB_CONFIG_OUT=`./configure|awk 'BEGIN { PRNT=0; } $1 == "*******************************************************" { PRNT=1; } { if (PRNT) print $0; } '`
+			okay_failedexit $?
+			while IFS= read -r GRUB_CONFIG_LINE; do
+				echo "		${GRUB_CONFIG_LINE}"
+			done <<< "${GRUB_CONFIG_OUT}"
+			echo -n "	GRUB - Running make: "
+			make -j 2 &> /dev/null
+			okay_failedexit $?
+
+			cd "${CWD}"
+		fi
 		echo
 	fi
 
