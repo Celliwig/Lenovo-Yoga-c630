@@ -172,7 +172,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		MODULE_LIST_TXT=""
 		if [ "${#MODULE_LIST[@]}" -ne 0 ]; then
 			for tmp_module in "${MODULE_LIST[@]}"; do
-				MODULE_LIST_TXT="${MODULE_LIST_TXT} -m \"${tmp_module}\""
+				MODULE_LIST_TXT="${MODULE_LIST_TXT} -m ${tmp_module}"
 			done
 		fi
 		./build_initrd.sh -k "${KERNEL_PACKAGE}" ${MODULE_LIST_TXT}
