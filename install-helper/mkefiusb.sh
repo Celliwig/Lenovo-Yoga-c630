@@ -113,41 +113,63 @@ if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
 	echo -n "	Formating linux filesystem partition: "
 	sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
 	okay_failedexit $?
+	echo
 fi
 
-#if "${INSTALL_GRUB}"; then
-#	echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
-#	if [ -d "${DIR_GRUB}" ]; then
-#		echo "	${DIR_GRUB} already exist..."
-#		read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
-#		if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
+if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
+	echo -e "${TXT_UNDERLINE}Copying system files...${TXT_NORMAL}"
+	if [ ! -d "${DIR_USBKEY}" ]; then
+		echo -n "       Creating output directory: "
+		mkdir -p "${DIR_USBKEY}" &> /dev/null
+		okay_failedexit $?
+	fi
+	echo -n "	Mounting EFI System partition: "
+	sudo mount -t vfat /dev/disk/by-label/IHEFI "${DIR_USBKEY}" -o uid=1000,gid=1000,umask=022 &> /dev/null
+	okay_failedexit $?
+	if [ ! -d "${DIR_EFI_BOOT}" ]; then
+		echo -n "	Creating EFI boot directory: "
+		mkdir -p "${DIR_EFI_BOOT}" &> /dev/null
+		okay_failedexit $?
+	fi
+
+#	if "${INSTALL_GRUB}"; then
+#		echo -e "${TXT_UNDERLINE}Install GRUB...${TXT_NORMAL}"
+#		if [ -d "${DIR_GRUB}" ]; then
+#			echo "	${DIR_GRUB} already exist..."
+#			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
+#			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
+#				cd "${DIR_GRUB}"
+#				git pull &> /dev/null
+#				retval="${?}"
+#				cd "${CWD}"
+#				if [ "${retval}" -ne 0 ]; then
+#					echo "	git pull failed!!!"
+#					exit 1
+#				fi
+#			fi
+#		else
+#			echo "	No GRUB repo."
+#			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
+#			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
+#				git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
+#				retval="${?}"
+#				if [ "${retval}" -ne 0 ]; then
+#					echo "	git clone failed!!!"
+#					exit 1
+#				fi
+#			fi
+#		fi
+#		if [ -d "${DIR_GRUB}" ]; then
 #			cd "${DIR_GRUB}"
-#			git pull &> /dev/null
-#			retval="${?}"
+#			./autogen.sh
+#			./configure --with-platform=efi --target=aarch64
+#			export EFI_ARCH=
 #			cd "${CWD}"
-#			if [ "${retval}" -ne 0 ]; then
-#				echo "	git pull failed!!!"
-#				exit 1
-#			fi
 #		fi
-#	else
-#		echo "	No GRUB repo."
-#		read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
-#		if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
-#			git clone https://git.savannah.gnu.org/git/grub.git "${DIR_GRUB}" &> /dev/null
-#			retval="${?}"
-#			if [ "${retval}" -ne 0 ]; then
-#				echo "	git clone failed!!!"
-#				exit 1
-#			fi
-#		fi
+#		echo
 #	fi
-#	if [ -d "${DIR_GRUB}" ]; then
-#		cd "${DIR_GRUB}"
-#		./autogen.sh
-#		./configure --with-platform=efi --target=aarch64
-#		export EFI_ARCH=
-#		cd "${CWD}"
-#	fi
-#	echo
-#fi
+
+	echo -n "	UnMounting EFI System partition: "
+	sudo umount "${DIR_USBKEY}" &> /dev/null
+	okay_failedexit $?
+fi
