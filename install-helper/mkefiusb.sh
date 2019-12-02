@@ -75,7 +75,7 @@ else
 	exit 1
 fi
 if [ -n "${KERNEL_PACKAGE}" ]; then
-	echo -n "	Checking kernel package [\"${KERNEL_PACKAGE}\"] type: "
+	echo -n "	Checking kernel package type (${KERNEL_PACKAGE}): "
 	KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
 	if [[ "${KERNEL_PACKAGE_TYPE}" == "unknown" ]]; then
 		echo "Failed"
@@ -163,21 +163,24 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		if [ -d "${DIR_GRUB}" ]; then
 			cd "${DIR_GRUB}"
 
-			echo -n "	GRUB - Running bootstrap: "
-			./bootstrap &> /dev/null
-			okay_failedexit $?
-			echo -n "	GRUB - Running autogen: "
-			./autogen.sh &> /dev/null
-			okay_failedexit $?
-			echo -n "	GRUB - Running configure: "
-			GRUB_CONFIG_OUT=`./configure|awk 'BEGIN { PRNT=0; } $1 == "*******************************************************" { PRNT=1; } { if (PRNT) print $0; } '`
-			okay_failedexit $?
-			while IFS= read -r GRUB_CONFIG_LINE; do
-				echo "		${GRUB_CONFIG_LINE}"
-			done <<< "${GRUB_CONFIG_OUT}"
-			echo -n "	GRUB - Running make: "
-			make -j 2 &> /dev/null
-			okay_failedexit $?
+			read -r -p "	(Re)Build GRUB source? (y/n): " INSTALL_GRUB_BUILD
+			if [[ ${INSTALL_GRUB_BUILD} = [Yy] ]]; then
+				echo -n "	GRUB - Running bootstrap: "
+				./bootstrap &> /dev/null
+				okay_failedexit $?
+				echo -n "	GRUB - Running autogen: "
+				./autogen.sh &> /dev/null
+				okay_failedexit $?
+				echo -n "	GRUB - Running configure: "
+				GRUB_CONFIG_OUT=`./configure|awk 'BEGIN { PRNT=0; } $1 == "*******************************************************" { PRNT=1; } { if (PRNT) print $0; } '`
+				okay_failedexit $?
+				while IFS= read -r GRUB_CONFIG_LINE; do
+					echo "		${GRUB_CONFIG_LINE}"
+				done <<< "${GRUB_CONFIG_OUT}"
+				echo -n "	GRUB - Running make: "
+				make -j 2 &> /dev/null
+				okay_failedexit $?
+			fi
 			if [ -d "${DIR_EFI_GRUB}" ]; then			# Remove the existing grub directory
 				rm -rf "${DIR_EFI_GRUB}" &> /dev/null
 			fi
@@ -191,6 +194,9 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 			okay_failedexit $?
 			echo -n "	GRUB - Copying modules: "
 			cp grub-core/*.{mod,lst} "${DIR_EFI_GRUBMODS}" &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Set as default bootloader: "
+			cp "${BOOT_EFI_GRUB}" "${DIR_EFI_BOOT}"
 			okay_failedexit $?
 			cd "${CWD}"
 		fi
