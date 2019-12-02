@@ -1,3 +1,4 @@
 grub/*
 initrd/*
 makejail/install-helper-initrd.py
+usb_key/*
