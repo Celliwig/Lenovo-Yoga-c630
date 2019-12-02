@@ -119,7 +119,6 @@ if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
 	echo -n "	Formating linux filesystem partition: "
 	sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
 	okay_failedexit $?
-	echo
 fi
 
 # Wait a little time so that /dev/disk is updated
@@ -231,9 +230,8 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 				rm -rf "${DIR_EFI_GRUB}" &> /dev/null
 			fi
 			mkdir -p "${DIR_EFI_GRUBMODS}" &> /dev/null
-			BOOT_EFI_GRUB="${DIR_EFI_GRUB}/BOOTAA64.EFI"
 			echo -n "	GRUB - Installing boot loader: "
-			./grub-mkimage --directory grub-core --prefix "${EFI_GRUB}" --output "${BOOT_EFI_GRUB}" --format arm64-efi \
+			./grub-mkimage --directory grub-core --prefix "${EFI_GRUB}" --output "${FILE_EFI_GRUBBOOT}" --format arm64-efi \
 				part_gpt part_msdos ntfs ntfscomp hfsplus fat ext2 normal chain boot configfile linux minicmd \
 				gfxterm all_video efi_gop video_fb font video loadenv disk test gzio bufio gettext terminal \
 				crypto extcmd boot fshelp search iso9660 &> /dev/null
@@ -242,12 +240,37 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 			cp grub-core/*.{mod,lst} "${DIR_EFI_GRUBMODS}" &> /dev/null
 			okay_failedexit $?
 			echo -n "	GRUB - Set as default bootloader: "
-			cp "${BOOT_EFI_GRUB}" "${DIR_EFI_BOOT}"
+			cp "${FILE_EFI_GRUBBOOT}" "${DIR_EFI_BOOT}"
 			okay_failedexit $?
 			cd "${CWD}"
 		fi
-		echo
 	fi
+
+	rm "${FILE_EFI_GRUBCFG}" &> /dev/null
+	echo "	Creating grub.cfg: "
+	touch "${FILE_EFI_GRUBCFG}"
+	echo "set menu_color_normal=white/black" >> "${FILE_EFI_GRUBCFG}"
+	echo "set menu_color_highlight=black/light-gray" >> "${FILE_EFI_GRUBCFG}"
+	echo "if background_color 44,0,30,0; then" >> "${FILE_EFI_GRUBCFG}"
+	echo "  clear" >> "${FILE_EFI_GRUBCFG}"
+	echo "fi" >> "${FILE_EFI_GRUBCFG}"
+	echo "" >> "${FILE_EFI_GRUBCFG}"
+	echo "insmod gzio" >> "${FILE_EFI_GRUBCFG}"
+	echo "set timeout=30" >> "${FILE_EFI_GRUBCFG}"
+	for tmp_kernel_version in `find "${DIR_USBKEY_BOOT}" -name vmlinuz-\* |sed "s|${DIR_USBKEY_BOOT}/||g"`; do
+		echo "		Adding entry: ${tmp_kernel_version}"
+
+		tmp_kernel_args='efi=novamap pd_ignore_unused clk_ignore_unused'
+		tmp_initrd_version=`echo "${tmp_kernel_version}" |sed 's|vmlinuz||'`
+		tmp_devicetree='/usr/lib/linux-image-5.4.0-rc7-g43234ba81/qcom/sdm850-lenovo-yoga-c630.dtb'
+
+		echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
+		echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
+		echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
+		echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
+		echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
+		echo "}" >> "${FILE_EFI_GRUBCFG}"
+	done
 
 	echo -n "	UnMounting EFI System partition: "
 	sudo umount "${DIR_USBKEY}" &> /dev/null
