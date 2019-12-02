@@ -136,6 +136,34 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		okay_failedexit $?
 	fi
 
+	if [[ "${KERNEL_PACKAGE}" != "" ]]; then
+		echo -e "${TXT_UNDERLINE}Install kernel${TXT_NORMAL}"
+		KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
+		echo "  Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
+
+		KERNEL_PACKAGE_NAME=`basename "${KERNEL_PACKAGE}"`
+		case "${KERNEL_PACKAGE_TYPE}" in
+			"debian")
+				echo -n "       Extracting ${KERNEL_PACKAGE_NAME}: "
+				KERNEL_PACKAGE_TEMPDIR=`deb_package_extract "${KERNEL_PACKAGE}"`
+				okay_failedexit $?
+				;;
+			"redhat")
+				echo -n "       Extracting ${KERNEL_PACKAGE_NAME}: "
+				KERNEL_PACKAGE_TEMPDIR=`rpm_package_extract "${KERNEL_PACKAGE}"`
+				okay_failedexit $?
+				;;
+			*)
+				exit -1
+				;;
+		esac
+
+		echo -n "       Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to USB key: "
+		cp -a "${KERNEL_PACKAGE_TEMPDIR}"/* "${DIR_USBKEY}"
+		okay_failedexit $?
+		sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
+	fi
+
 	if "${INSTALL_GRUB}"; then
 		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
 		if [ -d "${DIR_GRUB}" ]; then
