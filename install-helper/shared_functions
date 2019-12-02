@@ -8,6 +8,9 @@ DIR_EXTRAS="${CWD}/extras"
 DIR_USBKEY="${CWD}/usb_key"
 DIR_USBKEY_BOOT="${DIR_USBKEY}/boot"
 DIR_EFI_BOOT="${DIR_USBKEY}/EFI/Boot"
+EFI_GRUB="/EFI/grub"
+DIR_EFI_GRUB="${DIR_USBKEY}/${EFI_GRUB}"
+DIR_EFI_GRUBMODS="${DIR_EFI_GRUB}/modules"
 DIR_GRUB="${CWD}/grub"
 
 ###################################################################################################################################################

@@ -178,7 +178,20 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 			echo -n "	GRUB - Running make: "
 			make -j 2 &> /dev/null
 			okay_failedexit $?
-
+			if [ -d "${DIR_EFI_GRUB}" ]; then			# Remove the existing grub directory
+				rm -rf "${DIR_EFI_GRUB}" &> /dev/null
+			fi
+			mkdir -p "${DIR_EFI_GRUBMODS}" &> /dev/null
+			BOOT_EFI_GRUB="${DIR_EFI_GRUB}/BOOTAA64.EFI"
+			echo -n "	GRUB - Installing boot loader: "
+			./grub-mkimage --directory grub-core --prefix "${EFI_GRUB}" --output "${BOOT_EFI_GRUB}" --format arm64-efi \
+				part_gpt part_msdos ntfs ntfscomp hfsplus fat ext2 normal chain boot configfile linux minicmd \
+				gfxterm all_video efi_gop video_fb font video loadenv disk test gzio bufio gettext terminal \
+				crypto extcmd boot fshelp search iso9660 &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Copying modules: "
+			cp grub-core/*.{mod,lst} "${DIR_EFI_GRUBMODS}" &> /dev/null
+			okay_failedexit $?
 			cd "${CWD}"
 		fi
 		echo
