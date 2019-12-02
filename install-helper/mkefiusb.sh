@@ -86,13 +86,33 @@ if [ -n "${KERNEL_PACKAGE}" ]; then
 fi
 echo
 
-read -r -p "ARE YOU SURE YOU WISH TO CONTINUE? THIS WILL ERASE: "${BLOCK_DEVICE}". (y/N): " BLOCK_DEVICE_CONFIRM
-if [[ $BLOCK_DEVICE_CONFIRM = [Yy] ]]; then
+read -r -p "ARE YOU SURE YOU WISH TO CONTINUE? (y/N): " DOCONTINUE
+if [[ $DOCONTINUE = [Yy] ]]; then
+	sudo ls &> /dev/null								# Sudo now so we aren't prompted later
 	echo
-	echo -e "${TXT_UNDERLINE}Create an EFI compatible USB key...${TXT_NORMAL}"
 else
 	echo "Operation canceled"
 	exit 1
+fi
+
+read -r -p "Partition and format: ${BLOCK_DEVICE} (y/N)" BLOCK_DEVICE_PARTITION
+if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
+	echo -e "${TXT_UNDERLINE}Creating an EFI compatible USB key...${TXT_NORMAL}"
+	echo -n "	Wiping partition table: "
+	sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
+	okay_failedexit $?
+	echo -n "	Create EFI System partition (2G): "
+	sudo sgdisk --new=1:0:+2G --typecode=1:ef00 "${BLOCK_DEVICE}" &> /dev/null
+	okay_failedexit $?
+	echo -n "	Creating linux filesystem partition (rest): "
+	sudo sgdisk --new=2:+2G:0 --typecode=2:8300 "${BLOCK_DEVICE}" &> /dev/null
+	okay_failedexit $?
+	echo -n "	Formating EFI System partition (VFAT): "
+	sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
+	okay_failedexit $?
+	echo -n "	Formating linux filesystem partition: "
+	sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
+	okay_failedexit $?
 fi
 
 #if "${INSTALL_GRUB}"; then
