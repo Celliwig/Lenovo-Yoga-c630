@@ -7,6 +7,7 @@ DIR_MAKEJAIL="${CWD}/makejail"
 DIR_EXTRAS="${CWD}/extras"
 DIR_USBKEY="${CWD}/usb_key"
 DIR_USBKEY_BOOT="${DIR_USBKEY}/boot"
+DIR_EFI_BOOT="${DIR_USBKEY}/EFI/Boot"
 DIR_GRUB="${CWD}/grub"
 
 ###################################################################################################################################################
