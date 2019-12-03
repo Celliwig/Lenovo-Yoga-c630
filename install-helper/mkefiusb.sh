@@ -134,15 +134,27 @@ if "${MAKE_PARTITIONS}"; then
 fi
 
 if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
+	MOUNTAS_UID=`id -u`
+	MOUNTAS_GID=`id -g`
+
 	echo -e "${TXT_UNDERLINE}Copying system files${TXT_NORMAL}"
 	if [ ! -d "${DIR_USBKEY}" ]; then
-		echo -n "       Creating output directory: "
+		echo -n "       Creating 'usb_key/' directory: "
 		mkdir -p "${DIR_USBKEY}" &> /dev/null
+		okay_failedexit $?
+	fi
+	if [ ! -d "${DIR_USBKEYFILES}" ]; then
+		echo -n "       Creating 'usb_key-files/' directory: "
+		mkdir -p "${DIR_USBKEYFILES}" &> /dev/null
 		okay_failedexit $?
 	fi
 	echo -n "	Mounting EFI System partition: "
 	sudo mount -t vfat /dev/disk/by-label/IHEFI "${DIR_USBKEY}" -o uid=1000,gid=1000,umask=022 &> /dev/null
 	okay_failedexit $?
+	echo -n "	Mounting install-helper file storage: "
+	sudo mount -t ext3 /dev/disk/by-label/IHFILES "${DIR_USBKEYFILES}" &> /dev/null
+	okay_failedexit $?
+	chown ${MOUNTAS_UID}:${MOUNTAS_GID} "${DIR_USBKEYFILES}"
 	if [ ! -d "${DIR_EFI_BOOT}" ]; then
 		echo -n "	Creating EFI boot directory: "
 		mkdir -p "${DIR_EFI_BOOT}" &> /dev/null
@@ -283,5 +295,8 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 
 	echo -n "	UnMounting EFI System partition: "
 	sudo umount "${DIR_USBKEY}" &> /dev/null
+	okay_failedexit $?
+	echo -n "	UnMounting install-helper file storage: "
+	sudo umount "${DIR_USBKEYFILES}" &> /dev/null
 	okay_failedexit $?
 fi
