@@ -116,10 +116,10 @@ if "${MAKE_PARTITIONS}"; then
 		sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
 		okay_failedexit $?
 		echo -n "	Create EFI System partition (${PARTITION_EFI_SIZE}): "
-		sudo sgdisk --new=1:0:+${PARTITION_EFI_SIZE} --typecode=1:ef00 "${BLOCK_DEVICE}" &> /dev/null
+		sudo sgdisk --new=1:0:+${PARTITION_EFI_SIZE} --typecode=1:ef00 --change-name=1:IHEFI "${BLOCK_DEVICE}" &> /dev/null
 		okay_failedexit $?
 		echo -n "	Creating linux filesystem partition (rest): "
-		sudo sgdisk --new=2:+${PARTITION_EFI_SIZE}:0 --typecode=2:8300 "${BLOCK_DEVICE}" &> /dev/null
+		sudo sgdisk --new=2:+${PARTITION_EFI_SIZE}:0 --typecode=2:8300 --change-name=2:IHFILES "${BLOCK_DEVICE}" &> /dev/null
 		okay_failedexit $?
 		echo -n "	Formating EFI System partition (VFAT): "
 		sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
