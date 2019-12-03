@@ -160,6 +160,11 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		mkdir -p "${DIR_EFI_BOOT}" &> /dev/null
 		okay_failedexit $?
 	fi
+	if [ ! -d "${DIR_USBKEYFILES}/images" ]; then
+		echo -n "	Creating 'usb_key-files/images' directory: "
+		mkdir -p "${DIR_USBKEYFILES}/images" &> /dev/null
+		okay_failedexit $?
+	fi
 
 	if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 		echo -e "${TXT_UNDERLINE}Install kernel${TXT_NORMAL}"
