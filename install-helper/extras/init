@@ -289,11 +289,29 @@ maybe_break mountroot
 mount_top
 mount_premount
 
-# Delay to settle system
-sleep 10
-
-# Configure console
+# Update path
 PATH=$PATH:/install-helper
+
+# Mount the device associated with the partition label IHFILES.
+mkdir /media
+# Wait for USB key to become available
+while true; do
+	echo -n "Looking for device with partition label 'IHFILES': "
+	IHFILES_DEV=`blkid -o device -L IHFILES`
+	if [ -n "${IHFILES_DEV}" ]; then
+		echo "${IHFILES_DEV}"
+		mount -t ext3 ${IHFILES_DEV} /media
+		break
+	else
+		echo 'Not found'
+		sleep 1
+	fi
+done
+
+# Set console log level
+echo "3" > /proc/sys/kernel/printk
+
+# Start menu
 ih-start
 
 #mountroot
