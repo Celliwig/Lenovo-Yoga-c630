@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # $Id: setup-vars,v 1.3 2012/06/29 09:52:26 tom Exp $
 # vile:shmode
 
@@ -22,14 +22,69 @@
 : ${SIG_KILL=9}
 : ${SIG_TERM=15}
 
-show_msg() {
+ih_umount_all() {
+	sync
+
+	echo "Unmounting filesystems:"
+	# First unmount any loop devices
+	for tmp_loop_device in $(losetup --all|awk -F ':' '{print $1}'); do
+		echo -n "	Umounting ${tmp_loop_device}: ";
+		umount ${tmp_loop_device} &> /dev/null
+		if [ ${?} -eq 0 ]; then
+			echo "Okay"
+		else
+			echo "Failed"
+		fi
+	done
+
+	# Destroy any loop devices
+	for tmp_loop_device in $(losetup --all|awk -F ':' '{print $1}'); do
+		echo -n "	Destroying ${tmp_loop_device}: ";
+		losetup -d ${tmp_loop_device} &> /dev/null
+		if [ ${?} -eq 0 ]; then
+			echo "Okay"
+		else
+			echo "Failed"
+		fi
+	done
+
+	# Unmount nested filesystems
+	for mounted_fs in `mount |awk '/^\// {print $3}'`; do
+		for nested_fsmount in `mount |awk "/\\\\${mounted_fs}/ {print \\$3}"|sort -r`; do
+			if [[ "${mounted_fs}" != "${nested_fsmount}" ]]; then
+				echo -n "	Unmounting ${nested_fsmount}: "
+				umount ${nested_fsmount} &> /dev/null
+				if [ ${?} -eq 0 ]; then
+					echo "Okay"
+				else
+					echo "Failed"
+				fi
+			fi
+		done
+	done
+
+	# Unmount filesystems
+	for mounted_fs in `mount |awk '/^\// {print $1}'`; do
+		echo -n "	Unmounting ${mounted_fs}: "
+		umount ${mounted_fs} &> /dev/null
+		if [ ${?} -eq 0 ]; then
+			echo "Okay"
+		else
+			echo "Failed"
+		fi
+	done
+
+	sleep 2
+}
+
+ih_show_msg() {
 	local message="${1}"
 	local rows="${2}"
 	local columns="${3}"
 	$DIALOG --stdout --title "install-helper" --msgbox "${message}" "${rows}" "${columns}"
 }
 
-show_select_blockdevice() {
+ih_show_select_blockdevice() {
 	while true; do
 		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a block device" "$@" --fselect /dev/ 14 48`
 		retval="${?}"
@@ -39,7 +94,7 @@ show_select_blockdevice() {
 				echo "${tmp_dselect}"
 				return 0
 			else
-				show_msg "Error: Please select block device parent." 5 45
+				ih_show_msg "Error: Please select block device parent." 5 45
 			fi
 		else
 			echo ''

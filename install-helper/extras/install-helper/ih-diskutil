@@ -6,7 +6,7 @@ if [ -z "${ih_path}" ]; then
 fi
 . "${ih_path}"/ih-functions
 
-show_menu_partitioners() {
+ih_show_menu_partitioners() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
 		--menu "Select partitioner:\n\n" 10 51 5 \
 		"fdisk"  "Classic partitioner." \
@@ -17,24 +17,24 @@ show_menu_partitioners() {
 	return "${retval}"
 }
 
-partitioner_run_fdisk() {
-	tmp_blockdevice_select=`show_select_blockdevice`
+ih_partitioner_run_fdisk() {
+	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
 		/sbin/fdisk "${tmp_blockdevice_select}"
 	fi
 }
 
-partitioner_run_cfdisk() {
-	tmp_blockdevice_select=`show_select_blockdevice`
+ih_partitioner_run_cfdisk() {
+	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
 		/sbin/cfdisk "${tmp_blockdevice_select}"
 	fi
 }
 
-partitioner_run_parted() {
-	tmp_blockdevice_select=`show_select_blockdevice`
+ih_partitioner_run_parted() {
+	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
 		/sbin/parted "${tmp_blockdevice_select}"
@@ -43,7 +43,7 @@ partitioner_run_parted() {
 
 ih_menu_partitioner_select=""
 while true; do
-	tmp_menu_select=`show_menu_partitioners --default-item "${ih_menu_partitioner_select}"`
+	tmp_menu_select=`ih_show_menu_partitioners --default-item "${ih_menu_partitioner_select}"`
 	ih_retval="${?}"
 
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -51,13 +51,13 @@ while true; do
 
 		case "${ih_menu_partitioner_select}" in
 			fdisk)
-				partitioner_run_fdisk
+				ih_partitioner_run_fdisk
 				;;
 			cfdisk)
-				partitioner_run_cfdisk
+				ih_partitioner_run_cfdisk
 				;;
 			parted)
-				partitioner_run_parted
+				ih_partitioner_run_parted
 				;;
 		esac
 	else

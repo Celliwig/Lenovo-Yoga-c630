@@ -6,7 +6,7 @@ if [ -z "${ih_path}" ]; then
 fi
 . "${ih_path}"/ih-functions
 
-show_menu_main() {
+ih_show_menu_main() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
 		--menu "Select option:\n\n" 12 51 5 \
 		"DiskUtil"  "Disk partitioners." \
@@ -21,7 +21,7 @@ show_menu_main() {
 
 ih_menu_main_select=""
 while true; do
-	tmp_menu_select=`show_menu_main --default-item "${ih_menu_main_select}"`
+	tmp_menu_select=`ih_show_menu_main --default-item "${ih_menu_main_select}"`
 	ih_retval="${?}"
 
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -41,6 +41,7 @@ while true; do
 				ih-shell
 				;;
 			Reboot)
+				ih_umount_all
 				echo b > /proc/sysrq-trigger
 				;;
 		esac
