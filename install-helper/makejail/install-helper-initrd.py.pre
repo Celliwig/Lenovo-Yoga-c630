@@ -115,6 +115,7 @@ forceCopy=[
 		"/bin/sha256sum",
 		"/bin/sleep",
 		"/bin/sort",
+		"/bin/sync",
 		"/bin/tail",
 		"/bin/tar",
 		"/bin/tput",
