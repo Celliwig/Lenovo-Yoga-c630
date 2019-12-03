@@ -154,7 +154,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	echo -n "	Mounting install-helper file storage: "
 	sudo mount -t ext3 /dev/disk/by-label/IHFILES "${DIR_USBKEYFILES}" &> /dev/null
 	okay_failedexit $?
-	chown ${MOUNTAS_UID}:${MOUNTAS_GID} "${DIR_USBKEYFILES}"
+	sudo chown ${MOUNTAS_UID}:${MOUNTAS_GID} "${DIR_USBKEYFILES}" &> /dev/null
 	if [ ! -d "${DIR_EFI_BOOT}" ]; then
 		echo -n "	Creating EFI boot directory: "
 		mkdir -p "${DIR_EFI_BOOT}" &> /dev/null
