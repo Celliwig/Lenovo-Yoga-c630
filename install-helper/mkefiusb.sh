@@ -13,10 +13,11 @@ If the kernel package is specified it is included on the EFI partition, and in t
 
 Options:
 	-d <device name>	- Target device (mandatory).
-	-g			- Build grub (optional).
-	-i			- Build initrd (optional).
-	-k <kernel package>	- Kernel package to include (optional).
-	-m <module name>	- Load named module on startup (optional).
+	-g			- Build grub.
+	-i			- Build initrd.
+	-k <kernel package>	- Kernel package to include.
+	-m <module name>	- Load named module on startup.
+	-p			- Erase target device and build required partitions.
 
 '-m' can be specified multiple times.
 EOF
@@ -27,9 +28,10 @@ BLOCK_DEVICE=""
 INITRD_BUILD=false
 INSTALL_GRUB=false
 KERNEL_PACKAGE=""
+MAKE_PARTITIONS=false
 MODULE_LIST=()
 # Pass arguments
-while getopts ":d:gik:m:" opt; do
+while getopts ":d:gik:m:p" opt; do
 	case $opt in
 		d)
 			if [[ "${BLOCK_DEVICE}" == "" ]]; then
@@ -53,6 +55,9 @@ while getopts ":d:gik:m:" opt; do
 			;;
 		m)
 			MODULE_LIST+=("${OPTARG}")
+			;;
+		p)
+			MAKE_PARTITIONS=true
 			;;
 		\?)
 			print_usage
@@ -100,29 +105,33 @@ else
 	exit 1
 fi
 
-echo -e "${TXT_UNDERLINE}Partition and format: ${BLOCK_DEVICE}${TXT_NORMAL}"
-read -r -p "	Partition device (y/N): " BLOCK_DEVICE_PARTITION
-if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
-	echo "	Creating an EFI compatible USB key."
-	echo -n "	Wiping partition table: "
-	sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
-	okay_failedexit $?
-	echo -n "	Create EFI System partition (2G): "
-	sudo sgdisk --new=1:0:+2G --typecode=1:ef00 "${BLOCK_DEVICE}" &> /dev/null
-	okay_failedexit $?
-	echo -n "	Creating linux filesystem partition (rest): "
-	sudo sgdisk --new=2:+2G:0 --typecode=2:8300 "${BLOCK_DEVICE}" &> /dev/null
-	okay_failedexit $?
-	echo -n "	Formating EFI System partition (VFAT): "
-	sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
-	okay_failedexit $?
-	echo -n "	Formating linux filesystem partition: "
-	sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
-	okay_failedexit $?
-fi
+if "${MAKE_PARTITIONS}"; then
+	PARTITION_EFI_SIZE="1G"
 
-# Wait a little time so that /dev/disk is updated
-sleep 5
+	echo -e "${TXT_UNDERLINE}Partition and format: ${BLOCK_DEVICE}${TXT_NORMAL}"
+	read -r -p "	Partition device (y/N): " BLOCK_DEVICE_PARTITION
+	if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
+		echo "	Creating an EFI compatible USB key."
+		echo -n "	Wiping partition table: "
+		sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
+		okay_failedexit $?
+		echo -n "	Create EFI System partition (${PARTITION_EFI_SIZE}): "
+		sudo sgdisk --new=1:0:+${PARTITION_EFI_SIZE} --typecode=1:ef00 "${BLOCK_DEVICE}" &> /dev/null
+		okay_failedexit $?
+		echo -n "	Creating linux filesystem partition (rest): "
+		sudo sgdisk --new=2:+${PARTITION_EFI_SIZE}:0 --typecode=2:8300 "${BLOCK_DEVICE}" &> /dev/null
+		okay_failedexit $?
+		echo -n "	Formating EFI System partition (VFAT): "
+		sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
+		okay_failedexit $?
+		echo -n "	Formating linux filesystem partition: "
+		sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
+		okay_failedexit $?
+	fi
+
+	# Wait a little time so that /dev/disk is updated
+	sleep 5
+fi
 
 if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	echo -e "${TXT_UNDERLINE}Copying system files${TXT_NORMAL}"
