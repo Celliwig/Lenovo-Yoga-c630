@@ -221,6 +221,7 @@ forceCopy=[
 		"/sbin/shutdown",
 		"/sbin/swapoff",
 		"/sbin/swapon",
+		"/sbin/switch_root",
 		"/sbin/vcstime",
 		"/sbin/vgcfgbackup",
 		"/sbin/vgcfgrestore",
