@@ -154,6 +154,7 @@ forceCopy=[
 		"/sbin/halt",
 		"/sbin/insmod",
 		"/sbin/kpartx",
+		"/sbin/logsave",
 		"/sbin/losetup",
 		"/sbin/lsmod",
 		"/sbin/lvchange",
