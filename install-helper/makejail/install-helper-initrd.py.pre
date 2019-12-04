@@ -106,6 +106,7 @@ forceCopy=[
 		"/bin/ps",
 		"/bin/pwd",
 		"/bin/readlink",
+		"/bin/realpath",
 		"/bin/reset",
 		"/bin/rm",
 		"/bin/sed",
