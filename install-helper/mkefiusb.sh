@@ -284,18 +284,45 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	echo "insmod gzio" >> "${FILE_EFI_GRUBCFG}"
 	echo "set timeout=30" >> "${FILE_EFI_GRUBCFG}"
 	for tmp_kernel_version in `find "${DIR_USBKEY_BOOT}" -name vmlinuz-\* |sed "s|${DIR_USBKEY_BOOT}/||g"`; do
-		echo "		Adding entry: ${tmp_kernel_version}"
-
-		tmp_kernel_args='efi=novamap pd_ignore_unused clk_ignore_unused'
 		tmp_initrd_version=`echo "${tmp_kernel_version}" |sed 's|vmlinuz||'`
-		tmp_devicetree='/usr/lib/linux-image-5.4.0-rc7-g43234ba81/qcom/sdm850-lenovo-yoga-c630.dtb'
 
-		echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
-		echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
-		echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
-		echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
-		echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
-		echo "}" >> "${FILE_EFI_GRUBCFG}"
+		tmp_kernel_args=`dialog --stdout --clear --title "install-helper" \
+					--inputbox "Please enter kernel arguments for ${tmp_kernel_version}:" 10 70 "${DEFAULT_KERNEL_ARGS}"`
+		if [ $? -eq 0 ]; then
+			tmp_kernel_args="${DEFAULT_KERNEL_ARGS}"			# If canceled, load defaults
+		fi
+
+		DIALOG_CHECKBOX_LST=""
+		DIR_KERNEL_DTBS="/usr/lib/linux-image${tmp_initrd_version}"
+		DIR_KERNEL_DTBS_FULLPATH="${DIR_USBKEY}${DIR_KERNEL_DTBS}"
+		for tmp_dtb_path in `find "${DIR_KERNEL_DTBS_FULLPATH}" -name \*\.dtb`; do
+			tmp_dtb_path=`echo "${tmp_dtb_path}"| sed "s|${DIR_KERNEL_DTBS_FULLPATH}||"`
+			tmp_dtb_name=`basename "${tmp_dtb_path}"`
+			tmp_dtb_dir=`dirname "${tmp_dtb_path}"|tr -d "/"`
+			DIALOG_CHECKBOX_LST+="${tmp_dtb_name} \"${tmp_dtb_dir}\" off "
+		done
+
+		SELECTED_KERNEL_DTBS=`dialog --stdout --clear --title "install-helper" \
+			--checklist "Select the DTB to use with ${tmp_kernel_version}:" 20 61 8 ${DIALOG_CHECKBOX_LST}`
+		if [ $? -eq 0 ]; then
+			for tmp_kernel_dtb in ${SELECTED_KERNEL_DTBS}; do
+				echo "		Adding entry: ${tmp_kernel_version} - ${tmp_kernel_dtb}"
+				tmp_devicetree="${DIR_KERNEL_DTBS}/${tmp_dtb_dir}/${tmp_kernel_dtb}"
+				echo "menuentry \"${tmp_kernel_version} (${tmp_kernel_dtb})\" {" >> "${FILE_EFI_GRUBCFG}"
+				echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
+				echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
+				echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
+				echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
+				echo "}" >> "${FILE_EFI_GRUBCFG}"
+			done
+		else
+			echo "		Adding entry: ${tmp_kernel_version}"
+			echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
+			echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
+			echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
+			echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
+			echo "}" >> "${FILE_EFI_GRUBCFG}"
+		fi
 	done
 
 	echo -n "	UnMounting EFI System partition: "
