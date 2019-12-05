@@ -223,7 +223,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 			echo "	No GRUB repo."
 			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
 			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
-				git clone "${GIT_REPO}" "${DIR_GRUB}" &> /dev/null
+				git clone "${GIT_GRUB_REPO}" "${DIR_GRUB}" &> /dev/null
 				retval="${?}"
 				if [ "${retval}" -ne 0 ]; then
 					echo "	git clone failed!!!"
