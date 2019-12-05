@@ -76,9 +76,6 @@ export fastboot=n
 export forcefsck=n
 export fsckfix=
 
-# Used for debugging
-export ih_menu_debug=
-
 # mdadm needs hostname to be set. This has to be done before the udev rules are called!
 if [ -f "/etc/hostname" ]; then
         /bin/hostname -F /etc/hostname >/dev/null 2>&1

@@ -38,7 +38,7 @@ ih_show_menu_main_debug() {
 
 ih_menu_main_select=""
 while true; do
-	if [[ "${ih_menu_debug}" == "debug" ]]; then
+	if [[ "${ih_menu}" == "debug" ]]; then
 		tmp_menu_select=`ih_show_menu_main_debug --default-item "${ih_menu_main_select}"`
 	else
 		tmp_menu_select=`ih_show_menu_main --default-item "${ih_menu_main_select}"`
