@@ -20,9 +20,29 @@ ih_show_menu_main() {
 	return "${retval}"
 }
 
+ih_show_menu_main_debug() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Select option:\n\n" 16 51 9 \
+		"DiskUtil"  "Disk partitioners." \
+		"Install"  "Install system." \
+		"Rescue" "Rescue system." \
+		"GRUB" "GRUB options." \
+		"Shell" "Launch a console." \
+		"Reboot" "Restart system." \
+		"BootShell" "Boot /sbin/sh on /rootfsmnt." \
+		"BootInit" "Boot /sbin/init on /rootfsmnt."`
+	retval="${?}"
+	echo "${tmp_mselect}"
+	return "${retval}"
+}
+
 ih_menu_main_select=""
 while true; do
-	tmp_menu_select=`ih_show_menu_main --default-item "${ih_menu_main_select}"`
+	if [[ "${ih_menu_debug}" == "debug" ]]; then
+		tmp_menu_select=`ih_show_menu_main_debug --default-item "${ih_menu_main_select}"`
+	else
+		tmp_menu_select=`ih_show_menu_main --default-item "${ih_menu_main_select}"`
+	fi
 	ih_retval="${?}"
 
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -47,6 +67,12 @@ while true; do
 			Reboot)
 				ih_umount_all
 				echo b > /proc/sysrq-trigger
+				;;
+			BootShell)
+				exit 234
+				;;
+			BootInit)
+				exit 235
 				;;
 		esac
 	else

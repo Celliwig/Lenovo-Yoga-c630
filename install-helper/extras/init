@@ -76,6 +76,8 @@ export fastboot=n
 export forcefsck=n
 export fsckfix=
 
+# Used for debugging
+export ih_menu_debug=
 
 # mdadm needs hostname to be set. This has to be done before the udev rules are called!
 if [ -f "/etc/hostname" ]; then
@@ -330,7 +332,7 @@ ih_retval=${?}
 # Check if rootmnt is mounted
 rootmnt_count=`mount | grep -c "${rootmnt}"`
 
-if [ ${ih_retval} -eq 235 ] && [ ${rootmnt_count} -ne 0 ]; then
+if [[ ( ${ih_retval} -eq 234 || ${ih_retval} -eq 235 ) && ${rootmnt_count} -ne 0 ]]; then
 #	#validate_init() {
 #	#	run-init -n "${rootmnt}" "${1}"
 #	#}
@@ -383,7 +385,8 @@ if [ ${ih_retval} -eq 235 ] && [ ${rootmnt_count} -ne 0 ]; then
 	unset forcefsck
 	unset fsckfix
 
-	exec switch_root "${rootmnt}" "${init}"
+	if [ ${ih_retval} -eq 234 ]; then exec switch_root "${rootmnt}" "/bin/sh"; fi
+	if [ ${ih_retval} -eq 235 ]; then exec switch_root "${rootmnt}" "${init}"; fi
 	echo "Something went badly wrong in the initramfs."
 	panic "Please file a bug on initramfs-tools."
 fi
