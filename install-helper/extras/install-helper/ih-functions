@@ -22,19 +22,34 @@
 : ${SIG_KILL=9}
 : ${SIG_TERM=15}
 
+ih_umount() {
+	local ih_fs_mount=${1}
+	echo -n "	Unmounting ${ih_fs_mount}: "
+	umount ${ih_fs_mount} &> /dev/null
+	if [ ${?} -eq 0 ]; then
+		echo "Okay"
+	else
+		echo "Failed"
+	fi
+}
+
+ih_umount_nested() {
+	local ih_fs_mount_check=${1}
+	# Unmount nested filesystems
+	for nested_fs_mount in `mount |awk "/\\\\${ih_fs_mount_check}/ {print \\$3}"|sort -r`; do
+		if [[ "${ih_fs_mount_check}" != "${nested_fs_mount}" ]]; then
+			ih_umount "${nested_fs_mount}"
+		fi
+	done
+}
+
 ih_umount_all() {
 	sync
 
 	echo "Unmounting filesystems:"
 	# First unmount any loop devices
 	for tmp_loop_device in $(losetup --all|awk -F ':' '{print $1}'); do
-		echo -n "	Umounting ${tmp_loop_device}: ";
-		umount ${tmp_loop_device} &> /dev/null
-		if [ ${?} -eq 0 ]; then
-			echo "Okay"
-		else
-			echo "Failed"
-		fi
+		ih_umount "${tmp_loop_device}"
 	done
 
 	# Destroy any loop devices
@@ -50,31 +65,15 @@ ih_umount_all() {
 
 	# Unmount nested filesystems
 	for mounted_fs in `mount |awk '/^\// {print $3}'`; do
-		for nested_fsmount in `mount |awk "/\\\\${mounted_fs}/ {print \\$3}"|sort -r`; do
-			if [[ "${mounted_fs}" != "${nested_fsmount}" ]]; then
-				echo -n "	Unmounting ${nested_fsmount}: "
-				umount ${nested_fsmount} &> /dev/null
-				if [ ${?} -eq 0 ]; then
-					echo "Okay"
-				else
-					echo "Failed"
-				fi
-			fi
-		done
+		ih_umount_nested "${mounted_fs}"
 	done
 
 	# Unmount filesystems
 	for mounted_fs in `mount |awk '/^\// {print $1}'`; do
-		echo -n "	Unmounting ${mounted_fs}: "
-		umount ${mounted_fs} &> /dev/null
-		if [ ${?} -eq 0 ]; then
-			echo "Okay"
-		else
-			echo "Failed"
-		fi
+		ih_umount "${mounted_fs}"
 	done
 
-	sleep 2
+	sleep 3
 }
 
 ih_show_msg() {
@@ -86,7 +85,7 @@ ih_show_msg() {
 
 ih_show_select_blockdevice() {
 	while true; do
-		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a block device" "$@" --fselect /dev/ 14 48`
+		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a block device." "$@" --fselect /dev/ 14 48`
 		retval="${?}"
 		if [ "${retval}" -eq 0 ]; then
 			local blockdevice_name=`basename "${tmp_dselect}"`
@@ -94,7 +93,27 @@ ih_show_select_blockdevice() {
 				echo "${tmp_dselect}"
 				return 0
 			else
-				ih_show_msg "Error: Please select block device parent." 5 45
+				ih_show_msg "Error: Please select a block device." 5 45
+			fi
+		else
+			echo ''
+			return "${retval}"
+		fi
+	done
+}
+
+ih_show_select_rootdevice() {
+	while true; do
+		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a root device." "$@" --fselect /dev/ 14 48`
+		retval="${?}"
+		if [ "${retval}" -eq 0 ]; then
+			local rootdevice_name=`realpath "${tmp_dselect}"`
+			local rootdevice_rslt=`blkid -o device|grep -c "^${rootdevice_name}\$"`
+			if [ ${rootdevice_rslt} -eq 1 ]; then
+				echo "${tmp_dselect}"
+				return 0
+			else
+				ih_show_msg "Error: Please select root device." 5 45
 			fi
 		else
 			echo ''
