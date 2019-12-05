@@ -73,7 +73,8 @@ local_device_setup()
 			slumber=30
 			;;
 	esac
-	if [ "${ROOTDELAY:-0}" -gt $slumber ]; then
+#	if [ "${ROOTDELAY:-0}" -gt $slumber ]; then
+	if [ -n "${ROOTDELAY}" ]; then
 		slumber=$ROOTDELAY
 	fi
 
@@ -256,6 +257,8 @@ able to reboot again and resume the installation.
 			mount -o move /host "$rootmnt/host"
 		fi
 	fi
+
+	return ${mountroot_status}
 }
 
 local_mount_fs()
@@ -286,6 +289,7 @@ local_mount_fs()
 mountroot()
 {
 	local_mount_root
+	return ${?}
 }
 
 mount_top()
