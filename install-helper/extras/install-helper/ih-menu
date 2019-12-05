@@ -1,17 +1,18 @@
 #!/bin/bash
 
-ih_path=`dirname "${BASH_SOURCE[0]}"`
-if [ -z "${ih_path}" ]; then
-	ih_path="."
-fi
-. "${ih_path}"/ih-functions
+. install-helper/ih-functions
+. install-helper/ih-diskutil
+. install-helper/ih-install
+. install-helper/ih-rescue
+. install-helper/ih-shell
 
 ih_show_menu_main() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
-		--menu "Select option:\n\n" 12 51 5 \
+		--menu "Select option:\n\n" 14 51 7 \
 		"DiskUtil"  "Disk partitioners." \
 		"Install"  "Install system." \
 		"Rescue" "Rescue system." \
+		"GRUB" "GRUB options." \
 		"Shell" "Launch a console." \
 		"Reboot" "Restart system."`
 	retval="${?}"
@@ -29,21 +30,26 @@ while true; do
 
 		case "${ih_menu_main_select}" in
 			DiskUtil)
-				ih-diskutil
+				ih_diskutil
 				;;
 			Install)
-				ih-install
+				ih_install
 				;;
 			Rescue)
-				ih-rescue
+				ih_rescue
+				if [ $? -eq 0 ]; then
+					exit 235
+				fi
 				;;
 			Shell)
-				ih-shell
+				ih_shell
 				;;
 			Reboot)
 				ih_umount_all
 				echo b > /proc/sysrq-trigger
 				;;
 		esac
+	else
+		exit 0
 	fi
 done

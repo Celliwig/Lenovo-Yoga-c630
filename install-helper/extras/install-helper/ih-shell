@@ -1,14 +1,8 @@
-#!/bin/bash
+ih_shell() {
+	dialog  --stdout --title "Execute shell" --yesno "This will execute a shell. 'exit' will return to the menu system." 7 60
+	retval="${?}"
 
-ih_path=`dirname "${BASH_SOURCE[0]}"`
-if [ -z "${ih_path}" ]; then
-	ih_path="."
-fi
-. "${ih_path}"/ih-functions
-
-dialog  --stdout --title "Execute shell" --yesno "This will execute a shell. 'exit' will return to the menu system." 7 60
-retval="${?}"
-
-if [ "${retval}" -eq 0 ]; then
-	PS1='ih-shell:\[\033[01;34m\]\w\[\033[00m\]\$ ' /bin/bash --norc --noprofile
-fi
+	if [ "${retval}" -eq 0 ]; then
+		PS1='ih-shell:\[\033[01;34m\]\w\[\033[00m\]\$ ' /bin/bash --norc --noprofile
+	fi
+}

@@ -1,12 +1,4 @@
-#!/bin/bash
-
-ih_path=`dirname "${BASH_SOURCE[0]}"`
-if [ -z "${ih_path}" ]; then
-	ih_path="."
-fi
-. "${ih_path}"/ih-functions
-
-ih_show_menu_partitioners() {
+ih_diskutil_show_menu_partitioners() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
 		--menu "Select partitioner:\n\n" 10 51 5 \
 		"fdisk"  "Classic partitioner." \
@@ -17,7 +9,7 @@ ih_show_menu_partitioners() {
 	return "${retval}"
 }
 
-ih_partitioner_run_fdisk() {
+ih_diskutil_dskpart_fdisk() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -25,7 +17,7 @@ ih_partitioner_run_fdisk() {
 	fi
 }
 
-ih_partitioner_run_cfdisk() {
+ih_diskutil_dskpart_cfdisk() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -33,7 +25,7 @@ ih_partitioner_run_cfdisk() {
 	fi
 }
 
-ih_partitioner_run_parted() {
+ih_diskutil_dskpart_parted() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
@@ -41,26 +33,28 @@ ih_partitioner_run_parted() {
 	fi
 }
 
-ih_menu_partitioner_select=""
-while true; do
-	tmp_menu_select=`ih_show_menu_partitioners --default-item "${ih_menu_partitioner_select}"`
-	ih_retval="${?}"
+ih_diskutil() {
+	ih_diskutil_menu_dskpart_select=""
+	while true; do
+		tmp_menu_select=`ih_diskutil_show_menu_partitioners --default-item "${ih_diskutil_menu_dskpart_select}"`
+		ih_retval="${?}"
 
-	if [ "${ih_retval}" -eq 0 ]; then
-		ih_menu_partitioner_select="${tmp_menu_select}"
+		if [ "${ih_retval}" -eq 0 ]; then
+			ih_diskutil_menu_dskpart_select="${tmp_menu_select}"
 
-		case "${ih_menu_partitioner_select}" in
-			fdisk)
-				ih_partitioner_run_fdisk
-				;;
-			cfdisk)
-				ih_partitioner_run_cfdisk
-				;;
-			parted)
-				ih_partitioner_run_parted
-				;;
-		esac
-	else
-		exit
-	fi
-done
+			case "${ih_diskutil_menu_dskpart_select}" in
+				fdisk)
+					ih_diskutil_dskpart_fdisk
+					;;
+				cfdisk)
+					ih_diskutil_dskpart_cfdisk
+					;;
+				parted)
+					ih_diskutil_dskpart_parted
+					;;
+			esac
+		else
+			return
+		fi
+	done
+}
