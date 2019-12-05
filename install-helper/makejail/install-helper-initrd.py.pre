@@ -61,6 +61,7 @@ forceCopy=[
 		"/bin/chown",
 		"/bin/chvt",
 		"/bin/clear",
+		"/bin/cpio",
 		"/bin/cut",
 		"/bin/date",
 		"/bin/dd",
