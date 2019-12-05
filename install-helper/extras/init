@@ -64,7 +64,7 @@ export NETWORK_SKIP_ENSLAVED=
 export break=
 export init=/sbin/init
 export readonly=y
-export rootmnt=/root
+export rootmnt=/rootfsmnt
 export debug=
 export panic=
 export blacklist=
@@ -303,5 +303,91 @@ done
 # Set console log level
 echo "3" > /proc/sys/kernel/printk
 
+# Configure console
+if command -v chvt >/dev/null 2>&1; then
+        chvt 1
+fi
+run_scripts /scripts/panic
+
 # Start menu
-ih-start
+# Try to use setsid, which will enable job control in the shell
+# and paging in more
+if command -v setsid >/dev/null 2>&1; then
+	unset IFS
+	read -r console rest </proc/consoles
+	if [ "${console}" = "tty0" ]; then
+		# Need to choose a specific VT
+		console="tty1"
+	fi
+	# We don't have 'setsid -c' so we need to setsid, open
+	# the tty, and finally exec an interactive shell
+	setsid sh -c "exec ih-menu <>/dev/${console} 1>&0 2>&1"
+else
+	ih-menu </dev/console >/dev/console 2>&1
+fi
+ih_retval=${?}
+
+# Check if rootmnt is mounted
+rootmnt_count=`mount | grep -c "${rootmnt}"`
+
+if [ ${ih_retval} -eq 235 ] && [ ${rootmnt_count} -ne 0 ]; then
+#	#validate_init() {
+#	#	run-init -n "${rootmnt}" "${1}"
+#	#}
+#
+#	## Check init is really there
+#	#if ! validate_init "$init"; then
+#	#	echo "Target filesystem doesn't have requested ${init}."
+#	#	init=
+#	#	for inittest in /sbin/init /etc/init /bin/init /bin/sh; do
+#	#		if validate_init "${inittest}"; then
+#	#			init="$inittest"
+#	#			break
+#	#		fi
+#	#	done
+#	#fi
+#
+#	## No init on rootmount
+#	#if ! validate_init "${init}" ; then
+#	#	panic "No init found. Try passing init= bootarg."
+#	#fi
+
+	maybe_break init
+
+	# don't leak too much of env - some init(8) don't clear it
+	# (keep init, rootmnt, drop_caps)
+	unset debug
+	unset MODPROBE_OPTIONS
+	unset DPKG_ARCH
+	unset ROOTFLAGS
+	unset ROOTFSTYPE
+	unset ROOTDELAY
+	unset ROOT
+	unset IP
+	unset IP6
+	unset VLAN
+	unset BOOT
+	unset BOOTIF
+	unset DEVICE
+	unset UBIMTD
+	unset blacklist
+	unset break
+	unset noresume
+	unset panic
+	unset quiet
+	unset readonly
+	unset resume
+	unset resume_offset
+	unset noresume
+	unset fastboot
+	unset forcefsck
+	unset fsckfix
+
+	exec switch_root "${rootmnt}" "${init}"
+	echo "Something went badly wrong in the initramfs."
+	panic "Please file a bug on initramfs-tools."
+fi
+
+# Reboot
+ih_umount_all
+echo b > /proc/sysrq-trigger
