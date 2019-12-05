@@ -92,12 +92,6 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
-if [ ! -d "${DIR_USBKEY_BOOT}" ]; then
-	echo -n "	Creating output directory: "
-	mkdir -p "${DIR_USBKEY_BOOT}" &> /dev/null
-	okay_failedexit $?
-fi
-
 echo -n "	Copying scripts: "
 sudo cp -a "${DIR_EXTRAS}"/* "${DIR_INITRD}"
 okay_failedexit $?
@@ -108,6 +102,23 @@ if [ "${#MODULE_LIST[@]}" -ne 0 ]; then
 		echo "		${tmp_module}"
 		echo "${tmp_module}" | sudo tee -a "${DIR_INITRD}"/conf/modules &> /dev/null
 	done
+fi
+
+if [ ! -d "${DIR_INITRD_GPGKEYS}" ]; then
+	echo -n "	Creating GPG keys directory: "
+	sudo mkdir -p "${DIR_INITRD_GPGKEYS}" &> /dev/null
+	okay_failedexit $?
+fi
+cd "${DIR_INITRD_GPGKEYS}"
+echo -n "	Fetching Fedora GPG key: "
+sudo wget "${FEDORA_GPG_KEYS}" &> /dev/null
+okay_failedexit $?
+cd "${CWD}"
+
+if [ ! -d "${DIR_USBKEY_BOOT}" ]; then
+	echo -n "	Creating output directory: "
+	mkdir -p "${DIR_USBKEY_BOOT}" &> /dev/null
+	okay_failedexit $?
 fi
 
 echo -n "	Generating cpio image: "

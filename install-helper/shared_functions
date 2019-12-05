@@ -7,6 +7,7 @@ DEFAULT_KERNEL_ARGS='efi=novamap pd_ignore_unused clk_ignore_unused'
 # URLs
 ###################################################################################################################################################
 GIT_GRUB_REPO="https://git.savannah.gnu.org/git/grub.git"
+FEDORA_GPG_KEYS="https://getfedora.org/static/fedora.gpg"
 
 ###################################################################################################################################################
 # Paths
@@ -14,6 +15,7 @@ GIT_GRUB_REPO="https://git.savannah.gnu.org/git/grub.git"
 CWD=$PWD
 
 DIR_INITRD="${CWD}/initrd"
+DIR_INITRD_GPGKEYS="${DIR_INITRD}/gpgkeys"
 DIR_MAKEJAIL="${CWD}/makejail"
 DIR_EXTRAS="${CWD}/extras"
 DIR_USBKEY="${CWD}/usb_key"

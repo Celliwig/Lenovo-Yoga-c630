@@ -76,6 +76,8 @@ forceCopy=[
 		"/bin/file",
 		"/bin/find",
 		"/bin/getent",
+		"/bin/gpg",
+		"/bin/gpg-agent",
 		"/bin/grep",
 		"/bin/gunzip",
 		"/bin/gzip",
