@@ -329,7 +329,7 @@ ih_retval=${?}
 # Check if rootmnt is mounted
 rootmnt_count=`mount | grep -c "${rootmnt}"`
 
-if [[ ( ${ih_retval} -eq 234 || ${ih_retval} -eq 235 ) && ${rootmnt_count} -ne 0 ]]; then
+if { [ ${ih_retval} -eq 234 ] || [ ${ih_retval} -eq 235 ]; } && [ ${rootmnt_count} -ne 0 ]; then
 #	#validate_init() {
 #	#	run-init -n "${rootmnt}" "${1}"
 #	#}
