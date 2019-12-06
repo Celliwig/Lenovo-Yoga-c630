@@ -60,15 +60,29 @@ ih_install_cdrom() {
 						ih_install_cdrom_dialog_boot_list+=("${ih_install_cdrom_dialog_boot_index}")
 						ih_install_cdrom_dialog_boot_list+=("${tmp_grub_cfg_boot_entry}")
 						ih_install_cdrom_dialog_boot_index=$((ih_install_cdrom_dialog_boot_index+1))
-					done <<< `awk "match(\\$0, /^menuentry ['\"]+([^'\"]*)['\"]+/, tmp_entry) {print tmp_entry[1]}" "${ih_install_cdrom_grub_cfg_path}"`
+					done <<< `awk "match(\\$0, /^menuentry ['\"]([^'\"]*)['\"]/, tmp_entry) {print tmp_entry[1]}" "${ih_install_cdrom_grub_cfg_path}"`
 					tmp_bselect=`${DIALOG} --stdout --clear --title "install-helper" \
 						--menu "Select boot option:\n\n" 10 71 5 "${ih_install_cdrom_dialog_boot_list[@]}"`
 					ih_retval="${?}"
-					if [ $? -eq 0 ]; then
+
+					if [ ${ih_retval} -eq 0 ]; then
 						local ih_install_cdrom_grub_cfg_boot_entry=${ih_install_cdrom_boot_list[${tmp_bselect}]}
-echo ${ih_install_cdrom_grub_cfg_boot_entry}
-sleep 4
+						local ih_install_cdrom_grub_cfg_boot_entry_start=`grep -n "^menuentry ['\"]${ih_install_cdrom_grub_cfg_boot_entry}['\"]" "${ih_install_cdrom_grub_cfg_path}"|cut -d: -f1`
+						local ih_install_cdrom_grub_cfg_boot_entry_end=`tail -n+${ih_install_cdrom_grub_cfg_boot_entry_start} "${ih_install_cdrom_grub_cfg_path}"|grep -n '^}'|head -n 1| cut -d: -f1`
+						local ih_install_cdrom_grub_cfg_boot_entry_txt=`tail -n+${ih_install_cdrom_grub_cfg_boot_entry_start} "${ih_install_cdrom_grub_cfg_path}"|head -n+${ih_install_cdrom_grub_cfg_boot_entry_end}`
+						while IFS= read -r ih_install_cdrom_grub_cfg_boot_entry_line; do
+							tmp_grub_cfg_boot_entry_item=`echo "${ih_install_cdrom_grub_cfg_boot_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^linux[[:space:]]'`
+							if [ $? -eq 0 ]; then
+								local ih_install_cdrom_grub_cfg_boot_entry_linux="${tmp_grub_cfg_boot_entry_item}"
+							fi
+							tmp_grub_cfg_boot_entry_item=`echo "${ih_install_cdrom_grub_cfg_boot_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^initrd[[:space:]]'`
+							if [ $? -eq 0 ]; then
+								local ih_install_cdrom_grub_cfg_boot_entry_initrd="${tmp_grub_cfg_boot_entry_item}"
+							fi
+						done <<< "${ih_install_cdrom_grub_cfg_boot_entry_txt}"
 					fi
+					ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   ${ih_install_cdrom_grub_cfg_boot_entry_linux}\n   ${ih_install_cdrom_grub_cfg_boot_entry_initrd}\n" 9 80
+
 				else
 					ih_show_msg "Error: Couldn't find required grub.cfg." 5 45
 				fi
