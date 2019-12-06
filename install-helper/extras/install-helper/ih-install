@@ -1,0 +1,128 @@
+ih_install_raw_image() {
+#	# Select image file to write to disk
+#	ih_install_raw_image_selected=`ih_show_select_images`
+#	retval="${?}"
+#
+#	if [ "${ih_retval}" -eq 0 ]; then
+#		ih_install_
+#	fi
+#
+#	return 1
+
+	dialog --title "System Install" --yesno "Holding page for raw install." 7 60
+	return
+}
+
+ih_install_cdrom() {
+	local ih_install_cdrom_media_mnt="/mnt"
+
+	# Get a list of devices marked as optical media
+	local ih_install_cdrom_list=`blkid |grep 'TYPE="iso9660"'`
+	local ih_install_cdrom_retval=1
+	if [ -z "${ih_install_cdrom_list}" ]; then
+		ih_show_msg "Error: No optical media available." 5 45
+	else
+		local ih_install_cdrom_dialog_list=()
+		# Generate list for dialog
+		while IFS= read -r ih_install_cdrom_list_entry; do
+			local tmp_dev_path=`echo "${ih_install_cdrom_list_entry}"| cut -d ':' -f1`
+			ih_install_cdrom_dialog_list+=("${tmp_dev_path}")
+			local tmp_dev_label=`echo "${ih_install_cdrom_list_entry}"| gawk 'match($0, / LABEL="([^"]+)" /, a) {print a[1]}'`
+			ih_install_cdrom_dialog_list+=("${tmp_dev_label}")
+		done <<< "${ih_install_cdrom_list}"
+		# Show dialog of available optical media
+		tmp_mselect=`${DIALOG} --stdout --clear --title "install-helper" "$@" \
+			--menu "Select install media:\n\n" 10 71 5 "${ih_install_cdrom_dialog_list[@]}"`
+		ih_retval="${?}"
+
+		if [ "${ih_retval}" -eq 0 ]; then
+			local ih_install_cdrom_src="${tmp_mselect}"
+
+			# Mount selected media
+			mount -t iso9660 "${ih_install_cdrom_src}" "${ih_install_cdrom_media_mnt}" &> /dev/null
+			if [ $? -eq 0 ]; then
+				local ih_install_cdrom_grub_cfg_path=""
+				# Search for available grub configuration
+				while IFS= read -r tmp_grub_cfg; do
+					# Check for actual menu entries, not just general include directive
+					grep '^menuentry ' "${tmp_grub_cfg}" &> /dev/null
+					if [ $? -eq 0 ]; then
+						# Save grub.cfg path
+						ih_install_cdrom_grub_cfg_path="${tmp_grub_cfg}"
+					fi
+				done <<< `find "${ih_install_cdrom_media_mnt}" -name grub.cfg`
+				if [ -n "${ih_install_cdrom_grub_cfg_path}" ]; then
+					local ih_install_cdrom_boot_list=()
+					local ih_install_cdrom_dialog_boot_list=()
+					local ih_install_cdrom_dialog_boot_index=0
+					while IFS= read -r tmp_grub_cfg_boot_entry; do
+						ih_install_cdrom_boot_list+=("${tmp_grub_cfg_boot_entry}")
+						ih_install_cdrom_dialog_boot_list+=("${ih_install_cdrom_dialog_boot_index}")
+						ih_install_cdrom_dialog_boot_list+=("${tmp_grub_cfg_boot_entry}")
+						ih_install_cdrom_dialog_boot_index=$((ih_install_cdrom_dialog_boot_index+1))
+					done <<< `awk "match(\\$0, /^menuentry ['\"]+([^'\"]*)['\"]+/, tmp_entry) {print tmp_entry[1]}" "${ih_install_cdrom_grub_cfg_path}"`
+					tmp_bselect=`${DIALOG} --stdout --clear --title "install-helper" \
+						--menu "Select boot option:\n\n" 10 71 5 "${ih_install_cdrom_dialog_boot_list[@]}"`
+					ih_retval="${?}"
+					if [ $? -eq 0 ]; then
+						local ih_install_cdrom_grub_cfg_boot_entry=${ih_install_cdrom_boot_list[${tmp_bselect}]}
+echo ${ih_install_cdrom_grub_cfg_boot_entry}
+sleep 4
+					fi
+				else
+					ih_show_msg "Error: Couldn't find required grub.cfg." 5 45
+				fi
+
+#				# Create a tmpfs to copy install initramfs image into
+#				mount -t tmpfs none "${rootmnt}"
+#				cd "${rootmnt}"
+
+				# Make sure to umount optical media
+				umount "${ih_install_cdrom_media_mnt}"
+				if [ ${ih_install_cdrom_retval} -eq 0 ]; then
+					# If successful, umount /media as well
+					umount /media
+				fi
+
+				return ${ih_install_cdrom_retval}
+			else
+				ih_show_msg "Error: Couldn't mount ${ih_install_cdrom_src}." 5 45
+			fi
+		fi
+	fi
+
+	return ${ih_install_cdrom_retval};
+}
+
+ih_install_show_menu_method() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Select install method:\n\n" 10 71 5 \
+		"Image" "Install using raw disk image." \
+		"CDROM" "Install using CD/DVD."`
+	ih_retval="${?}"
+	echo "${tmp_mselect}"
+	return "${ih_retval}"
+}
+
+ih_install() {
+	ih_install_menu_method_select=""
+	while true; do
+		tmp_menu_select=`ih_install_show_menu_method --default-item "${ih_install_menu_method_select}"`
+		ih_retval="${?}"
+
+		if [ "${ih_retval}" -eq 0 ]; then
+			ih_install_menu_method_select="${tmp_menu_select}"
+
+			case "${ih_install_menu_method_select}" in
+				Image)
+					ih_install_raw_image
+					;;
+				CDROM)
+					ih_install_cdrom
+					;;
+			esac
+		else
+			return
+		fi
+	done
+}
