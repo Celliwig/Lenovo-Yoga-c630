@@ -106,27 +106,53 @@ else
 fi
 
 if "${MAKE_PARTITIONS}"; then
-	PARTITION_EFI_SIZE="1G"
-
 	echo -e "${TXT_UNDERLINE}Partition and format: ${BLOCK_DEVICE}${TXT_NORMAL}"
 	read -r -p "	Partition device (y/N): " BLOCK_DEVICE_PARTITION
 	if [[ $BLOCK_DEVICE_PARTITION = [Yy] ]]; then
-		echo "	Creating an EFI compatible USB key."
-		echo -n "	Wiping partition table: "
-		sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
-		okay_failedexit $?
-		echo -n "	Create EFI System partition (${PARTITION_EFI_SIZE}): "
-		sudo sgdisk --new=1:0:+${PARTITION_EFI_SIZE} --typecode=1:ef00 --change-name=1:IHEFI "${BLOCK_DEVICE}" &> /dev/null
-		okay_failedexit $?
-		echo -n "	Creating linux filesystem partition (rest): "
-		sudo sgdisk --new=2:+${PARTITION_EFI_SIZE}:0 --typecode=2:8300 --change-name=2:IHFILES "${BLOCK_DEVICE}" &> /dev/null
-		okay_failedexit $?
-		echo -n "	Formating EFI System partition (VFAT): "
-		sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
-		okay_failedexit $?
-		echo -n "	Formating linux filesystem partition: "
-		sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
-		okay_failedexit $?
+		dev_size_bytes=`sudo blockdev --getsize64 ${BLOCK_DEVICE}`
+		dev_size_gig=$((dev_size_bytes/1000000000))
+		echo "	Detected: ${BLOCK_DEVICE} (${dev_size_gig} GB)"
+
+		if [ ${dev_size_gig} -eq 0 ]; then
+			echo "	!!!NOT ENOUGH SPACE ON THIS DEVICE!!!"
+			exit 1
+		else
+			# Calculate some basic layouts
+			# After about 4G, the unused space can be used to copy ISO images in to
+			if [ ${dev_size_gig} -le 4 ]; then
+				PARTITION_EFI_SIZE=1
+				PARTITION_ALT_SIZE=$((${dev_size_gig}-1))
+			elif [ ${dev_size_gig} -le 8 ]; then
+				PARTITION_EFI_SIZE=1
+				PARTITION_ALT_SIZE=3
+			else
+				PARTITION_EFI_SIZE=1
+				PARTITION_ALT_SIZE=$(((${dev_size_gig}/2)-1))
+			fi
+
+			PARTITION_EFI_SIZE_TXT="${PARTITION_EFI_SIZE}G"
+			PARTITION_ALT_SIZE_TXT="${PARTITION_ALT_SIZE}G"
+
+			echo "	Creating an EFI compatible USB key."
+			echo -n "	Wiping partition table: "
+			sudo sgdisk --zap-all "${BLOCK_DEVICE}" &> /dev/null
+			okay_failedexit $?
+			echo -n "	Create EFI System partition (${PARTITION_EFI_SIZE_TXT}): "
+			sudo sgdisk --new=1:0:+${PARTITION_EFI_SIZE_TXT} --typecode=1:ef00 --change-name=1:IHEFI "${BLOCK_DEVICE}" &> /dev/null
+			okay_failedexit $?
+			echo -n "	Formating EFI System partition (VFAT): "
+			sudo mkfs.vfat -F32 -n IHEFI "${BLOCK_DEVICE}1" &> /dev/null
+			okay_failedexit $?
+
+			if [ ${PARTITION_ALT_SIZE} -gt 0 ]; then
+				echo -n "	Creating linux filesystem partition (${PARTITION_ALT_SIZE_TXT}): "
+				sudo sgdisk --new=2:+${PARTITION_EFI_SIZE_TXT}:${PARTITION_ALT_SIZE_TXT} --typecode=2:8300 --change-name=2:IHFILES "${BLOCK_DEVICE}" &> /dev/null
+				okay_failedexit $?
+				echo -n "	Formating linux filesystem: "
+				sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
+				okay_failedexit $?
+			fi
+		fi
 	fi
 
 	# Wait a little time so that /dev/disk is updated
@@ -272,58 +298,60 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		fi
 	fi
 
-	rm "${FILE_EFI_GRUBCFG}" &> /dev/null
-	echo "	Creating grub.cfg: "
-	touch "${FILE_EFI_GRUBCFG}"
-	echo "set menu_color_normal=white/black" >> "${FILE_EFI_GRUBCFG}"
-	echo "set menu_color_highlight=black/light-gray" >> "${FILE_EFI_GRUBCFG}"
-	echo "if background_color 44,0,30,0; then" >> "${FILE_EFI_GRUBCFG}"
-	echo "  clear" >> "${FILE_EFI_GRUBCFG}"
-	echo "fi" >> "${FILE_EFI_GRUBCFG}"
-	echo "" >> "${FILE_EFI_GRUBCFG}"
-	echo "insmod gzio" >> "${FILE_EFI_GRUBCFG}"
-	echo "set timeout=30" >> "${FILE_EFI_GRUBCFG}"
-	for tmp_kernel_version in `find "${DIR_USBKEY_BOOT}" -name vmlinuz-\* |sed "s|${DIR_USBKEY_BOOT}/||g"`; do
-		tmp_initrd_version=`echo "${tmp_kernel_version}" |sed 's|vmlinuz||'`
+	if "${INSTALL_GRUB}"; then
+		rm "${FILE_EFI_GRUBCFG}" &> /dev/null
+		echo "	Creating grub.cfg: "
+		touch "${FILE_EFI_GRUBCFG}"
+		echo "set menu_color_normal=white/black" >> "${FILE_EFI_GRUBCFG}"
+		echo "set menu_color_highlight=black/light-gray" >> "${FILE_EFI_GRUBCFG}"
+		echo "if background_color 44,0,30,0; then" >> "${FILE_EFI_GRUBCFG}"
+		echo "  clear" >> "${FILE_EFI_GRUBCFG}"
+		echo "fi" >> "${FILE_EFI_GRUBCFG}"
+		echo "" >> "${FILE_EFI_GRUBCFG}"
+		echo "insmod gzio" >> "${FILE_EFI_GRUBCFG}"
+		echo "set timeout=30" >> "${FILE_EFI_GRUBCFG}"
+		for tmp_kernel_version in `find "${DIR_USBKEY_BOOT}" -name vmlinuz-\* |sed "s|${DIR_USBKEY_BOOT}/||g"`; do
+			tmp_initrd_version=`echo "${tmp_kernel_version}" |sed 's|vmlinuz||'`
 
-		tmp_kernel_args=`dialog --stdout --clear --title "install-helper" \
-					--inputbox "Please enter kernel arguments for ${tmp_kernel_version}:" 10 70 "${DEFAULT_KERNEL_ARGS}"`
-		if [ $? -eq 0 ]; then
-			tmp_kernel_args="${DEFAULT_KERNEL_ARGS}"			# If canceled, load defaults
-		fi
+			tmp_kernel_args=`dialog --stdout --clear --title "install-helper" \
+						--inputbox "Please enter kernel arguments for ${tmp_kernel_version}:" 10 70 "${DEFAULT_KERNEL_ARGS}"`
+			if [ $? -eq 0 ]; then
+				tmp_kernel_args="${DEFAULT_KERNEL_ARGS}"			# If canceled, load defaults
+			fi
 
-		DIALOG_CHECKBOX_LST=""
-		DIR_KERNEL_DTBS="/usr/lib/linux-image${tmp_initrd_version}"
-		DIR_KERNEL_DTBS_FULLPATH="${DIR_USBKEY}${DIR_KERNEL_DTBS}"
-		for tmp_dtb_path in `find "${DIR_KERNEL_DTBS_FULLPATH}" -name \*\.dtb`; do
-			tmp_dtb_path=`echo "${tmp_dtb_path}"| sed "s|${DIR_KERNEL_DTBS_FULLPATH}||"`
-			tmp_dtb_name=`basename "${tmp_dtb_path}"`
-			tmp_dtb_dir=`dirname "${tmp_dtb_path}"|tr -d "/"`
-			DIALOG_CHECKBOX_LST+="${tmp_dtb_name} \"${tmp_dtb_dir}\" off "
-		done
+			DIALOG_CHECKBOX_LST=""
+			DIR_KERNEL_DTBS="/usr/lib/linux-image${tmp_initrd_version}"
+			DIR_KERNEL_DTBS_FULLPATH="${DIR_USBKEY}${DIR_KERNEL_DTBS}"
+			for tmp_dtb_path in `find "${DIR_KERNEL_DTBS_FULLPATH}" -name \*\.dtb`; do
+				tmp_dtb_path=`echo "${tmp_dtb_path}"| sed "s|${DIR_KERNEL_DTBS_FULLPATH}||"`
+				tmp_dtb_name=`basename "${tmp_dtb_path}"`
+				tmp_dtb_dir=`dirname "${tmp_dtb_path}"|tr -d "/"`
+				DIALOG_CHECKBOX_LST+="${tmp_dtb_name} \"${tmp_dtb_dir}\" off "
+			done
 
-		SELECTED_KERNEL_DTBS=`dialog --stdout --clear --title "install-helper" \
-			--checklist "Select the DTB to use with ${tmp_kernel_version}:" 20 61 8 ${DIALOG_CHECKBOX_LST}`
-		if [ $? -eq 0 ]; then
-			for tmp_kernel_dtb in ${SELECTED_KERNEL_DTBS}; do
-				echo "		Adding entry: ${tmp_kernel_version} - ${tmp_kernel_dtb}"
-				tmp_devicetree="${DIR_KERNEL_DTBS}/${tmp_dtb_dir}/${tmp_kernel_dtb}"
-				echo "menuentry \"${tmp_kernel_version} (${tmp_kernel_dtb})\" {" >> "${FILE_EFI_GRUBCFG}"
+			SELECTED_KERNEL_DTBS=`dialog --stdout --clear --title "install-helper" \
+				--checklist "Select the DTB to use with ${tmp_kernel_version}:" 20 61 8 ${DIALOG_CHECKBOX_LST}`
+			if [ $? -eq 0 ]; then
+				for tmp_kernel_dtb in ${SELECTED_KERNEL_DTBS}; do
+					echo "		Adding entry: ${tmp_kernel_version} - ${tmp_kernel_dtb}"
+					tmp_devicetree="${DIR_KERNEL_DTBS}/${tmp_dtb_dir}/${tmp_kernel_dtb}"
+					echo "menuentry \"${tmp_kernel_version} (${tmp_kernel_dtb})\" {" >> "${FILE_EFI_GRUBCFG}"
+					echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
+					echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
+					echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
+					echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
+					echo "}" >> "${FILE_EFI_GRUBCFG}"
+				done
+			else
+				echo "		Adding entry: ${tmp_kernel_version}"
+				echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
 				echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
 				echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
 				echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
-				echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
 				echo "}" >> "${FILE_EFI_GRUBCFG}"
-			done
-		else
-			echo "		Adding entry: ${tmp_kernel_version}"
-			echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
-			echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
-			echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
-			echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
-			echo "}" >> "${FILE_EFI_GRUBCFG}"
-		fi
-	done
+			fi
+		done
+	fi
 
 	echo -n "	UnMounting EFI System partition: "
 	sudo umount "${DIR_USBKEY}" &> /dev/null
