@@ -1,12 +1,47 @@
-ih_diskutil_show_menu_partitioners() {
-	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
-		--menu "Select partitioner:\n\n" 10 51 5 \
-		"fdisk"  "Classic partitioner." \
-		"cfdisk"  "Ncurses partitioner." \
-		"parted" "Parted partitioner."`
-	retval="${?}"
-	echo "${tmp_mselect}"
-	return "${retval}"
+#ih_diskutil_list_local_partitions() {
+#	local local_partitions=()
+#
+##MODULE_LIST+=("${OPTARG}")
+#
+#}
+
+ih_diskutil_copy_2_local_partition() {
+	# Store path of file to copy
+	local filesrc_name="${1}"
+	if [ -f "${filesrc_name}" ]; then
+		# Get size of file to copy
+		local filesrc_size=`du -k "${filesrc_name}" |cut -f1 2> /dev/null`
+		if [ ${?} -ne 0 ]; then
+			return 1
+		fi
+
+		# Get path of USB device root
+		local ihdev=`blkid -o device -L IHEFI | gawk 'match($0, /(\/dev\/[a-z]*)+/, a) {print a[1]}' 2> /dev/null`
+		if [ ${?} -ne 0 ]; then
+			return 1
+		fi
+		# Create new partition
+		local ihdev_partnum=`sgdisk --new=0:0:+${filesrc_size}K --typecode=0:8300 --change-name=0:IHCOPY ${ihdev} |grep partNum|cut -d ' ' -f3 2> /dev/null`
+		ih_retval="${?}"
+		# Returned partition number is offset by 1
+		ihdev_partnum=$((ihdev_partnum+1))
+		if [ ${ih_retval} -eq 0 ]; then
+			# Reload partition info for specified device
+			partprobe ${ihdev} &> /dev/null
+			if [ $? -eq 0 ]; then
+				# Copy file to partition
+				dd if="${filesrc_name}" of="${ihdev}${ihdev_partnum}" &> /dev/null
+				if [ $? -eq 0 ]; then
+					return 0					# Okay
+				else
+					return 23					# 23 - dd failed
+				fi
+			fi
+			return 22							# 22 - partprobe failed
+		fi
+		return 21								# 21 - create partition failed
+	fi
+	return 20;									# 20 - File not found
 }
 
 ih_diskutil_dskpart_fdisk() {
@@ -31,6 +66,17 @@ ih_diskutil_dskpart_parted() {
 	if [ "${ih_retval}" -eq 0 ]; then
 		/sbin/parted "${tmp_blockdevice_select}"
 	fi
+}
+
+ih_diskutil_show_menu_partitioners() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Select partitioner:\n\n" 10 51 5 \
+		"fdisk"  "Classic partitioner." \
+		"cfdisk"  "Ncurses partitioner." \
+		"parted" "Parted partitioner."`
+	retval="${?}"
+	echo "${tmp_mselect}"
+	return "${retval}"
 }
 
 ih_diskutil() {
