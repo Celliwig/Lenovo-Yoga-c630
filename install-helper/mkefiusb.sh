@@ -146,7 +146,7 @@ if "${MAKE_PARTITIONS}"; then
 
 			if [ ${PARTITION_ALT_SIZE} -gt 0 ]; then
 				echo -n "	Creating linux filesystem partition (${PARTITION_ALT_SIZE_TXT}): "
-				sudo sgdisk --new=2:+${PARTITION_EFI_SIZE_TXT}:${PARTITION_ALT_SIZE_TXT} --typecode=2:8300 --change-name=2:IHFILES "${BLOCK_DEVICE}" &> /dev/null
+				sudo sgdisk --new=2:0:+${PARTITION_ALT_SIZE_TXT} --typecode=2:8300 --change-name=2:IHFILES "${BLOCK_DEVICE}" &> /dev/null
 				okay_failedexit $?
 				echo -n "	Formating linux filesystem: "
 				sudo mkfs.ext3 -F -L IHFILES "${BLOCK_DEVICE}2" &> /dev/null
