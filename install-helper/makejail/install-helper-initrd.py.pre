@@ -42,6 +42,11 @@ forceCopy=[
 		"/etc/os-release",
 		"/etc/plymouth",
 		"/etc/udev/udev.conf",
+# File magic
+		"/etc/magic",
+		"/etc/magic.mime",
+		"/usr/share/misc/magic.mgc",
+		"/usr/lib/file/magic.mgc",
 # Terminfo
 		"/lib/terminfo/*",
 		"/lib/terminfo/*/*",
