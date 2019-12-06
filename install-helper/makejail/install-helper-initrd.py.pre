@@ -100,6 +100,8 @@ forceCopy=[
 		"/bin/lspci",
 		"/bin/lsusb",
 		"/bin/lsattr",
+		"/bin/lz4",
+		"/bin/lz4cat",
 		"/bin/md5sum",
 		"/bin/mkdir",
 		"/bin/mknod",
