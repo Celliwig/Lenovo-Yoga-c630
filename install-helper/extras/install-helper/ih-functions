@@ -83,9 +83,21 @@ ih_show_msg() {
 	$DIALOG --stdout --title "install-helper" --msgbox "${message}" "${rows}" "${columns}"
 }
 
+ih_show_select_device() {
+	tmp_dselect=`"${DIALOG}" --stdout --clear "$@" --fselect /dev/ 14 48`
+	retval="${?}"
+	if [ "${retval}" -eq 0 ]; then
+		echo "${tmp_dselect}"
+		return 0
+	else
+		echo ''
+		return "${retval}"
+	fi
+}
+
 ih_show_select_blockdevice() {
 	while true; do
-		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a block device." "$@" --fselect /dev/ 14 48`
+		tmp_dselect=`ih_show_select_device --title "Please choose a block device."`
 		retval="${?}"
 		if [ "${retval}" -eq 0 ]; then
 			local blockdevice_name=`basename "${tmp_dselect}"`
@@ -104,7 +116,7 @@ ih_show_select_blockdevice() {
 
 ih_show_select_rootdevice() {
 	while true; do
-		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose a root device." "$@" --fselect /dev/ 14 48`
+		tmp_dselect=`ih_show_select_device --title "Please choose a partition."`
 		retval="${?}"
 		if [ "${retval}" -eq 0 ]; then
 			local rootdevice_name=`realpath "${tmp_dselect}"`
@@ -114,6 +126,25 @@ ih_show_select_rootdevice() {
 				return 0
 			else
 				ih_show_msg "Error: Please select root device." 5 45
+			fi
+		else
+			echo ''
+			return "${retval}"
+		fi
+	done
+}
+
+ih_show_select_images() {
+	while true; do
+		tmp_dselect=`"${DIALOG}" --stdout --clear --title "Please choose an install image." "$@" --fselect /media/images 14 48`
+		retval="${?}"
+		if [ "${retval}" -eq 0 ]; then
+			local image_filename="${tmp_dselect}"
+			if [ -f "${image_filename}" ]; then
+				echo "${image_filename}"
+				return 0
+			else
+				ih_show_msg "Error: ${image_filename} is not a file." 5 45
 			fi
 		else
 			echo ''
