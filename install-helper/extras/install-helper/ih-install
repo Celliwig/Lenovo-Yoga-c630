@@ -139,7 +139,7 @@ ih_install_cdrom() {
 								ih_show_msg "Error: Failed to copy kernel modules." 5 45
 								ih_install_cdrom_retval=1
 							fi
-						}
+						fi
 					else
 						ih_show_msg "Error: Couldn't find initrd: ${ih_install_cdrom_installer_initrd_path}." 5 45
 					fi
