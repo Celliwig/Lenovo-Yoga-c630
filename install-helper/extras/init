@@ -351,6 +351,15 @@ if { [ ${ih_retval} -eq 234 ] || [ ${ih_retval} -eq 235 ]; } && [ ${rootmnt_coun
 #	#	panic "No init found. Try passing init= bootarg."
 #	#fi
 
+	init="/bin/sh"
+	if [ -f "${rootmnt}/init" ]; then
+		init="/init"
+	elif [ -f "${rootmnt}/sbin/init" ]; then
+		init="/sbin/init"
+	elif [ -f "${rootmnt}/bin/init" ]; then
+		init="/bin/init"
+	fi
+
 	maybe_break init
 
 	# don't leak too much of env - some init(8) don't clear it
