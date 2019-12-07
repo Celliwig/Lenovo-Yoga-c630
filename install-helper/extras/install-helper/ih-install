@@ -80,68 +80,69 @@ ih_install_cdrom() {
 								local ih_install_cdrom_grub_cfg_boot_entry_initrd="${tmp_grub_cfg_boot_entry_item}"
 							fi
 						done <<< "${ih_install_cdrom_grub_cfg_boot_entry_txt}"
-					fi
-					ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   ${ih_install_cdrom_grub_cfg_boot_entry_linux}\n   ${ih_install_cdrom_grub_cfg_boot_entry_initrd}\n" 9 80
 
-					# Extract kernel/initrd info
-					local ih_install_cdrom_grub_cfg_boot_initrd_path=`echo "${ih_install_cdrom_grub_cfg_boot_entry_initrd}"|sed 's|^initrd[[:space:]]||'`
+						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   ${ih_install_cdrom_grub_cfg_boot_entry_linux}\n   ${ih_install_cdrom_grub_cfg_boot_entry_initrd}\n" 9 80
 
-					# Check that identified installer actually exists
-					local ih_install_cdrom_installer_initrd_path="${ih_install_cdrom_media_mnt}/${ih_install_cdrom_grub_cfg_boot_initrd_path}"
-					if [ -f "${ih_install_cdrom_installer_initrd_path}" ]; then
-						# Create a tmpfs to copy install initramfs image into
-						mount -t tmpfs none "${rootmnt}"
-						cd "${rootmnt}"
+						# Extract kernel/initrd info
+						local ih_install_cdrom_grub_cfg_boot_initrd_path=`echo "${ih_install_cdrom_grub_cfg_boot_entry_initrd}"|sed 's|^initrd[[:space:]]||'`
 
-						# Identify initramfs compression
-						local ih_install_cdrom_installer_initrd_ctype=`ih_file_identify "${ih_install_cdrom_installer_initrd_path}"`
-						local ih_install_cdrom_initrd_decompress_cmd=""
-						case "${ih_install_cdrom_installer_initrd_ctype}" in
-							"gzip compressed data")
-								ih_install_cdrom_initrd_decompress_cmd="/bin/zcat"
-								ih_install_cdrom_retval=0
-								;;
-							"XZ compressed data")
-								ih_install_cdrom_initrd_decompress_cmd="/bin/xzcat"
-								ih_install_cdrom_retval=0
-								;;
-							"LZ4 compressed data")
-								ih_install_cdrom_initrd_decompress_cmd="/bin/lz4cat"
-								ih_install_cdrom_retval=0
-								;;
-							*)
-								ih_show_msg "Error: Couldn't identify initramfs compression." 5 45
-								ih_install_cdrom_retval=1
-								;;
-						esac
+						# Check that identified installer actually exists
+						local ih_install_cdrom_installer_initrd_path="${ih_install_cdrom_media_mnt}/${ih_install_cdrom_grub_cfg_boot_initrd_path}"
+						if [ -f "${ih_install_cdrom_installer_initrd_path}" ]; then
+							# Create a tmpfs to copy install initramfs image into
+							mount -t tmpfs none "${rootmnt}"
+							cd "${rootmnt}"
 
-						# Decompress installer initramfs image
-						if [ ${ih_install_cdrom_retval} -eq 0 ]; then
-							if [ -f "${ih_install_cdrom_initrd_decompress_cmd}" ]; then
-								"${ih_install_cdrom_initrd_decompress_cmd}" "${ih_install_cdrom_installer_initrd_path}"| cpio -idmv &> /dev/null
-								if [ ${?} -ne 0 ]; then
-									ih_show_msg "Error: Decompression of installer initrd image failed." 5 45
+							# Identify initramfs compression
+							local ih_install_cdrom_installer_initrd_ctype=`ih_file_identify "${ih_install_cdrom_installer_initrd_path}"`
+							local ih_install_cdrom_initrd_decompress_cmd=""
+							case "${ih_install_cdrom_installer_initrd_ctype}" in
+								"gzip compressed data")
+									ih_install_cdrom_initrd_decompress_cmd="/bin/zcat"
+									ih_install_cdrom_retval=0
+									;;
+								"XZ compressed data")
+									ih_install_cdrom_initrd_decompress_cmd="/bin/xzcat"
+									ih_install_cdrom_retval=0
+									;;
+								"LZ4 compressed data")
+									ih_install_cdrom_initrd_decompress_cmd="/bin/lz4cat"
+									ih_install_cdrom_retval=0
+									;;
+								*)
+									ih_show_msg "Error: Couldn't identify initramfs compression." 5 45
+									ih_install_cdrom_retval=1
+									;;
+							esac
+
+							# Decompress installer initramfs image
+							if [ ${ih_install_cdrom_retval} -eq 0 ]; then
+								if [ -f "${ih_install_cdrom_initrd_decompress_cmd}" ]; then
+									"${ih_install_cdrom_initrd_decompress_cmd}" "${ih_install_cdrom_installer_initrd_path}"| cpio -idmv &> /dev/null
+									if [ ${?} -ne 0 ]; then
+										ih_show_msg "Error: Decompression of installer initrd image failed." 5 45
+										ih_install_cdrom_retval=1
+									fi
+								else
+									ih_show_msg "Error: ${ih_install_cdrom_initrd_decompress_cmd} doesn't exist." 5 45
 									ih_install_cdrom_retval=1
 								fi
-							else
-								ih_show_msg "Error: ${ih_install_cdrom_initrd_decompress_cmd} doesn't exist." 5 45
-								ih_install_cdrom_retval=1
 							fi
-						fi
 
-						cd /
+							cd /
 
-						# Copy kernel modules
-						if [ ${ih_install_cdrom_retval} -eq 0 ]; then
-							local ih_install_cdrom_lib_path="/lib/modules/$(uname -r)"
-							cp -a "${ih_install_cdrom_lib_path}" "${rootmnt}/lib/modules/"
-							if [ ${?} -ne 0 ]; then
-								ih_show_msg "Error: Failed to copy kernel modules." 5 45
-								ih_install_cdrom_retval=1
+							# Copy kernel modules
+							if [ ${ih_install_cdrom_retval} -eq 0 ]; then
+								local ih_install_cdrom_lib_path="/lib/modules/$(uname -r)"
+								cp -a "${ih_install_cdrom_lib_path}" "${rootmnt}/lib/modules/"
+								if [ ${?} -ne 0 ]; then
+									ih_show_msg "Error: Failed to copy kernel modules." 5 45
+									ih_install_cdrom_retval=1
+								fi
 							fi
+						else
+							ih_show_msg "Error: Couldn't find initrd: ${ih_install_cdrom_installer_initrd_path}." 5 45
 						fi
-					else
-						ih_show_msg "Error: Couldn't find initrd: ${ih_install_cdrom_installer_initrd_path}." 5 45
 					fi
 				else
 					ih_show_msg "Error: Couldn't find required grub.cfg." 5 45
