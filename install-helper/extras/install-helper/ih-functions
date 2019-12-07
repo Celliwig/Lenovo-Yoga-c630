@@ -22,6 +22,24 @@
 : ${SIG_KILL=9}
 : ${SIG_TERM=15}
 
+ih_file_identify() {
+	local ih_file_path="${1}"
+	local ih_file_type=`file -0 -F '' "${ih_file_path}"| cut -d '' -f2| sed 's/[[:space:]]*//'`
+	if [ ${?} -eq 0 ]; then
+		ih_file_type_awk=`echo "${ih_file_type}"| awk "match(\\$0, /^([a-zA-Z0-9]+ compressed data)/, tmp_entry) {print tmp_entry[1]}"`
+		if [ ${?} -eq 0 ]; then
+			echo "${ih_file_type_awk}"
+			return 0
+		else
+			echo "${ih_file_type}"
+			return 0
+		fi
+	else
+		echo ''
+		return 1
+	fi
+}
+
 ih_umount() {
 	local ih_fs_mount=${1}
 	echo -n "	Unmounting ${ih_fs_mount}: "
