@@ -129,6 +129,17 @@ ih_install_cdrom() {
 								fi
 							fi
 
+							# Make sure there are suitable mount points
+							if [ ! -d "${rootmnt}/proc" ]; then
+								mkdir "${rootmnt}/proc"
+							}
+							if [ ! -d "${rootmnt}/run" ]; then
+								mkdir "${rootmnt}/run"
+							}
+							if [ ! -d "${rootmnt}/sys" ]; then
+								mkdir "${rootmnt}/sys"
+							}
+
 							cd /
 
 							# Copy kernel modules
@@ -194,6 +205,9 @@ ih_install() {
 					;;
 				CDROM)
 					ih_install_cdrom
+					if [ ${?} -eq 0 ]; then
+						return 0
+					fi
 					;;
 			esac
 		else
