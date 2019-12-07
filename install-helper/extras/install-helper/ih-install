@@ -132,13 +132,13 @@ ih_install_cdrom() {
 							# Make sure there are suitable mount points
 							if [ ! -d "${rootmnt}/proc" ]; then
 								mkdir "${rootmnt}/proc"
-							}
+							fi
 							if [ ! -d "${rootmnt}/run" ]; then
 								mkdir "${rootmnt}/run"
-							}
+							fi
 							if [ ! -d "${rootmnt}/sys" ]; then
 								mkdir "${rootmnt}/sys"
-							}
+							fi
 
 							cd /
 
