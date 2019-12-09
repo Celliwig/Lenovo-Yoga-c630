@@ -1,0 +1,12 @@
+cramfs
+dm-crypt
+dm-mirror
+dm-multipath
+dm-raid
+dm-snapshot
+linear
+raid0
+raid1
+raid456
+raid10
+xfs
