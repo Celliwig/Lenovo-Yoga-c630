@@ -6,6 +6,11 @@
 . install-helper/ih-rescue
 . install-helper/ih-shell
 
+local ih_menu_debug=0
+if [[ "${ih_menu}" == "debug" ]]; then
+	ih_menu_debug=1
+fi
+
 ih_show_menu_main() {
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
 		--menu "Select option:\n\n" 14 51 7 \
@@ -38,7 +43,8 @@ ih_show_menu_main_debug() {
 
 ih_menu_main_select=""
 while true; do
-	if [[ "${ih_menu}" == "debug" ]]; then
+
+	if [ ${ih_menu_debug} -eq 1 ]; then
 		tmp_menu_select=`ih_show_menu_main_debug --default-item "${ih_menu_main_select}"`
 	else
 		tmp_menu_select=`ih_show_menu_main --default-item "${ih_menu_main_select}"`
@@ -54,10 +60,13 @@ while true; do
 				;;
 			Install)
 				ih_install
+				if [[ ${?} -eq 0 && ${ih_menu_debug} -eq 0 ]]; then
+					exit 235
+				fi
 				;;
 			Rescue)
 				ih_rescue
-				if [ $? -eq 0 ]; then
+				if [[ ${?} -eq 0 && ${ih_menu_debug} -eq 0 ]]; then
 					exit 235
 				fi
 				;;
