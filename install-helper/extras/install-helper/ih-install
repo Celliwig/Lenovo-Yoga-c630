@@ -81,10 +81,28 @@ ih_install_cdrom() {
 							fi
 						done <<< "${ih_install_cdrom_grub_cfg_boot_entry_txt}"
 
-						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   ${ih_install_cdrom_grub_cfg_boot_entry_linux}\n   ${ih_install_cdrom_grub_cfg_boot_entry_initrd}\n" 9 80
+						# Extract kernel info
+						# Strip leading 'linux ' string
+						local ih_install_cdrom_grub_cfg_boot_kernel_combo=`echo "${ih_install_cdrom_grub_cfg_boot_entry_linux}"|sed 's|^linux[[:space:]]||'`
+						# Get only the kernel directory path (kernel arg can mess with dirname so drop everything but first)
+						ih_install_cdrom_grub_cfg_boot_kernel_path=`dirname "${ih_install_cdrom_grub_cfg_boot_kernel_combo}"| head -n1`
+						# We need to find the longest match to remove the kernel string, so reverse ls
+						local ih_install_cdrom_grub_cfg_boot_kernel_filename=""
+						for tmp_filename in `ls -r "${ih_install_cdrom_media_mnt}${ih_install_cdrom_grub_cfg_boot_kernel_path}"`; do
+							if [[ "${ih_install_cdrom_grub_cfg_boot_kernel_combo}" == "${ih_install_cdrom_grub_cfg_boot_kernel_path}/${tmp_filename}"* ]]; then
+								ih_install_cdrom_grub_cfg_boot_kernel_filename="${ih_install_cdrom_grub_cfg_boot_kernel_path}/${tmp_filename}"
+							fi
+						done
+						# Now get kernel args
+						local ih_install_cdrom_grub_cfg_boot_kernel_args=""
+						if [ -n "${ih_install_cdrom_grub_cfg_boot_kernel_filename}" ]; then
+							ih_install_cdrom_grub_cfg_boot_kernel_args=`echo "${ih_install_cdrom_grub_cfg_boot_kernel_combo}"| sed "s|${ih_install_cdrom_grub_cfg_boot_kernel_filename}||"`
+						fi
 
-						# Extract kernel/initrd info
+						# Extract initrd info
 						local ih_install_cdrom_grub_cfg_boot_initrd_path=`echo "${ih_install_cdrom_grub_cfg_boot_entry_initrd}"|sed 's|^initrd[[:space:]]||'`
+
+						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   Kernel: ${ih_install_cdrom_grub_cfg_boot_kernel_filename} (${ih_install_cdrom_grub_cfg_boot_kernel_args})\n   Intrd: ${ih_install_cdrom_grub_cfg_boot_initrd_path}\n" 9 80
 
 						# Check that identified installer actually exists
 						local ih_install_cdrom_installer_initrd_path="${ih_install_cdrom_media_mnt}/${ih_install_cdrom_grub_cfg_boot_initrd_path}"
@@ -148,6 +166,22 @@ ih_install_cdrom() {
 								cp -a "${ih_install_cdrom_lib_path}" "${rootmnt}/lib/modules/"
 								if [ ${?} -ne 0 ]; then
 									ih_show_msg "Error: Failed to copy kernel modules." 5 45
+									ih_install_cdrom_retval=1
+								fi
+							fi
+
+							# Patch kernel arguments
+							# Possibly need to create environment variables?
+							if [ -n "${ih_install_cdrom_grub_cfg_boot_kernel_args}" ]; then
+								sed "s|$| ${ih_install_cdrom_grub_cfg_boot_kernel_args}|" /proc/cmdline > "${rootmnt}/cmdline-alt"
+								if [ ${?} -eq 0 ]; then
+									mount -n -o bind "${rootmnt}/cmdline-alt" /proc/cmdline &> /dev/null
+									if [ ${?} -ne 0 ]; then
+										ih_show_msg "Error: Failed to ammend kernel command line." 5 45
+										ih_install_cdrom_retval=1
+									fi
+								else
+									ih_show_msg "Error: Failed to copy kernel command line." 5 45
 									ih_install_cdrom_retval=1
 								fi
 							fi
