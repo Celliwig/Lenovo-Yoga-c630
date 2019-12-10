@@ -8,5 +8,29 @@ The problems of trying to get a new kernel intergrated with a particular distrib
 
 To keep this a generic method an initramfs image is generated which is used to preload and patch the installer initramfs image. It does this by first loading a number of predefined kernel modules (e.g. device mapper related, XFS which needed by Fedora 2nd stage!!!), but can also include user specified modules. A basic CLI menu system is then run so that the installation media can be selected. From that selection it takes the existing initramfs image, unpacks it, and copies in the necessary kernel libraries. It then patches the kernel command line string (/proc/cmdline) with the kernel arguments from selected installation method (necessary for Fedora, for example). It then uses switch_root to start executing the installer initramfs as if it were initiated as normal.
 
+## Commands
 
-./mkefiusb.sh -d /dev/sdb -g -k ../../Lenovo-Yoga-c630-packages/kernel/linux-image-5.4.0-rc7-g43234ba81_5.4.0-rc7-g43234ba81-1_arm64.deb -i -m "i2c-qcom-geni"
+* build_initrd.sh - Used to build the initramfs image with all the required tools from a specified kernel package.
+* mkefiusb.sh - Builds a UEFI bootable device with kernel package and initrd installed.
+
+### build_initrd
+#### Options
+* -k <path to kernel package> This is the path to a Debian/RedHat kernel package which will be included in the initramfs image.
+* -m <kernel module name> Name of a kernel module to load at boot time. Can be specified multiple times.
+
+`e.g. ./build_initrd.sh -k ../linux-image-5.4.0-rc7.deb -m "i2c-qcom-geni" -m "usbhid"`
+
+Builds an initramfs image using kernel package '../linux-image-5.4.0-rc7.deb', loads modules i2c-qcom-geni, and usbhid on boot.
+
+### mkefiusb
+#### Options
+* -d <device path>
+* -g Build GRUB.
+* -i Build initrd.
+* -k <path to kernel package> This is the path to a Debian/RedHat kernel package which will be installed.
+* -m <kernel module name> Name of a kernel module to load at boot time. Can be specified multiple times.
+* -p Erase target device and build required partitions.
+
+`e.g. ./mkefiusb.sh -p -d /dev/sdb -k ../linux-image-5.4.0-rc7.deb -i -m "i2c-qcom-geni" -g`
+
+Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT partitions labeled 'IHEFI' (ESP, EFI System Partition), and 'IHFILES' used to build GRUB. These labels are important as they are used to identify the partitions in the next steps. The kernel package is then unpacked in the ESP. The initramfs image is built, and placed in the ESP as well. GRUB is then downloaded from it's repository if not already, and built. Then installed into the ESP. Finally a config is built for GRUB from the contents of the ESP /boot directory. 
