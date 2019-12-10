@@ -92,6 +92,8 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
+# Make sure permissions are correct.
+sudo chown -R root:root "${DIR_EXTRAS}"
 echo -n "	Copying scripts: "
 sudo cp -a "${DIR_EXTRAS}"/* "${DIR_INITRD}"
 okay_failedexit $?
