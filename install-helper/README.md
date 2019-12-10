@@ -22,6 +22,8 @@ To keep this a generic method an initramfs image is generated which is used to p
 
 Builds an initramfs image using kernel package '../linux-image-5.4.0-rc7.deb', loads modules i2c-qcom-geni, and usbhid on boot.
 
+An initramfs image is just a root filing system compressed into an easy format to unpack in to RAM. Whilst various tools exist to create initramfs images (e.g. initramfs-tools), makejail is used as there is greater flexability to create fuller and more capable images easily, as it was originally designed to create chroot environments using minimal configuration files. First makejail's configuration file is preprocessed to set the output directory correctly, and makejail is then run. Then the specified kernel image is unpacked into the makejail's output directory, and the extras directory is copied into that as well. Finally the modules file is updated with any modules the user selected, and the whole output directory is 'cpio'ed to create an initramfs image. That is then gzipped to compress it for efficiency.
+
 ### mkefiusb
 #### Options
 * -d <device path>
