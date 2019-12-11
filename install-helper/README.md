@@ -37,5 +37,5 @@ An initramfs image is just a root filing system compressed into an easy format t
 
 Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT partitions labeled 'IHEFI' (ESP, EFI System Partition), and 'IHFILES' used to build GRUB. These labels are important as they are used to identify the partitions in the next steps. The kernel package is then unpacked in the ESP. The initramfs image is built, and placed in the ESP as well. GRUB is then downloaded from it's repository if not already, and built. Then installed into the ESP. Finally a config is built for GRUB from the contents of the ESP /boot directory. 
 
-## Unknown Issues
+## Known Issues
 This is very much work in development!
