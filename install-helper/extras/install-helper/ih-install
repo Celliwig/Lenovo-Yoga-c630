@@ -41,16 +41,8 @@ ih_install_cdrom() {
 			# Mount selected media
 			mount -t iso9660 "${ih_install_cdrom_src}" "${ih_install_cdrom_media_mnt}" &> /dev/null
 			if [ $? -eq 0 ]; then
-				local ih_install_cdrom_grub_cfg_path=""
 				# Search for available grub configuration
-				while IFS= read -r tmp_grub_cfg; do
-					# Check for actual menu entries, not just general include directive
-					grep '^menuentry ' "${tmp_grub_cfg}" &> /dev/null
-					if [ $? -eq 0 ]; then
-						# Save grub.cfg path
-						ih_install_cdrom_grub_cfg_path="${tmp_grub_cfg}"
-					fi
-				done <<< `find "${ih_install_cdrom_media_mnt}" -name grub.cfg`
+				local ih_install_cdrom_grub_cfg_path=`ih_grub_cfg_identify "${ih_install_cdrom_media_mnt}"`
 				if [ -n "${ih_install_cdrom_grub_cfg_path}" ]; then
 					local ih_install_cdrom_boot_list=()
 					local ih_install_cdrom_dialog_boot_list=()
@@ -60,52 +52,24 @@ ih_install_cdrom() {
 						ih_install_cdrom_dialog_boot_list+=("${ih_install_cdrom_dialog_boot_index}")
 						ih_install_cdrom_dialog_boot_list+=("${tmp_grub_cfg_boot_entry}")
 						ih_install_cdrom_dialog_boot_index=$((ih_install_cdrom_dialog_boot_index+1))
-					done <<< `awk "match(\\$0, /^menuentry ['\"]([^'\"]*)['\"]/, tmp_entry) {print tmp_entry[1]}" "${ih_install_cdrom_grub_cfg_path}"`
+					done <<< `ih_grub_cfg_menu_entries "${ih_install_cdrom_grub_cfg_path}"`
+
 					tmp_bselect=`${DIALOG} --stdout --clear --title "install-helper" \
 						--menu "Select boot option:\n\n" 10 71 5 "${ih_install_cdrom_dialog_boot_list[@]}"`
 					ih_retval="${?}"
 
 					if [ ${ih_retval} -eq 0 ]; then
 						local ih_install_cdrom_grub_cfg_boot_entry=${ih_install_cdrom_boot_list[${tmp_bselect}]}
-						local ih_install_cdrom_grub_cfg_boot_entry_start=`grep -n "^menuentry ['\"]${ih_install_cdrom_grub_cfg_boot_entry}['\"]" "${ih_install_cdrom_grub_cfg_path}"|cut -d: -f1`
-						local ih_install_cdrom_grub_cfg_boot_entry_end=`tail -n+${ih_install_cdrom_grub_cfg_boot_entry_start} "${ih_install_cdrom_grub_cfg_path}"|grep -n '^}'|head -n 1| cut -d: -f1`
-						local ih_install_cdrom_grub_cfg_boot_entry_txt=`tail -n+${ih_install_cdrom_grub_cfg_boot_entry_start} "${ih_install_cdrom_grub_cfg_path}"|head -n+${ih_install_cdrom_grub_cfg_boot_entry_end}`
-						while IFS= read -r ih_install_cdrom_grub_cfg_boot_entry_line; do
-							tmp_grub_cfg_boot_entry_item=`echo "${ih_install_cdrom_grub_cfg_boot_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^linux[[:space:]]'`
-							if [ $? -eq 0 ]; then
-								local ih_install_cdrom_grub_cfg_boot_entry_linux="${tmp_grub_cfg_boot_entry_item}"
-							fi
-							tmp_grub_cfg_boot_entry_item=`echo "${ih_install_cdrom_grub_cfg_boot_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^initrd[[:space:]]'`
-							if [ $? -eq 0 ]; then
-								local ih_install_cdrom_grub_cfg_boot_entry_initrd="${tmp_grub_cfg_boot_entry_item}"
-							fi
-						done <<< "${ih_install_cdrom_grub_cfg_boot_entry_txt}"
+						local ih_install_cdrom_grub_cfg_boot_entry_txt=`ih_grub_cfg_extract_menu_entry "${ih_install_cdrom_grub_cfg_path}" "${ih_install_cdrom_grub_cfg_boot_entry}"`
+						local ih_install_cdrom_grub_cfg_kernel_str=`ih_grub_cfg_extract_menu_entry_kernel "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
+						local ih_install_cdrom_grub_cfg_kernel_filepath=`ih_grub_cfg_extract_menu_entry_kernel_filepath "${ih_install_cdrom_grub_cfg_kernel_str}"`
+						local ih_install_cdrom_grub_cfg_kernel_args=`ih_grub_cfg_extract_menu_entry_kernel_args "${ih_install_cdrom_grub_cfg_kernel_str}"`
+						local ih_install_cdrom_grub_cfg_initrd_filepath=`ih_grub_cfg_extract_menu_entry_initrd "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
 
-						# Extract kernel info
-						# Strip leading 'linux ' string
-						local ih_install_cdrom_grub_cfg_boot_kernel_combo=`echo "${ih_install_cdrom_grub_cfg_boot_entry_linux}"|sed 's|^linux[[:space:]]||'`
-						# Get only the kernel directory path (kernel arg can mess with dirname so drop everything but first)
-						ih_install_cdrom_grub_cfg_boot_kernel_path=`dirname "${ih_install_cdrom_grub_cfg_boot_kernel_combo}"| head -n1`
-						# We need to find the longest match to remove the kernel string, so reverse ls
-						local ih_install_cdrom_grub_cfg_boot_kernel_filename=""
-						for tmp_filename in `ls -r "${ih_install_cdrom_media_mnt}${ih_install_cdrom_grub_cfg_boot_kernel_path}"`; do
-							if [[ "${ih_install_cdrom_grub_cfg_boot_kernel_combo}" == "${ih_install_cdrom_grub_cfg_boot_kernel_path}/${tmp_filename}"* ]]; then
-								ih_install_cdrom_grub_cfg_boot_kernel_filename="${ih_install_cdrom_grub_cfg_boot_kernel_path}/${tmp_filename}"
-							fi
-						done
-						# Now get kernel args
-						local ih_install_cdrom_grub_cfg_boot_kernel_args=""
-						if [ -n "${ih_install_cdrom_grub_cfg_boot_kernel_filename}" ]; then
-							ih_install_cdrom_grub_cfg_boot_kernel_args=`echo "${ih_install_cdrom_grub_cfg_boot_kernel_combo}"| sed "s|${ih_install_cdrom_grub_cfg_boot_kernel_filename}||"`
-						fi
-
-						# Extract initrd info
-						local ih_install_cdrom_grub_cfg_boot_initrd_path=`echo "${ih_install_cdrom_grub_cfg_boot_entry_initrd}"|sed 's|^initrd[[:space:]]||'`
-
-						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   Kernel: ${ih_install_cdrom_grub_cfg_boot_kernel_filename} (${ih_install_cdrom_grub_cfg_boot_kernel_args})\n   Intrd: ${ih_install_cdrom_grub_cfg_boot_initrd_path}\n" 9 80
+						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   Kernel: ${ih_install_cdrom_grub_cfg_kernel_filepath} (${ih_install_cdrom_grub_cfg_kernel_args})\n   Intrd: ${ih_install_cdrom_grub_cfg_initrd_filepath}\n" 9 80
 
 						# Check that identified installer actually exists
-						local ih_install_cdrom_installer_initrd_path="${ih_install_cdrom_media_mnt}/${ih_install_cdrom_grub_cfg_boot_initrd_path}"
+						local ih_install_cdrom_installer_initrd_path="${ih_install_cdrom_media_mnt}/${ih_install_cdrom_grub_cfg_initrd_filepath}"
 						if [ -f "${ih_install_cdrom_installer_initrd_path}" ]; then
 							# Create a tmpfs to copy install initramfs image into
 							mount -t tmpfs none "${rootmnt}"
@@ -172,8 +136,8 @@ ih_install_cdrom() {
 
 							# Patch kernel arguments
 							# Possibly need to create environment variables?
-							if [ -n "${ih_install_cdrom_grub_cfg_boot_kernel_args}" ]; then
-								sed "s|$| ${ih_install_cdrom_grub_cfg_boot_kernel_args}|" /proc/cmdline > "${rootmnt}/cmdline-alt"
+							if [ -n "${ih_install_cdrom_grub_cfg_kernel_args}" ]; then
+								sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline > "${rootmnt}/cmdline-alt"
 								if [ ${?} -eq 0 ]; then
 									mount -n -o bind "${rootmnt}/cmdline-alt" /proc/cmdline &> /dev/null
 									if [ ${?} -ne 0 ]; then
