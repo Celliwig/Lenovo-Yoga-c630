@@ -51,6 +51,13 @@ MAKEJAIL_CFG_PRE="${DIR_MAKEJAIL}/install-helper-initrd.py.pre"
 sed "s|###PROJECT_DIR###|${DIR_INITRD}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"
 okay_failedexit $?
 
+MAKEJAIL_CFG_CHKFILES=`./makejail/makejail-chkfiles "${MAKEJAIL_CFG}"`
+if [ ${?} -ne 0 ]; then
+	echo "Please install the following files:"
+	echo "${MAKEJAIL_CFG_CHKFILES}"
+	exit
+fi
+
 if [ ! -d "${DIR_INITRD}" ]; then
 	echo -n "	Creating initrd image directory: "
 	mkdir "${DIR_INITRD}" &> /dev/null
