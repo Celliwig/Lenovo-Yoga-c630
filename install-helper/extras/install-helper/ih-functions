@@ -24,19 +24,14 @@
 
 ih_grub_cfg_identify() {
 	local ih_grub_cfg_root_path="${1}"
-	local ih_grub_cfg_identified=""
 	while IFS= read -r tmp_grub_cfg_path; do
 		# Check for actual menu entries, not just general include directive
 		grep '^menuentry ' "${tmp_grub_cfg_path}" &> /dev/null
 		if [ ${?} -eq 0 ]; then
-			# Save grub.cfg path
-			ih_grub_cfg_identified="${tmp_grub_cfg_path}"
+			echo "${tmp_grub_cfg_path}"
+			return 0
 		fi
 	done <<< `find "${ih_grub_cfg_root_path}" -name grub.cfg`
-	if [ -n "${ih_grub_cfg_identified}" ]; then
-		echo "${ih_grub_cfg_identified}"
-		return 0
-	fi
 	return 1
 }
 
@@ -46,7 +41,7 @@ ih_grub_cfg_menu_entries() {
 	while IFS= read -r tmp_grub_cfg_menu_entry; do
 		ih_grub_menu_entries_txt+="${tmp_grub_cfg_menu_entry}\n"
 	done <<< `awk "match(\\$0, /^[[:space:]]*menuentry ['\"]([^'\"]*)['\"]/, tmp_entry) {print tmp_entry[1]}" "${ih_grub_cfg_path}"`
-	echo -e "${ih_grub_menu_entries_txt}"
+	echo -en "${ih_grub_menu_entries_txt}"
 }
 
 ih_grub_cfg_extract_menu_entry() {
