@@ -62,8 +62,8 @@ ih_install_cdrom() {
 						local ih_install_cdrom_grub_cfg_boot_entry=${ih_install_cdrom_boot_list[${tmp_bselect}]}
 						local ih_install_cdrom_grub_cfg_boot_entry_txt=`ih_grub_cfg_extract_menu_entry "${ih_install_cdrom_grub_cfg_path}" "${ih_install_cdrom_grub_cfg_boot_entry}"`
 						local ih_install_cdrom_grub_cfg_kernel_str=`ih_grub_cfg_extract_menu_entry_kernel "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
-						local ih_install_cdrom_grub_cfg_kernel_filepath=`ih_grub_cfg_extract_menu_entry_kernel_filepath "${ih_install_cdrom_grub_cfg_kernel_str}"`
-						local ih_install_cdrom_grub_cfg_kernel_args=`ih_grub_cfg_extract_menu_entry_kernel_args "${ih_install_cdrom_grub_cfg_kernel_str}"`
+						local ih_install_cdrom_grub_cfg_kernel_filepath=`ih_grub_cfg_extract_menu_entry_kernel_filepath "${ih_install_cdrom_grub_cfg_kernel_str}" "${ih_install_cdrom_media_mnt}"`
+						local ih_install_cdrom_grub_cfg_kernel_args=`ih_grub_cfg_extract_menu_entry_kernel_args "${ih_install_cdrom_grub_cfg_kernel_str}" "${ih_install_cdrom_grub_cfg_kernel_filepath}"`
 						local ih_install_cdrom_grub_cfg_initrd_filepath=`ih_grub_cfg_extract_menu_entry_initrd "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
 
 						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   Kernel: ${ih_install_cdrom_grub_cfg_kernel_filepath} (${ih_install_cdrom_grub_cfg_kernel_args})\n   Intrd: ${ih_install_cdrom_grub_cfg_initrd_filepath}\n" 9 80
