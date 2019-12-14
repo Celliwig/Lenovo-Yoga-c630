@@ -329,7 +329,7 @@ ih_retval=${?}
 # Check if rootmnt is mounted
 rootmnt_count=`mount | grep -c "${rootmnt}"`
 
-if { [ ${ih_retval} -eq 234 ] || [ ${ih_retval} -eq 235 ]; } && [ ${rootmnt_count} -ne 0 ]; then
+if { [ ${ih_retval} -ge 230 ] && [ ${ih_retval} -le 240 ]; } && [ ${rootmnt_count} -ne 0 ]; then
 #	#validate_init() {
 #	#	run-init -n "${rootmnt}" "${1}"
 #	#}
@@ -391,6 +391,7 @@ if { [ ${ih_retval} -eq 234 ] || [ ${ih_retval} -eq 235 ]; } && [ ${rootmnt_coun
 	unset forcefsck
 	unset fsckfix
 
+	if [ ${ih_retval} -eq 230 ]; then exec switch_root "${rootmnt}" "${init}"; fi
 	if [ ${ih_retval} -eq 234 ]; then exec chroot "${rootmnt}" "/bin/sh"; fi
 	if [ ${ih_retval} -eq 235 ]; then exec chroot "${rootmnt}" "${init}"; fi
 	echo "Something went badly wrong in the initramfs."

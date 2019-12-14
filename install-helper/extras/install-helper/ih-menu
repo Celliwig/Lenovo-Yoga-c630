@@ -67,7 +67,7 @@ while true; do
 			Rescue)
 				ih_rescue
 				if [[ ${?} -eq 0 && ${ih_menu_debug} -eq 0 ]]; then
-					exit 235
+					exit 230
 				fi
 				;;
 			Shell)
