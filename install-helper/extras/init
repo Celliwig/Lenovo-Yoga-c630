@@ -391,8 +391,8 @@ if { [ ${ih_retval} -eq 234 ] || [ ${ih_retval} -eq 235 ]; } && [ ${rootmnt_coun
 	unset forcefsck
 	unset fsckfix
 
-	if [ ${ih_retval} -eq 234 ]; then exec switch_root "${rootmnt}" "/bin/sh"; fi
-	if [ ${ih_retval} -eq 235 ]; then exec switch_root "${rootmnt}" "${init}"; fi
+	if [ ${ih_retval} -eq 234 ]; then exec chroot "${rootmnt}" "/bin/sh"; fi
+	if [ ${ih_retval} -eq 235 ]; then exec chroot "${rootmnt}" "${init}"; fi
 	echo "Something went badly wrong in the initramfs."
 	panic "Please file a bug on initramfs-tools."
 fi
