@@ -79,7 +79,8 @@ ih_grub_cfg_extract_menu_entry_kernel() {
 }
 
 ih_grub_cfg_extract_menu_entry_kernel_filepath() {
-	local ih_grub_cfg_kernel_str="${1}"
+	# Need a better way of extracting filename, this could easily match on a path
+	local ih_grub_cfg_kernel_str=`echo "${1}"| cut -d' ' -f1`
 	local ih_grub_cfg_kernel_path_prefix="${2}"
 	# Get only the kernel directory path (kernel arg can mess with dirname so drop everything but first)
 	local ih_grub_cfg_kernel_path=`dirname ${ih_grub_cfg_kernel_str}| head -n1`
