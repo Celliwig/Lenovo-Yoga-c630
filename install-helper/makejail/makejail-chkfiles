@@ -1,0 +1,19 @@
+#!/usr/bin/python
+
+import sys
+import os.path
+
+if len(sys.argv) != 2:
+   print "Usage: " + sys.argv[0] + " <makejail conffile>"
+   exit(1)
+
+execfile(sys.argv[1])
+
+returnCode=0
+for tmp_filename in forceCopy:
+   if not tmp_filename.endswith('*'):
+      if not os.path.exists(tmp_filename):
+         print(tmp_filename)
+         returnCode+=1
+
+exit(returnCode)
