@@ -37,10 +37,8 @@ forceCopy=[
 		"/etc/modprobe.d/iwlwifi.conf",
 		"/etc/modprobe.d/local.conf",
 		"/etc/modprobe.d/mdadm.conf",
-		"/etc/motd",
 		"/etc/nsswitch.conf",
 		"/etc/os-release",
-		"/etc/plymouth",
 		"/etc/udev/udev.conf",
 # File magic
 		"/etc/magic",
