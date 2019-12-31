@@ -19,7 +19,7 @@
 }
 
 // define the constant-string tokens:
-%token END ENDL
+//%token END ENDL
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
 // by convention), and associate each with a field of the union:
@@ -27,18 +27,16 @@
 %token <sval> INSMOD
 
 %%
-// the first rule defined is the highest-level rule, which in our
-// case is just the concept of a whole "snazzle file":
 grub-cfg:
-inits {
-      cout << "done with a snazzle file!" << endl;
+cfglines {
+      cout << "Processed GRUB config!" << endl;
     }
   ;
-inits:
-	inits init
-	| init
+cfglines:
+	cfglines cfgline
+	| cfgline
 	;
-init:
+cfgline:
 	| sets
 	| insmods
 	;
@@ -79,9 +77,9 @@ insmod:
 //footer:
 //  END ENDLS
 //  ;
-ENDLS:
-  ENDLS ENDL
-  | ENDL ;
+//ENDLS:
+//  ENDLS ENDL
+//  | ENDL ;
 %%
 int main(int argc, char** argv) {
 	if(argc < 2){

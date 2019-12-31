@@ -27,33 +27,47 @@
 		}
 	}
 %}
-%x set insmod
+%x set_cfg insmod_cfg if_cfg
 %%
-^[ \t]*\n		;
+^[ \t]*\n		{
+	++line_num;
+}
 set			{
 	push_state(YY_START);
-	BEGIN(set);
+	BEGIN(set_cfg);
 }
-<set>[= \t]		;
-<set>[^= \t\n]+		{
+<set_cfg>[= \t]		;
+<set_cfg>[^= \t\n]+	{
 	yylval.sval = strdup(yytext);
 	return SETVALUE;
 }
-<set>\n			{
+<set_cfg>[ \t]*\n	{
 	++line_num;
 	BEGIN(pop_state());
 }
 insmod			{
 	push_state(YY_START);
-	BEGIN(insmod);
+	BEGIN(insmod_cfg);
 }
-<insmod>[= \t]		;
-<insmod>[^= \t\n]+	{
+<insmod_cfg>[= \t]	;
+<insmod_cfg>[^= \t\n]+	{
 	yylval.sval = strdup(yytext);
 	return INSMOD;
 }
-<insmod>\n		{
+<insmod_cfg>[ \t]*\n	{
 	++line_num;
 	BEGIN(pop_state());
 }
+^[ \t]*if		{
+	push_state(YY_START);
+	BEGIN(if_cfg);
+}
+<if_cfg>[^\n]*		;
+<if_cfg>\n		{
+	++line_num;
+}
+<if_cfg>[ \t]*fi[ \t]*\n	{
+	BEGIN(pop_state());
+}
+
 %%
