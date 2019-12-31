@@ -1,0 +1,4 @@
+grub-cfg
+*.tab.c
+*.tab.h
+*.yy.c
