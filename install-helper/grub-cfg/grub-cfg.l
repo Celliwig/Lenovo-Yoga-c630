@@ -5,6 +5,7 @@
 	unsigned int entry_num = 0;
 	unsigned int entry_depth = 0;
 %}
+%option stack
 %x set_cfg insmod_cfg if_cfg menuentry_cfg
 %%
 ^[ \t]*\n			{
