@@ -11,6 +11,12 @@
 	extern int line_num;
 
 	void yyerror(const char *s);
+
+	#define ACTION_PRINT_TITLE 1;
+	#define ACTION_PRINT_KERNEL 2;
+	#define ACTION_PRINT_INITRD 3;
+	unsigned char action = 0;
+	int *menu_selection_list, menu_selection_list_size;
 %}
 
 %union {
@@ -70,28 +76,68 @@ insmod:
 	;
 menutitle:
 	MENUTITLE {
-		cout << "menu title: " << $1 << endl;
+		if (action == 1) {
+			cout << "menu title: " << $1 << endl;
+		}
 		free($1);
 	}
 linux:
 	LINUX {
-		cout << "linux: " << $1 << endl;
+		if (action == 2) {
+			cout << "linux: " << $1 << endl;
+		}
 		free($1);
 	}
 initrd:
 	INITRD {
-		cout << "initrd: " << $1 << endl;
+		if (action == 3) {
+			cout << "initrd: " << $1 << endl;
+		}
 		free($1);
 	}
 %%
 int main(int argc, char** argv) {
-	if(argc < 2){
-		printf("Usage : %s <filename> ...\n", argv[0]);
-		exit(0);
+	char* grub_config = NULL;
+	int opt, index;
+
+	// Parse normal arguments
+	while ((opt = getopt(argc, argv, "f:ikt")) != -1) {
+		switch (opt) {
+			case 'f':
+				grub_config = optarg;
+				break;
+			case 'i':
+				action = ACTION_PRINT_INITRD;
+				break;
+			case 'k':
+				action = ACTION_PRINT_KERNEL;
+				break;
+			case 't':
+				action = ACTION_PRINT_TITLE;
+				break;
+		}
+	}
+	// Parse additional arguments (menu entry selections)
+	menu_selection_list_size = argc - optind;
+	menu_selection_list = new int[menu_selection_list_size];
+	index = 0;
+	for(; optind < argc; optind++){
+		menu_selection_list[index] = atoi(argv[optind]);
+		index++;
+	}
+
+	if ((action == 0) || (grub_config == NULL)) {
+		printf("Usage:\n");
+		printf("%s\n", argv[0]);
+		printf("	-f <grub_config>\n");
+		printf("	-i - Print initrd info from menu entry\n");
+		printf("	-k - Print kernel info from menu entry\n");
+		printf("	-t - Print menu entry title\n");
+		exit(-1);
 	}
 
 	// open a file handle to a particular file:
-	FILE *myfile = fopen(argv[1], "r");
+	FILE *myfile = fopen(grub_config, "r");
 	// make sure it's valid:
 	if (!myfile) {
 		cout << "Can't open GRUB config." << endl;
@@ -102,6 +148,9 @@ int main(int argc, char** argv) {
 
 	// Parse through the input:
 	yyparse();
+
+	// Clean up
+	delete menu_selection_list;
 }
 
 void yyerror(const char *s) {

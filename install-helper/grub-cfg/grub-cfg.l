@@ -2,8 +2,8 @@
 	#include "grub-cfg.tab.h"
 	#define STATE_STACK_SIZE 32
 	unsigned int line_num = 1;
-	unsigned int entry_num = 0;
-	unsigned int entry_depth = 0;
+	unsigned int menu_entry_num = 0;
+	unsigned int menu_entry_depth = 0;
 %}
 %option stack
 %x set_cfg insmod_cfg if_cfg menuentry_cfg menuentry_title_cfg menuentry_body_cfg linux_cfg initrd_cfg
@@ -47,8 +47,10 @@
 	yy_pop_state();
 }
 ^[ \t]*menuentry				{
+	menu_entry_num++;
 	yy_push_state(menuentry_cfg);
 }
+<menuentry_cfg>[ \t]*--hotkey=[a-zA-Z0-9]	;
 <menuentry_cfg>[ \t]*['"][^'"\n]+['"]		{
         yylval.sval = strdup(yytext);
         return MENUTITLE;
