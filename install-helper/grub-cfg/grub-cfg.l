@@ -6,50 +6,83 @@
 	unsigned int entry_depth = 0;
 %}
 %option stack
-%x set_cfg insmod_cfg if_cfg menuentry_cfg
+%x set_cfg insmod_cfg if_cfg menuentry_cfg menuentry_title_cfg menuentry_body_cfg linux_cfg initrd_cfg
 %%
-^[ \t]*\n			{
+^[ \t]*\n					{
 	++line_num;
 }
-set				{
+^[ \t]*set					{
 	yy_push_state(set_cfg);
 }
-<set_cfg>[= \t]			;
-<set_cfg>[^= \t\n]+		{
+<set_cfg>[= \t]					;
+<set_cfg>[^= \t\n]+				{
 	yylval.sval = strdup(yytext);
 	return SETVALUE;
 }
-<set_cfg>[ \t]*\n		{
+<set_cfg>[ \t]*\n				{
 	++line_num;
 	yy_pop_state();
 }
-insmod				{
+^[ \t]*insmod					{
 	yy_push_state(insmod_cfg);
 }
-<insmod_cfg>[= \t]		;
-<insmod_cfg>[^= \t\n]+		{
+<insmod_cfg>[= \t]				;
+<insmod_cfg>[^= \t\n]+				{
 	yylval.sval = strdup(yytext);
 	return INSMOD;
 }
-<insmod_cfg>[ \t]*\n		{
+<insmod_cfg>[ \t]*\n				{
 	++line_num;
 	yy_pop_state();
 }
-^[ \t]*if			{
+^[ \t]*if					{
 	yy_push_state(if_cfg);
 }
-<if_cfg>[^\n]*			;
-<if_cfg>\n			{
+<if_cfg>[^\n]*					;
+<if_cfg>\n					{
 	++line_num;
 }
-<if_cfg>[ \t]*fi[ \t]*\n	{
+<if_cfg>[ \t]*fi[ \t]*\n			{
 	++line_num;
 	yy_pop_state();
 }
-^[ \t]*menuentry		{
+^[ \t]*menuentry				{
 	yy_push_state(menuentry_cfg);
 }
-<menuentry_cfg>[ \t]*\}[ \t]*\n	{
+<menuentry_cfg>[ \t]*['"][^'"\n]+['"]		{
+        yylval.sval = strdup(yytext);
+        return MENUTITLE;
+}
+<menuentry_cfg>[ \t]*\{[ \t]*\n			{
+	++line_num;
+	BEGIN(menuentry_body_cfg);
+}
+<menuentry_body_cfg>^[ \t]*set			{
+	yy_push_state(set_cfg);
+}
+<menuentry_body_cfg>^[ \t]*linux[ \t]*		{
+	yy_push_state(linux_cfg);
+}
+<menuentry_body_cfg>^[ \t]*initrd[ \t]*		{
+	yy_push_state(initrd_cfg);
+}
+<menuentry_body_cfg>[ \t]*\}[ \t]*\n		{
+	++line_num;
+	yy_pop_state();
+}
+<linux_cfg>[^\n]+				{
+	yylval.sval = strdup(yytext);
+	return LINUX;
+}
+<linux_cfg>[ \t]*\n				{
+	++line_num;
+	yy_pop_state();
+}
+<initrd_cfg>[^\n]+				{
+	yylval.sval = strdup(yytext);
+	return INITRD;
+}
+<initrd_cfg>[ \t]*\n				{
 	++line_num;
 	yy_pop_state();
 }

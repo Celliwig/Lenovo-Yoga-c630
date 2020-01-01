@@ -1,21 +1,22 @@
 %{
-  #include <cstdio>
-  #include <iostream>
-  using namespace std;
+	#include <unistd.h>
+	#include <cstdio>
+	#include <iostream>
+	using namespace std;
 
-  // stuff from flex that bison needs to know about:
-  extern int yylex();
-  extern int yyparse();
-  extern FILE *yyin;
-  extern int line_num;
- 
-  void yyerror(const char *s);
+	// stuff from flex that bison needs to know about:
+	extern int yylex();
+	extern int yyparse();
+	extern FILE *yyin;
+	extern int line_num;
+
+	void yyerror(const char *s);
 %}
 
 %union {
-  int ival;
-  float fval;
-  char *sval;
+	int ival;
+	float fval;
+	char *sval;
 }
 
 // define the constant-string tokens:
@@ -25,6 +26,9 @@
 // by convention), and associate each with a field of the union:
 %token <sval> SETVALUE
 %token <sval> INSMOD
+%token <sval> MENUTITLE
+%token <sval> LINUX
+%token <sval> INITRD
 
 %%
 grub-cfg:
@@ -37,49 +41,48 @@ cfglines:
 	| cfgline
 	;
 cfgline:
-	| sets
-	| insmods
-	;
-sets:
-	sets set
 	| set
+	| insmod
+	| linux
+	| initrd
+	| menutitle
 	;
+//sets:
+//	sets set
+//	| set
+//	;
 set:
 	SETVALUE SETVALUE {
-		cout << "define: " << $1 << "->" << $2 << endl;
+		//cout << "define: " << $1 << "->" << $2 << endl;
 		free($1);
 		free($2);
 	}
 	;
-insmods:
-	insmods insmod
-	| insmod
-	;
+//insmods:
+//	insmods insmod
+//	| insmod
+//	;
 insmod:
 	INSMOD {
-		cout << "load: " << $1 << endl;
+		//cout << "load: " << $1 << endl;
 		free($1);
 	}
 	;
-//body_section:
-//  body_lines
-//  ;
-//body_lines:
-//  body_lines body_line
-//  | body_line
-//  ;
-//body_line:
-//  INT INT INT INT STRING ENDLS {
-//      cout << "new snazzle: " << $1 << $2 << $3 << $4 << $5 << endl;
-//      free($5);
-//    }
-//  ;
-//footer:
-//  END ENDLS
-//  ;
-//ENDLS:
-//  ENDLS ENDL
-//  | ENDL ;
+menutitle:
+	MENUTITLE {
+		cout << "menu title: " << $1 << endl;
+		free($1);
+	}
+linux:
+	LINUX {
+		cout << "linux: " << $1 << endl;
+		free($1);
+	}
+initrd:
+	INITRD {
+		cout << "initrd: " << $1 << endl;
+		free($1);
+	}
 %%
 int main(int argc, char** argv) {
 	if(argc < 2){
