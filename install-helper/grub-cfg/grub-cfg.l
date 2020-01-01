@@ -1,14 +1,31 @@
 %{
 	#include "grub-cfg.tab.h"
-	#define STATE_STACK_SIZE 32
+	#include <list>
+	#include <string>
+
 	unsigned int line_num = 1;
 	unsigned int menu_entry_num = 0;
 	unsigned int menu_entry_depth = 0;
+
+	std::list<int> menu_entry_stack;
+
+	void push_menu_entry_num() {
+		menu_entry_stack.push_front(menu_entry_num);
+		menu_entry_num = 0;
+	}
+
+	void pop_menu_entry_num() {
+		menu_entry_num = menu_entry_stack.front();
+		menu_entry_stack.pop_front();
+	}
 %}
 %option stack
-%x set_cfg insmod_cfg if_cfg menuentry_cfg menuentry_title_cfg menuentry_body_cfg linux_cfg initrd_cfg
+%x set_cfg insmod_cfg if_cfg submenu_cfg menuentry_cfg menuentry_title_cfg menuentry_body_cfg linux_cfg initrd_cfg
 %%
 ^[ \t]*\n					{
+	++line_num;
+}
+^[ \t]*background_image[^\n]*\n			{
 	++line_num;
 }
 ^[ \t]*set					{
@@ -45,6 +62,23 @@
 <if_cfg>[ \t]*fi[ \t]*\n			{
 	++line_num;
 	yy_pop_state();
+}
+^[ \t]*submenu					{
+	yy_push_state(submenu_cfg);
+}
+<submenu_cfg>[ \t]*--hotkey=[a-zA-Z0-9]		;
+<submenu_cfg>[ \t]*['"][^'"\n]+['"]		{
+	yylval.sval = strdup(yytext);
+	return MENUTITLE;
+}
+<submenu_cfg>[ \t]*\{[ \t]*\n			{
+	menu_entry_num++;
+	push_menu_entry_num();
+	++line_num;
+	yy_pop_state();
+}
+[ \t]*\}[ \t]*\n				{
+	pop_menu_entry_num();
 }
 ^[ \t]*menuentry				{
 	menu_entry_num++;
