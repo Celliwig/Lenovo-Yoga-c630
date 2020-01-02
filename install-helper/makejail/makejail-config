@@ -1,0 +1,271 @@
+#!/bin/bash
+
+DIR_MAKEJAIL=`dirname "${0}"`
+DIR_INITRD="${1}"
+
+required_utils=( "awk" \
+		"basename" \
+		"bash" \
+		"bunzip2" \
+		"cat" \
+		"chattr" \
+		"cp" \
+		"chfn" \
+		"chgrp" \
+		"chmod" \
+		"chown" \
+		"chvt" \
+		"clear" \
+		"cpio" \
+		"cut" \
+		"date" \
+		"dd" \
+		"df" \
+		"dialog" \
+		"diff" \
+		"dirname" \
+		"dmesg" \
+		"du" \
+		"echo" \
+		"eject" \
+		"false" \
+		"file" \
+		"find" \
+		"getent" \
+		"gpg" \
+		"gpg-agent" \
+		"grep" \
+		"gunzip" \
+		"gzip" \
+		"head" \
+		"hostname" \
+		"kill" \
+		"killall" \
+		"less" \
+		"ln" \
+		"ls" \
+		"lsblk" \
+		"lsmod" \
+		"lsof" \
+		"lspci" \
+		"lsusb" \
+		"lsattr" \
+		"lz4" \
+		"lz4cat" \
+		"md5sum" \
+		"mkdir" \
+		"mknod" \
+		"mktemp" \
+		"more" \
+		"mount" \
+		"mv" \
+		"nano" \
+		"nice" \
+		"passwd" \
+		"plymouth" \
+		"ps" \
+		"pwd" \
+		"readlink" \
+		"realpath" \
+		"reset" \
+		"rm" \
+		"sed" \
+		"setleds" \
+		"setsid" \
+		"setterm" \
+		"sha256sum" \
+		"sleep" \
+		"sort" \
+		"sync" \
+		"tail" \
+		"tar" \
+		"tput" \
+		"tr" \
+		"true" \
+		"tty" \
+		"udevadm" \
+		"umount" \
+		"uname" \
+		"uniq" \
+		"uptime" \
+		"wc" \
+		"whoami" \
+		"xz" \
+		"xzcat" \
+		"zcat" \
+		"zgrep" \
+		"blkid" \
+		"chroot" \
+		"depmod" \
+		"dmidecode" \
+		"fsck" \
+		"fsck.btrfs" \
+		"fsck.cramfs" \
+		"fsck.ext2" \
+		"fsck.ext3" \
+		"fsck.ext4" \
+		"fsck.fat" \
+		"fsck.msdos" \
+		"fsck.vfat" \
+		"fsck.xfs" \
+		"halt" \
+		"insmod" \
+		"logsave" \
+		"losetup" \
+		"lsmod" \
+		"lvchange" \
+		"lvconvert" \
+		"lvcreate" \
+		"lvdisplay" \
+		"lvextend" \
+		"lvm" \
+		"lvmconfig" \
+		"lvmdiskscan" \
+		"lvmdump" \
+		"lvmpolld" \
+		"lvmsadc" \
+		"lvmsar" \
+		"lvreduce" \
+		"lvremove" \
+		"lvrename" \
+		"lvresize" \
+		"lvs" \
+		"lvscan" \
+		"mdadm" \
+		"mdmon" \
+		"mkfs" \
+		"mkfs.bfs" \
+		"mkfs.btrfs" \
+		"mkfs.ext2" \
+		"mkfs.ext3" \
+		"mkfs.ext4" \
+		"mkfs.fat" \
+		"mkfs.msdos" \
+		"mkfs.ntfs" \
+		"mkfs.vfat" \
+		"mkfs.xfs" \
+		"mklost+found" \
+		"mkntfs" \
+		"mkswap" \
+		"modinfo" \
+		"modprobe" \
+		"mount.fuse" \
+		"mount.lowntfs-3g" \
+		"mount.ntfs" \
+		"mount.ntfs-3g" \
+		"mtd_debug" \
+		"mtdinfo" \
+		"mtdpart" \
+		"multipath" \
+		"multipathd" \
+		"partprobe" \
+		"plymouthd" \
+		"pvchange" \
+		"pvck" \
+		"pvcreate" \
+		"pvdisplay" \
+		"pvmove" \
+		"pvremove" \
+		"pvresize" \
+		"pvs" \
+		"pvscan" \
+		"reboot" \
+		"resize2fs" \
+		"rmmod" \
+		"shutdown" \
+		"swapoff" \
+		"swapon" \
+		"switch_root" \
+		"vcstime" \
+		"vgcfgbackup" \
+		"vgcfgrestore" \
+		"vgchange" \
+		"vgck" \
+		"vgconvert" \
+		"vgcreate" \
+		"vgdisplay" \
+		"vgexport" \
+		"vgextend" \
+		"vgimport" \
+		"vgimportclone" \
+		"vgmerge" \
+		"vgmknodes" \
+		"vgreduce" \
+		"vgremove" \
+		"vgrename" \
+		"vgs" \
+		"vgscan" \
+		"vgsplit" )
+
+optional_utils=( "cfdisk" \
+		"fdisk" \
+		"gdisk" \
+		"kpartx" \
+		"parted" \
+		"sfdisk" \
+		"sgdisk" )
+
+locate_util() {
+	util_name="${1}"
+
+	util_path=`find /bin -name "${util_name}" 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${util_path}" ]; then
+			echo "${util_path}"
+			return 0
+		fi
+	fi
+
+	util_path=`find /usr/bin -name "${util_name}" 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${util_path}" ]; then
+			echo "${util_path}"
+			return 0
+		fi
+	fi
+
+	util_path=`find /sbin -name "${util_name}" 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${util_path}" ]; then
+			echo "${util_path}"
+			return 0
+		fi
+	fi
+
+	util_path=`find /usr/sbin -name "${util_name}" 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${util_path}" ]; then
+			echo "${util_path}"
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
+MAKEJAIL_CFG_TXT=""
+MISSING_UTILS=""
+for tmp_command in ${required_utils[@]}; do
+	tmp_utilpath=`locate_util "${tmp_command}"`
+	if [ ${?} -eq 0 ]; then
+		MAKEJAIL_CFG_TXT="${MAKEJAIL_CFG_TXT}		\"${tmp_utilpath}\",\n"
+	else
+		MISSING_UTILS="${MISSING_UTILS}	${tmp_command}\n"
+	fi
+done
+if [ -n "${MISSING_UTILS}" ]; then
+	echo "There are missing utils, please install them to continue:"
+	echo -ne "${MISSING_UTILS}"
+	exit 1
+fi
+
+for tmp_command in ${optional_utils[@]}; do
+	tmp_utilpath=`locate_util "${tmp_command}"`
+	if [ ${?} -eq 0 ]; then
+		MAKEJAIL_CFG_TXT="${MAKEJAIL_CFG_TXT}		\"${tmp_utilpath}\",\n"
+	fi
+done
+
+MAKEJAIL_CFG="${DIR_MAKEJAIL}/install-helper-initrd.py"
+MAKEJAIL_CFG_PRE="${DIR_MAKEJAIL}/install-helper-initrd.py.pre"
+sed "s|###PROJECT_DIR###|${DIR_INITRD}|g ; s|###UTILS###|${MAKEJAIL_CFG_TXT}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"
