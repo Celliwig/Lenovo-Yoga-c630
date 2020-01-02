@@ -9,6 +9,8 @@
 	extern int yyparse();
 	extern FILE *yyin;
 	extern int line_num;
+	extern int check_menu_entry_num();
+	extern int *menu_selection_list, menu_selection_list_size;
 
 	void yyerror(const char *s);
 
@@ -16,7 +18,6 @@
 	#define ACTION_PRINT_KERNEL 2;
 	#define ACTION_PRINT_INITRD 3;
 	unsigned char action = 0;
-	int *menu_selection_list, menu_selection_list_size;
 %}
 
 %union {
@@ -38,9 +39,10 @@
 
 %%
 grub-cfg:
-cfglines {
-      cout << "Processed GRUB config!" << endl;
-    }
+	cfglines
+//{
+//      cout << "Processed GRUB config!" << endl;
+//    }
   ;
 cfglines:
 	cfglines cfgline
@@ -77,21 +79,27 @@ insmod:
 menutitle:
 	MENUTITLE {
 		if (action == 1) {
-			cout << "menu title: " << $1 << endl;
+			if (check_menu_entry_num()) {
+				cout << "menu title: " << $1 << endl;
+			}
 		}
 		free($1);
 	}
 linux:
 	LINUX {
 		if (action == 2) {
-			cout << "linux: " << $1 << endl;
+			if (check_menu_entry_num() > 1) {
+				cout << "linux: " << $1 << endl;
+			}
 		}
 		free($1);
 	}
 initrd:
 	INITRD {
 		if (action == 3) {
-			cout << "initrd: " << $1 << endl;
+			if (check_menu_entry_num() > 1) {
+				cout << "initrd: " << $1 << endl;
+			}
 		}
 		free($1);
 	}
