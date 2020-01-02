@@ -9,9 +9,10 @@
 	extern int yylex();
 	extern int yyparse();
 	extern FILE *yyin;
-	extern int line_num;
-	extern int check_menu_entry_num();
-	extern int *menu_selection_list, menu_selection_list_size;
+	extern unsigned int line_num;
+	extern unsigned int check_menu_entry_num();
+	extern unsigned int *menu_selection_list, menu_selection_list_size;
+	extern unsigned char is_submenu;
 
 	void yyerror(const char *s);
 
@@ -138,7 +139,7 @@ int main(int argc, char** argv) {
 	}
 	// Parse additional arguments (menu entry selections)
 	menu_selection_list_size = argc - optind;
-	menu_selection_list = new int[menu_selection_list_size];
+	menu_selection_list = new unsigned int[menu_selection_list_size];
 	index = 0;
 	for(; optind < argc; optind++){
 		menu_selection_list[index] = atoi(argv[optind]);
@@ -170,6 +171,9 @@ int main(int argc, char** argv) {
 
 	// Clean up
 	delete menu_selection_list;
+
+	if (is_submenu) exit(-1);
+	exit(0);
 }
 
 void yyerror(const char *s) {

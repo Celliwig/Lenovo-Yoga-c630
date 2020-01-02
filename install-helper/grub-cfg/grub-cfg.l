@@ -7,6 +7,7 @@
 	unsigned int menu_entry_num = 0;
 	unsigned int *menu_selection_list, menu_selection_list_size;
 	unsigned char is_menuentry = 0;
+	unsigned char is_submenu = 0;
 
 	std::list<int> menu_entry_stack;
 
@@ -35,6 +36,7 @@
 				}
 				menu_stack_iter++;
 			}
+			is_submenu = 1;
 			return 1;
 		}
 
