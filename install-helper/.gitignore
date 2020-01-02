@@ -1,3 +1,4 @@
+extras/usr/bin/grub-cfg
 grub/*
 initrd/*
 makejail/install-helper-initrd.py

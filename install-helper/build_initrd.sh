@@ -99,6 +99,14 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
+# Make grub-cfg
+echo -n "	Making grub-cfg: "
+cd "${DIR_GRUBCFG}"
+make grub-cfg &> /dev/null
+okay_failedexit $?
+cd "${CWD}"
+sudo cp "${DIR_GRUBCFG}/grub-cfg" "${DIR_EXTRAS}/usr/bin" &> /dev/null
+
 # Make sure permissions are correct.
 sudo chown -R root:root "${DIR_EXTRAS}"
 echo -n "	Copying scripts: "
