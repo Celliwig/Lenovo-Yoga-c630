@@ -2,6 +2,7 @@
 	#include <unistd.h>
 	#include <cstdio>
 	#include <iostream>
+	#include <string.h>
 	using namespace std;
 
 	// stuff from flex that bison needs to know about:
@@ -80,7 +81,17 @@ menutitle:
 	MENUTITLE {
 		if (action == 1) {
 			if (check_menu_entry_num()) {
-				cout << "menu title: " << $1 << endl;
+				unsigned int tmp_slen = strlen($1);
+				char *tmp_ptr, tmp_qchar;
+				if (tmp_slen > 0) {
+					tmp_qchar = $1[tmp_slen - 1];			// Get last character
+					$1[tmp_slen - 1] = '\0';			// Then remove last character
+					tmp_ptr = strchr($1, tmp_qchar);		// Get the first occurence of the ast character
+
+					if (tmp_ptr != NULL) {
+						cout << (tmp_ptr + 1) << endl;
+					}
+				}
 			}
 		}
 		free($1);
@@ -89,7 +100,7 @@ linux:
 	LINUX {
 		if (action == 2) {
 			if (check_menu_entry_num() > 1) {
-				cout << "linux: " << $1 << endl;
+				cout << $1 << endl;
 			}
 		}
 		free($1);
@@ -98,7 +109,7 @@ initrd:
 	INITRD {
 		if (action == 3) {
 			if (check_menu_entry_num() > 1) {
-				cout << "initrd: " << $1 << endl;
+				cout << $1 << endl;
 			}
 		}
 		free($1);
