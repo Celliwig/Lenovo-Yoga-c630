@@ -46,6 +46,7 @@ ih_install_cdrom() {
 				if [ -n "${ih_install_cdrom_grub_cfg_path}" ]; then
 					# Select menu entry from grub config
 					ih_install_cdrom_grub_cfg_menu_selection=`ih_grub_cfg_menu_entry_select "${ih_install_cdrom_grub_cfg_path}"`
+					ih_retval="${?}"
 
 					if [ ${ih_retval} -eq 0 ]; then
 						local ih_install_cdrom_grub_cfg_kernel_str=`grub-cfg -k -f "${ih_install_cdrom_grub_cfg_path}"${ih_install_cdrom_grub_cfg_menu_selection}`
