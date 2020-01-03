@@ -35,47 +35,62 @@ ih_grub_cfg_identify() {
 	return 1
 }
 
-ih_grub_cfg_menu_entries() {
+ih_grub_cfg_menu_entry_select() {
 	local ih_grub_cfg_path="${1}"
-	local ih_grub_menu_entries_txt=""
-	while IFS= read -r tmp_grub_cfg_menu_entry; do
-		ih_grub_menu_entries_txt+="${tmp_grub_cfg_menu_entry}\n"
-	done <<< `awk "match(\\$0, /^[[:space:]]*menuentry ['\"]([^'\"]*)['\"]/, tmp_entry) {print tmp_entry[1]}" "${ih_grub_cfg_path}"`
-	echo -en "${ih_grub_menu_entries_txt}"
-}
+	local ih_grub_cfg_menu_entry_path=()
+	local ih_grub_cfg_menu_entry_path_txt=""
+	local ih_grub_cfg_menu_entries_txt=""
 
-ih_grub_cfg_extract_menu_entry() {
-	local ih_grub_cfg_path="${1}"
-	local ih_grub_cfg_menu_entry="${2}"
-	ih_grub_cfg_menu_entry_start_txt=`grep -n "^[[:space:]]*menuentry ['\"]${ih_grub_cfg_menu_entry}['\"]" "${ih_grub_cfg_path}"`
-	if [ ${?} -eq 0 ]; then
-		local ih_grub_cfg_menu_entry_start=`echo "${ih_grub_cfg_menu_entry_start_txt}"| cut -d: -f1`
-		ih_grub_cfg_menu_entry_end_txt=`tail -n+${ih_grub_cfg_menu_entry_start} "${ih_grub_cfg_path}"|grep -n '^[[:space:]]*}'`
-		if [ ${?} -eq 0 ]; then
-			local ih_grub_cfg_menu_entry_end=`echo "${ih_grub_cfg_menu_entry_end_txt}"| head -n 1| cut -d: -f1`
-			local ih_grub_cfg_menu_entry_txt=`tail -n+${ih_grub_cfg_menu_entry_start} "${ih_grub_cfg_path}"|head -n+${ih_grub_cfg_menu_entry_end}`
-			echo "${ih_grub_cfg_menu_entry_txt}"
-			return 0
-		fi
-	fi
-	return 1
-}
+	local tmp_loop=true
+	while ${tmp_loop};do
+		# Generate dialog list selection
+		local ih_grub_cfg_menu_entry_list=()
+		local ih_grub_cfg_menu_entry_index=1
+		while IFS= read -r tmp_grub_cfg_menu_entry; do
+			ih_grub_cfg_menu_entry_list+=("${ih_grub_cfg_menu_entry_index}")
+			ih_grub_cfg_menu_entry_list+=("${tmp_grub_cfg_menu_entry}")
+			ih_grub_cfg_menu_entry_index=$((ih_grub_cfg_menu_entry_index+1))
+		done <<< `grub-cfg -t -f "${ih_grub_cfg_path}"${ih_grub_cfg_menu_entry_path_txt}`
 
-ih_grub_cfg_extract_menu_entry_kernel() {
-	local ih_grub_cfg_menu_entry_txt="${1}"
-	local ih_grub_cfg_menu_entry_kernel=""
-	while IFS= read -r ih_grub_cfg_menu_entry_line; do
-		tmp_grub_cfg_menu_entry_item=`echo "${ih_grub_cfg_menu_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^linux[[:space:]]'`
-		if [ $? -eq 0 ]; then
-			ih_grub_cfg_menu_entry_kernel="${tmp_grub_cfg_menu_entry_item}"
-			break
+		# Show dialog
+		tmp_bselect=`${DIALOG} --stdout --clear --title "install-helper" \
+			--menu "Select boot option:\n\n" 14 71 5 "${ih_grub_cfg_menu_entry_list[@]}"`
+		ih_retval="${?}"
+
+		# Update the path
+		if [ ${ih_retval} -eq 0 ]; then
+			# Add selected
+			ih_grub_cfg_menu_entry_path+=(${tmp_bselect})
+		elif [ ${ih_retval} -eq 255 ]; then
+			# We've hit escape, so just return
+			return 1
+		else
+			if [ ${#ih_grub_cfg_menu_entry_path[@]} -gt 0 ]; then
+				# Remove last selection
+				unset 'ih_grub_cfg_menu_entry_path[${#ih_grub_cfg_menu_entry_path[@]}-1]'
+			else
+				# Or return if we are at the root level
+				return 1
+			fi
 		fi
-	done <<< "${ih_grub_cfg_menu_entry_txt}"
-	if [ -n "${ih_grub_cfg_menu_entry_kernel}" ]; then
-		echo "${ih_grub_cfg_menu_entry_kernel}"|sed 's|^linux[[:space:]]||'
-		return 0
-	fi
-	return 1
+
+		# Evaluate current path
+		ih_grub_cfg_menu_entry_path_txt=""
+		for tmp_selection in ${ih_grub_cfg_menu_entry_path[@]}; do
+			ih_grub_cfg_menu_entry_path_txt+=" "
+			ih_grub_cfg_menu_entry_path_txt+="${tmp_selection}"
+		done
+
+		# Make sure we're not back at the root again
+		if [ ${#ih_grub_cfg_menu_entry_path[@]} -gt 0 ]; then
+			#echo grub-cfg -t -f "${ih_grub_cfg_path}"${ih_grub_cfg_menu_entry_path_txt}
+			grub-cfg -t -f "${ih_grub_cfg_path}"${ih_grub_cfg_menu_entry_path_txt} &> /dev/null
+			if [ ${?} -eq 0 ]; then
+				echo "${ih_grub_cfg_menu_entry_path_txt}"
+				return 0
+			fi
+		fi
+	done
 }
 
 ih_grub_cfg_extract_menu_entry_kernel_filepath() {
@@ -104,23 +119,6 @@ ih_grub_cfg_extract_menu_entry_kernel_args() {
 	ih_grub_cfg_kernel_args=`echo "${ih_grub_cfg_kernel_args}"| sed "s| quiet | |"`
 	ih_grub_cfg_kernel_args=`echo "${ih_grub_cfg_kernel_args}"| sed "s| splash | |"`
 	echo "${ih_grub_cfg_kernel_args}"
-}
-
-ih_grub_cfg_extract_menu_entry_initrd() {
-	local ih_grub_cfg_menu_entry_txt="${1}"
-	local ih_grub_cfg_menu_entry_initrd=""
-	while IFS= read -r ih_grub_cfg_menu_entry_line; do
-		tmp_grub_cfg_menu_entry_item=`echo "${ih_grub_cfg_menu_entry_line}"| sed 's/^[[:space:]]*//g'| grep '^initrd[[:space:]]'`
-		if [ $? -eq 0 ]; then
-			ih_grub_cfg_menu_entry_initrd="${tmp_grub_cfg_menu_entry_item}"
-			break
-		fi
-	done <<< "${ih_grub_cfg_menu_entry_txt}"
-	if [ -n "${ih_grub_cfg_menu_entry_initrd}" ]; then
-		echo "${ih_grub_cfg_menu_entry_initrd}"|sed 's|^initrd[[:space:]]||'
-		return 0
-	fi
-	return 1
 }
 
 ih_file_identify() {
