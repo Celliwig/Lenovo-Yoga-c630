@@ -44,27 +44,14 @@ ih_install_cdrom() {
 				# Search for available grub configuration
 				local ih_install_cdrom_grub_cfg_path=`ih_grub_cfg_identify "${ih_install_cdrom_media_mnt}"`
 				if [ -n "${ih_install_cdrom_grub_cfg_path}" ]; then
-					local ih_install_cdrom_boot_list=()
-					local ih_install_cdrom_dialog_boot_list=()
-					local ih_install_cdrom_dialog_boot_index=0
-					while IFS= read -r tmp_grub_cfg_boot_entry; do
-						ih_install_cdrom_boot_list+=("${tmp_grub_cfg_boot_entry}")
-						ih_install_cdrom_dialog_boot_list+=("${ih_install_cdrom_dialog_boot_index}")
-						ih_install_cdrom_dialog_boot_list+=("${tmp_grub_cfg_boot_entry}")
-						ih_install_cdrom_dialog_boot_index=$((ih_install_cdrom_dialog_boot_index+1))
-					done <<< `ih_grub_cfg_menu_entries "${ih_install_cdrom_grub_cfg_path}"`
-
-					tmp_bselect=`${DIALOG} --stdout --clear --title "install-helper" \
-						--menu "Select boot option:\n\n" 10 71 5 "${ih_install_cdrom_dialog_boot_list[@]}"`
-					ih_retval="${?}"
+					# Select menu entry from grub config
+					ih_install_cdrom_grub_cfg_menu_selection=`ih_grub_cfg_menu_entry_select "${ih_install_cdrom_grub_cfg_path}"`
 
 					if [ ${ih_retval} -eq 0 ]; then
-						local ih_install_cdrom_grub_cfg_boot_entry=${ih_install_cdrom_boot_list[${tmp_bselect}]}
-						local ih_install_cdrom_grub_cfg_boot_entry_txt=`ih_grub_cfg_extract_menu_entry "${ih_install_cdrom_grub_cfg_path}" "${ih_install_cdrom_grub_cfg_boot_entry}"`
-						local ih_install_cdrom_grub_cfg_kernel_str=`ih_grub_cfg_extract_menu_entry_kernel "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
+						local ih_install_cdrom_grub_cfg_kernel_str=`grub-cfg -k -f "${ih_install_cdrom_grub_cfg_path}"${ih_install_cdrom_grub_cfg_menu_selection}`
 						local ih_install_cdrom_grub_cfg_kernel_filepath=`ih_grub_cfg_extract_menu_entry_kernel_filepath "${ih_install_cdrom_grub_cfg_kernel_str}" "${ih_install_cdrom_media_mnt}"`
 						local ih_install_cdrom_grub_cfg_kernel_args=`ih_grub_cfg_extract_menu_entry_kernel_args "${ih_install_cdrom_grub_cfg_kernel_str}" "${ih_install_cdrom_grub_cfg_kernel_filepath}"`
-						local ih_install_cdrom_grub_cfg_initrd_filepath=`ih_grub_cfg_extract_menu_entry_initrd "${ih_install_cdrom_grub_cfg_boot_entry_txt}"`
+						local ih_install_cdrom_grub_cfg_initrd_filepath=`grub-cfg -i -f "${ih_install_cdrom_grub_cfg_path}"${ih_install_cdrom_grub_cfg_menu_selection}`
 
 						ih_show_msg "Extracted boot options for menu entry: ${ih_install_cdrom_grub_cfg_boot_entry}\n\n   Kernel: ${ih_install_cdrom_grub_cfg_kernel_filepath} (${ih_install_cdrom_grub_cfg_kernel_args})\n   Intrd: ${ih_install_cdrom_grub_cfg_initrd_filepath}\n" 9 80
 
