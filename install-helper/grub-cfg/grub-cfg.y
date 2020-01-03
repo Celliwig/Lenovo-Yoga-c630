@@ -33,8 +33,6 @@
 
 // define the "terminal symbol" token types I'm going to use (in CAPS
 // by convention), and associate each with a field of the union:
-%token <sval> SETVALUE
-%token <sval> INSMOD
 %token <sval> MENUTITLE
 %token <sval> LINUX
 %token <sval> INITRD
@@ -51,32 +49,9 @@ cfglines:
 	| cfgline
 	;
 cfgline:
-	| set
-	| insmod
 	| linux
 	| initrd
 	| menutitle
-	;
-//sets:
-//	sets set
-//	| set
-//	;
-set:
-	SETVALUE SETVALUE {
-		//cout << "define: " << $1 << "->" << $2 << endl;
-		free($1);
-		free($2);
-	}
-	;
-//insmods:
-//	insmods insmod
-//	| insmod
-//	;
-insmod:
-	INSMOD {
-		//cout << "load: " << $1 << endl;
-		free($1);
-	}
 	;
 menutitle:
 	MENUTITLE {
