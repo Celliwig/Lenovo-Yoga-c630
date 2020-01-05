@@ -16,6 +16,7 @@ required_utils=( "awk" \
 		"chown" \
 		"chvt" \
 		"clear" \
+		"cmp" \
 		"cpio" \
 		"cut" \
 		"date" \

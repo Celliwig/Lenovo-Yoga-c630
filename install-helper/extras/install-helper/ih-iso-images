@@ -45,21 +45,24 @@ while getopts ":c:d:lv" opt; do
 	esac
 done
 
+# Get path of USB device root
+ih_device=`blkid -o device -L IHEFI | gawk 'match($0, /(\/dev\/[a-z]*)+/, a) {print a[1]}' 2> /dev/null`
+if [ ${?} -ne 0 ]; then
+	echo "Could not find IH device."
+	return 1
+fi
+
 if [ ${copy_image} -eq 1 ]; then
 	if [ -f "${copy_image_path}" ]; then
 		# Get size of file to copy
-		filesrc_size=`du -k "${copy_image_path}" |cut -f1 2> /dev/null`
+		filesrc_size=`du -b "${copy_image_path}" |cut -f1 2> /dev/null`
+		filesrc_ksize=`du -k "${copy_image_path}" |cut -f1 2> /dev/null`
 		if [ ${?} -ne 0 ]; then
 			return 1
 		fi
 
-		# Get path of USB device root
-		ih_device=`blkid -o device -L IHEFI | gawk 'match($0, /(\/dev\/[a-z]*)+/, a) {print a[1]}' 2> /dev/null`
-		if [ ${?} -ne 0 ]; then
-			return 1
-		fi
 		# Create new partition
-		ihdev_partnum=`sgdisk --new=0:0:+${filesrc_size}K --typecode=0:8300 --change-name=0:IHIMAGE ${ih_device} |grep partNum|cut -d ' ' -f3 2> /dev/null`
+		ihdev_partnum=`sgdisk --new=0:0:+${filesrc_ksize}K --typecode=0:8300 --change-name=0:IHIMAGE ${ih_device} |grep partNum|cut -d ' ' -f3 2> /dev/null`
 		ih_retval="${?}"
 		# Returned partition number is offset by 1
 		ihdev_partnum=$((ihdev_partnum+1))
@@ -93,6 +96,14 @@ if [ ${copy_image} -eq 1 ]; then
 			# Copy file to partition
 			dd if="${copy_image_path}" of=${ih_device}${ihdev_partnum} &> /dev/null
 			if [ $? -eq 0 ]; then
+				if [ ${verify_image} -eq 1 ]; then
+					cmp -n "${filesrc_size}" "${copy_image_path}" ${ih_device}${ihdev_partnum} &> /dev/null
+					if [ ${?} -ne 0 ]; then
+						echo "Error: Verify failed."
+						exit -6
+					fi
+				fi
+
 				# Okay
 				exit 0
 			else
