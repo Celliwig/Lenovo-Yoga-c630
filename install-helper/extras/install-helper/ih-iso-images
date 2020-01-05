@@ -1,0 +1,122 @@
+#!/bin/bash
+
+print_usage() {
+	cat << EOF
+Usage: ih-iso-images [OPTIONS]
+Utility to manage ISO images on the IH USB key.
+
+Options:
+	-c <ISO image>		- Copy ISO image to IH USB key.
+	-d <partition number>	- Delete ISO image.
+	-l			- List installed ISO images.
+	-v			- Verify copied image (use with '-c' option).
+EOF
+	exit 1
+}
+
+copy_image=0
+copy_image_path=""
+delete_image=0
+list_images=0
+verify_image=0
+# Pass arguments
+while getopts ":c:d:lv" opt; do
+	case $opt in
+		c)
+			if [[ "${copy_image_path}" == "" ]]; then
+				copy_image=1
+				copy_image_path="${OPTARG}"
+			else
+				print_usage
+			fi
+			;;
+		d)
+			delete_image=1
+			;;
+		l)
+			list_images=1
+			;;
+		v)
+			verify_image=1
+			;;
+		\?)
+			print_usage
+			;;
+	esac
+done
+
+if [ ${copy_image} -eq 1 ]; then
+	if [ -f "${copy_image_path}" ]; then
+		# Get size of file to copy
+		filesrc_size=`du -k "${copy_image_path}" |cut -f1 2> /dev/null`
+		if [ ${?} -ne 0 ]; then
+			return 1
+		fi
+
+		# Get path of USB device root
+		ih_device=`blkid -o device -L IHEFI | gawk 'match($0, /(\/dev\/[a-z]*)+/, a) {print a[1]}' 2> /dev/null`
+		if [ ${?} -ne 0 ]; then
+			return 1
+		fi
+		# Create new partition
+		ihdev_partnum=`sgdisk --new=0:0:+${filesrc_size}K --typecode=0:8300 --change-name=0:IHIMAGE ${ih_device} |grep partNum|cut -d ' ' -f3 2> /dev/null`
+		ih_retval="${?}"
+		# Returned partition number is offset by 1
+		ihdev_partnum=$((ihdev_partnum+1))
+		if [ ${ih_retval} -eq 0 ]; then
+			# Reload partition info for specified device
+			partprobe ${ih_device} &> /dev/null
+			if [ ${?} -ne 0 ]; then
+				echo "Error: partprobe failed."
+				exit -3
+			fi
+
+			wait_loop=true
+			loop_count=0
+			while ${wait_loop}; do
+				#echo "Checking ${ih_device}${ihdev_partnum}..."
+				if [ -b "${ih_device}${ihdev_partnum}" ]; then
+					wait_loop=false;
+					break;
+				fi
+
+				loop_count=$((loop_count+1))
+				if [ ${loop_count} -eq 10 ]; then
+					echo 'Error: Timeout waiting for block device.'
+					exit -4
+				fi
+				sleep 1
+			done
+			# Sleep some more, just to be sure
+			sleep 5
+
+			# Copy file to partition
+			dd if="${copy_image_path}" of=${ih_device}${ihdev_partnum} &> /dev/null
+			if [ $? -eq 0 ]; then
+				# Okay
+				exit 0
+			else
+				echo "Error: dd failed."
+				exit -5
+			fi
+		fi
+		echo "Error: Partition creation failed."
+		exit -2
+	fi
+	echo "Error: ISO image not found."
+	exit -1;
+elif [ ${delete_image} -eq 1 ]; then
+	echo "Delete routine"
+elif [ ${list_images} -eq 1 ]; then
+	tmp_image_list=`blkid -t PARTLABEL=IHIMAGE`
+	if [ ${?} -eq 0 ]; then
+		while IFS= read -r tmp_image_line; do
+			tmp_image_part=`echo "${tmp_image_line}"|cut -d':' -f1`
+			tmp_image_label=`echo "${tmp_image_line}"| gawk 'match($0, / LABEL="([^"]+)" /, a) {print a[1]}'`
+
+			echo "${tmp_image_part}: ${tmp_image_label}"
+		done <<< "${tmp_image_list}"
+	fi
+else
+	print_usage
+fi
