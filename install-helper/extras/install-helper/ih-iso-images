@@ -17,6 +17,7 @@ EOF
 copy_image=0
 copy_image_path=""
 delete_image=0
+delete_image_num=""
 list_images=0
 verify_image=0
 # Pass arguments
@@ -31,7 +32,12 @@ while getopts ":c:d:lv" opt; do
 			fi
 			;;
 		d)
-			delete_image=1
+			if [[ "${delete_image_num}" == "" ]]; then
+				delete_image=1
+				delete_image_num="${OPTARG}"
+			else
+				print_usage
+			fi
 			;;
 		l)
 			list_images=1
@@ -117,7 +123,22 @@ if [ ${copy_image} -eq 1 ]; then
 	echo "Error: ISO image not found."
 	exit -1;
 elif [ ${delete_image} -eq 1 ]; then
-	echo "Delete routine"
+	blkid -t PARTLABEL=IHIMAGE ${ih_device}${delete_image_num} &> /dev/null
+	if [ ${?} -eq 0 ]; then
+		sgdisk --delete=${delete_image_num} ${ih_device} &> /dev/null
+		if [ ${?} -eq 0 ]; then
+			# Wait for change to propagate
+			sleep 1
+			exit 0
+		else
+			echo "Error: Failed to delete partition: ${ih_device}${delete_image_num}"
+			exit -2
+		fi
+
+	else
+		echo "Error: Failed to find partition: ${ih_device}${delete_image_num}"
+		exit -1
+	fi
 elif [ ${list_images} -eq 1 ]; then
 	tmp_image_list=`blkid -t PARTLABEL=IHIMAGE`
 	if [ ${?} -eq 0 ]; then
