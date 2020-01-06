@@ -39,3 +39,6 @@ Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT parti
 
 ## Known Issues
 This is very much work in development!
+
+## Tested against
+* Debian 10.2.0 arm64 1
