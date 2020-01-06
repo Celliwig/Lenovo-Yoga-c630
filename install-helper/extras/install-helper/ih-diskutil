@@ -5,6 +5,14 @@
 #
 #}
 
+ih_diskutil_dskpart_cfdisk() {
+	tmp_blockdevice_select=`ih_show_select_blockdevice`
+	ih_retval="${?}"
+	if [ "${ih_retval}" -eq 0 ]; then
+		/sbin/cfdisk "${tmp_blockdevice_select}"
+	fi
+}
+
 ih_diskutil_dskpart_fdisk() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
@@ -13,11 +21,11 @@ ih_diskutil_dskpart_fdisk() {
 	fi
 }
 
-ih_diskutil_dskpart_cfdisk() {
+ih_diskutil_dskpart_gdisk() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
 	ih_retval="${?}"
 	if [ "${ih_retval}" -eq 0 ]; then
-		/sbin/cfdisk "${tmp_blockdevice_select}"
+		/sbin/gdisk "${tmp_blockdevice_select}"
 	fi
 }
 
@@ -30,11 +38,27 @@ ih_diskutil_dskpart_parted() {
 }
 
 ih_diskutil_show_menu_partitioners() {
+	local ih_partitioner_dialog_list=()
+	# Generate list for dialog
+	if [ -e /sbin/fdisk ]; then
+		ih_partitioner_dialog_list+=("fdisk")
+		ih_partitioner_dialog_list+=("Classic partitioner.")
+	fi
+	if [ -e /sbin/cfdisk ]; then
+		ih_partitioner_dialog_list+=("cfdisk")
+		ih_partitioner_dialog_list+=("Ncurses partitioner.")
+	fi
+	if [ -e /sbin/parted ]; then
+		ih_partitioner_dialog_list+=("parted")
+		ih_partitioner_dialog_list+=("Parted partitioner.")
+	fi
+	if [ -e /sbin/gdisk ]; then
+		ih_partitioner_dialog_list+=("gdisk")
+		ih_partitioner_dialog_list+=("GPT partitioner.")
+	fi
+
 	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
-		--menu "Select partitioner:\n\n" 10 51 5 \
-		"fdisk"  "Classic partitioner." \
-		"cfdisk"  "Ncurses partitioner." \
-		"parted" "Parted partitioner."`
+		--menu "Select partitioner:\n\n" 15 61 5 "${ih_partitioner_dialog_list[@]}"`
 	retval="${?}"
 	echo "${tmp_mselect}"
 	return "${retval}"
@@ -50,11 +74,14 @@ ih_diskutil() {
 			ih_diskutil_menu_dskpart_select="${tmp_menu_select}"
 
 			case "${ih_diskutil_menu_dskpart_select}" in
+				cfdisk)
+					ih_diskutil_dskpart_cfdisk
+					;;
 				fdisk)
 					ih_diskutil_dskpart_fdisk
 					;;
-				cfdisk)
-					ih_diskutil_dskpart_cfdisk
+				gdisk)
+					ih_diskutil_dskpart_gdisk
 					;;
 				parted)
 					ih_diskutil_dskpart_parted
