@@ -6,6 +6,7 @@ Usage: ih-iso-images [OPTIONS]
 Utility to manage ISO images on the IH USB key.
 
 Options:
+	-C <ISO image>		- Check whether there is enough space for ISO image.
 	-c <ISO image>		- Copy ISO image to IH USB key.
 	-d <partition number>	- Delete ISO image.
 	-l			- List installed ISO images.
@@ -13,7 +14,8 @@ Options:
 EOF
 	exit 1
 }
-
+check_image=0
+check_image_path=""
 copy_image=0
 copy_image_path=""
 delete_image=0
@@ -21,8 +23,16 @@ delete_image_num=""
 list_images=0
 verify_image=0
 # Pass arguments
-while getopts ":c:d:lv" opt; do
+while getopts ":C:c:d:lv" opt; do
 	case $opt in
+		C)
+			if [[ "${check_image_path}" == "" ]]; then
+				check_image=1
+				check_image_path="${OPTARG}"
+			else
+				print_usage
+			fi
+			;;
 		c)
 			if [[ "${copy_image_path}" == "" ]]; then
 				copy_image=1
@@ -58,7 +68,16 @@ if [ ${?} -ne 0 ]; then
 	return 1
 fi
 
-if [ ${copy_image} -eq 1 ]; then
+if [ ${check_image} -eq 1 ]; then
+	free_space=`sgdisk -p ${ih_device} |awk 'BEGIN { SectorSize=0; NumSectors=0; }; match($0, /^Sector size \(logical\/physical\)\: ([0-9]+)\/([0-9]+) bytes/, a) { SectorSize=a[2]}; match($0, /^Total free space is ([0-9]+) sectors/, a) { NumSectors=a[1]; }; END { print SectorSize*NumSectors } '`
+	filesrc_size=`du -b "${copy_image_path}" |cut -f1 2> /dev/null`
+	if [ ${free_space} -gt ${filesrc_size} ]; then
+		exit 0;
+	else
+		echo "Error: Not enough space."
+		exit -1
+	fi
+elif [ ${copy_image} -eq 1 ]; then
 	if [ -f "${copy_image_path}" ]; then
 		# Get size of file to copy
 		filesrc_size=`du -b "${copy_image_path}" |cut -f1 2> /dev/null`
