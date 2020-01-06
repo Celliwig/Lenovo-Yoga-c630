@@ -70,7 +70,7 @@ fi
 
 if [ ${check_image} -eq 1 ]; then
 	free_space=`sgdisk -p ${ih_device} |awk 'BEGIN { SectorSize=0; NumSectors=0; }; match($0, /^Sector size \(logical\/physical\)\: ([0-9]+)\/([0-9]+) bytes/, a) { SectorSize=a[2]}; match($0, /^Total free space is ([0-9]+) sectors/, a) { NumSectors=a[1]; }; END { print SectorSize*NumSectors } '`
-	filesrc_size=`du -b "${copy_image_path}" |cut -f1 2> /dev/null`
+	filesrc_size=`du -b "${check_image_path}" |cut -f1 2> /dev/null`
 	if [ ${free_space} -gt ${filesrc_size} ]; then
 		exit 0;
 	else
