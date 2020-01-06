@@ -14,12 +14,14 @@ If the kernel package is specified it is included on the EFI partition, and in t
 Options:
 	-d <device name>	- Target device (mandatory).
 	-g			- Build grub.
+	-I <ISO image>		- ISO image to copy to device.
 	-i			- Build initrd.
 	-k <kernel package>	- Kernel package to include.
 	-m <module name>	- Load named module on startup.
 	-p			- Erase target device and build required partitions.
 
-'-m' can be specified multiple times.
+'-I' - multiple ISO images can be specified.
+'-m' - multiple module names can be specified.
 EOF
 	exit 1
 }
@@ -27,11 +29,12 @@ EOF
 BLOCK_DEVICE=""
 INITRD_BUILD=false
 INSTALL_GRUB=false
+ISO_IMAGE_LIST=()
 KERNEL_PACKAGE=""
 MAKE_PARTITIONS=false
 MODULE_LIST=()
 # Pass arguments
-while getopts ":d:gik:m:p" opt; do
+while getopts ":d:gI:ik:m:p" opt; do
 	case $opt in
 		d)
 			if [[ "${BLOCK_DEVICE}" == "" ]]; then
@@ -42,6 +45,9 @@ while getopts ":d:gik:m:p" opt; do
 			;;
 		g)
 			INSTALL_GRUB=true
+			;;
+		I)
+			ISO_IMAGE_LIST+=("${OPTARG}")
 			;;
 		i)
 			INITRD_BUILD=true
@@ -359,4 +365,28 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	echo -n "	UnMounting install-helper file storage: "
 	sudo umount "${DIR_USBKEYFILES}" &> /dev/null
 	okay_failedexit $?
+fi
+
+if [ ${#ISO_IMAGE_LIST[@]} -gt 0 ]; then
+	echo -e "${TXT_UNDERLINE}Copying ISO images${TXT_NORMAL}"
+	for tmp_iso_image in ${ISO_IMAGE_LIST[@]}; do
+		tmp_iso_filename=`basename "${tmp_iso_image}"`
+		echo -n "	Copying ${tmp_iso_filename}: "
+		if [ -f "${tmp_iso_image}" ]; then
+			# Check there's space
+			sudo ./extras/install-helper/ih-iso-images -C "${tmp_iso_image}" &> /dev/null
+			if [ ${?} -eq 0 ]; then
+				sudo ./extras/install-helper/ih-iso-images -v -c "${tmp_iso_image}" &> /dev/null
+				if [ ${?} -eq 0 ]; then
+					echo "Okay"
+				else
+					echo "Failed"
+				fi
+			else
+				echo "Not enough space."
+			fi
+		else
+			echo "Does not exist."
+		fi
+	done
 fi
