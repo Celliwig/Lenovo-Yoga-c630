@@ -1,9 +1,105 @@
-#ih_diskutil_list_local_partitions() {
-#	local local_partitions=()
-#
-##MODULE_LIST+=("${OPTARG}")
-#
-#}
+ih_diskutil_isoimage_list() {
+	local ih_diskutil_isoimage_list_txt=()
+	while read -r tmp_iso_image; do
+		tmp_iso_device=`echo "${tmp_iso_image}"| awk -F ": " '{ print $1 }'`
+		ih_diskutil_isoimage_list_txt+=("${tmp_iso_device}")
+		tmp_iso_label=`echo "${tmp_iso_image}"| awk -F ": " '{ print $2 }'`
+		ih_diskutil_isoimage_list_txt+=("${tmp_iso_label}")
+	done <<< `ih-iso-images -l`
+
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Installed ISO images:\n\n" 15 71 8 "${ih_diskutil_isoimage_list_txt[@]}"`
+
+	return 0
+}
+
+ih_diskutil_isoimage_install() {
+	tmp_iso_image=`ih_show_select_images`
+	if [ ${?} -eq 0 ]; then
+		# Check there's space
+		ih-iso-images -C "${tmp_iso_image}"
+		if [ ${?} -eq 0 ]; then
+			error_msg=`ih-iso-images -v -c "${tmp_iso_image}"`
+			if [ ${?} -ne 0 ]; then
+				"${DIALOG}" --stdout --title "install-helper" \
+					--msgbox "              ${error_msg}" 5 60
+			fi
+		else
+			"${DIALOG}" --stdout --title "install-helper" \
+				--msgbox "		Not enough space to install ISO image." 5 50
+		fi
+	fi
+
+	return 0
+}
+
+ih_diskutil_isoimage_delete() {
+	local ih_diskutil_isoimage_delete_txt=()
+	while read -r tmp_iso_image; do
+		tmp_iso_device=`echo "${tmp_iso_image}"| awk -F ": " '{ print $1 }'`
+		ih_diskutil_isoimage_delete_txt+=("${tmp_iso_device}")
+		tmp_iso_label=`echo "${tmp_iso_image}"| awk -F ": " '{ print $2 }'`
+		ih_diskutil_isoimage_delete_txt+=("${tmp_iso_label}")
+	done <<< `ih-iso-images -l`
+
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Installed ISO images:\n\n" 15 71 8 "${ih_diskutil_isoimage_delete_txt[@]}"`
+	retval="${?}"
+
+	if [ ${retval} -eq 0 ]; then
+		local tmp_device_num=`echo "${tmp_mselect}"| awk "match(\\$0, /^\/dev\/[a-zA-Z]+([0-9]+)/, partnum) {print partnum[1]}"`
+		local tmp_device_info=`blkid -t PARTLABEL=IHIMAGE "${tmp_mselect}"`
+		local tmp_device_label=`echo "${tmp_device_info}"| gawk 'match($0, / LABEL="([^"]+)" /, a) {print a[1]}'`
+		"${DIALOG}" --stdout --title "install-helper" \
+			--yesno "Delete partition:\n\n		${tmp_device_label} (${tmp_mselect})\n\nAre you sure?" 10 60
+		if [ ${?} -eq 0 ]; then
+			error_msg=`ih-iso-images -d ${tmp_device_num}`
+			if [ ${?} -ne 0 ]; then
+				"${DIALOG}" --stdout --title "install-helper" \
+					--msgbox "		${error_msg}" 5 60
+			fi
+		fi
+	fi
+
+	return 0
+}
+
+ih_diskutil_show_menu_isoimage_utils() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "ISO image utils:\n\n" 10 61 5 \
+		"List"  "List installed ISO images." \
+		"Install"  "Copy ISO image to device." \
+		"Delete" "Delete ISO image from device."`
+	retval="${?}"
+	echo "${tmp_mselect}"
+	return "${retval}"
+}
+
+ih_diskutil_isoimage_utils() {
+	ih_diskutil_menu_isoutils_select=""
+	while true; do
+		tmp_menu_select=`ih_diskutil_show_menu_isoimage_utils --default-item "${ih_diskutil_menu_isoutils_select}"`
+		ih_retval="${?}"
+
+		if [ "${ih_retval}" -eq 0 ]; then
+			ih_diskutil_menu_isoutils_select="${tmp_menu_select}"
+
+			case "${ih_diskutil_menu_isoutils_select}" in
+				List)
+					ih_diskutil_isoimage_list
+					;;
+				Install)
+					ih_diskutil_isoimage_install
+					;;
+				Delete)
+					ih_diskutil_isoimage_delete
+					;;
+			esac
+		else
+			return
+		fi
+	done
+}
 
 ih_diskutil_dskpart_cfdisk() {
 	tmp_blockdevice_select=`ih_show_select_blockdevice`
@@ -64,7 +160,7 @@ ih_diskutil_show_menu_partitioners() {
 	return "${retval}"
 }
 
-ih_diskutil() {
+ih_diskutil_partitioners() {
 	ih_diskutil_menu_dskpart_select=""
 	while true; do
 		tmp_menu_select=`ih_diskutil_show_menu_partitioners --default-item "${ih_diskutil_menu_dskpart_select}"`
@@ -85,6 +181,39 @@ ih_diskutil() {
 					;;
 				parted)
 					ih_diskutil_dskpart_parted
+					;;
+			esac
+		else
+			return
+		fi
+	done
+}
+
+ih_diskutil_show_menu() {
+	tmp_mselect=`"${DIALOG}" --stdout --clear --title "install-helper" "$@" \
+		--menu "Disk utils:\n\n" 10 61 5 \
+		"ISOutils"  "Manage ISO images." \
+		"Partitioners" "Disk partitioners."`
+	retval="${?}"
+	echo "${tmp_mselect}"
+	return "${retval}"
+}
+
+ih_diskutil() {
+	ih_diskutil_menu_select=""
+	while true; do
+		tmp_menu_select=`ih_diskutil_show_menu --default-item "${ih_diskutil_menu_select}"`
+		ih_retval="${?}"
+
+		if [ "${ih_retval}" -eq 0 ]; then
+			ih_diskutil_menu_select="${tmp_menu_select}"
+
+			case "${ih_diskutil_menu_select}" in
+				ISOutils)
+					ih_diskutil_isoimage_utils
+					;;
+				Partitioners)
+					ih_diskutil_partitioners
 					;;
 			esac
 		else
