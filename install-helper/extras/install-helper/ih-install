@@ -151,6 +151,14 @@ ih_install_cdrom() {
 				if [ ${ih_install_cdrom_retval} -eq 0 ]; then
 					# If successful, umount /media as well
 					umount /media
+
+					# 'Forget' all other install sources except the one we're using
+					# to avoid repos getting confused
+					while read -r tmp_iso_image; do
+						ih_device=`echo "${tmp_iso_image}"| gawk 'match($0, /^(\/dev\/[a-z]*)([0-9]+)/, a) {print a[1]}' 2> /dev/null`
+						ih_device_id=`echo "${tmp_iso_image}"| gawk 'match($0, /^(\/dev\/[a-z]*)([0-9]+)/, a) {print a[2]}' 2> /dev/null`
+						delpart "${ih_device}" ${ih_device_id}
+					done <<< `ih-iso-images -l | grep -v "${ih_install_cdrom_src}"`
 				else
 					# If not successful, umount the tmpfs we've just created
 					umount "${rootmnt}"

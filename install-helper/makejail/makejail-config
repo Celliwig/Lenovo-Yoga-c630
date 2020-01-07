@@ -21,6 +21,7 @@ required_utils=( "awk" \
 		"cut" \
 		"date" \
 		"dd" \
+		"delpart" \
 		"df" \
 		"dialog" \
 		"diff" \
