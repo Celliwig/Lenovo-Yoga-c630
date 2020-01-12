@@ -27,6 +27,7 @@ void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 				audit_msg_type_to_name(reply.type),
 				reply.len,
 				reply.message);
+			ev_break(EV_A_ EVBREAK_ALL);
 		}
 	}
 }
@@ -106,6 +107,12 @@ int delete_all_rules(int fd)
 }
 
 int main() {
+	int rc = nice(-4);
+	if (rc == -1 && errno) {
+		printf("Error: Could not change nice level.\n");
+		return 1;
+	}
+
 	fd = audit_open();
 	struct audit_rule_data* rule_new = new audit_rule_data();
 
