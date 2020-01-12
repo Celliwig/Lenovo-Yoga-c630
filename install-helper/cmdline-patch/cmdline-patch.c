@@ -10,16 +10,24 @@
 int fd;
 
 void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
+	const char prockey[] = "key=\"mount_proc\"";
 	struct audit_reply reply;
 
-	audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
-	if (reply.type != AUDIT_EOE && reply.type != AUDIT_PROCTITLE && reply.type != AUDIT_PATH) {
-//		if (reply.type != NULL) {
+	int rc = audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
+	if (rc > 0) {
+		/* If we get done or error, break out */
+		if (reply.type == NLMSG_DONE)
+			return;
+
+		if (reply.type == NLMSG_ERROR && reply.error->error)
+			return;
+
+		if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
 			printf("Event: Type=%s Message=%.*s\n",
 				audit_msg_type_to_name(reply.type),
 				reply.len,
 				reply.message);
-//		}
+		}
 	}
 }
 
@@ -98,7 +106,7 @@ int delete_all_rules(int fd)
 }
 
 int main() {
-	int fd = audit_open();
+	fd = audit_open();
 	struct audit_rule_data* rule_new = new audit_rule_data();
 
 	delete_all_rules(fd);
@@ -122,71 +130,16 @@ int main() {
 		return 1;
 	}
 
-//	struct ev_io monitor;
-//	struct ev_loop *loop = ev_default_loop(EVFLAG_NOENV);
-//
-//	ev_io_init(&monitor, monitoring, fd, EV_READ);
-//	ev_io_start(loop, &monitor);
-//
-//	ev_loop(loop, 0);
-////	ev_run(loop, 0);
-//
-//	ev_io_stop (loop, &monitor);
-//	ev_default_destroy();
+	struct ev_io monitor;
+	struct ev_loop *loop = ev_default_loop(EVFLAG_NOENV);
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	ev_io_init(&monitor, monitoring, fd, EV_READ);
+	ev_io_start(loop, &monitor);
 
-	fd_set master;
-	fd_set read_fds;
-	FD_ZERO(&master);
-	FD_ZERO(&read_fds);
-	FD_SET(fd, &master);
+	ev_run(loop, 0);
 
-	int i, rc, retval = 0;
-	int timeout = 40; /* tenths of seconds */
-	struct audit_reply reply;
-	const char prockey[] = "key=\"mount_proc\"";
-	while(true){
-		read_fds = master;
-
-		for (i = 0; i < timeout; i++) {
-			struct timeval t;
-
-			t.tv_sec  = 0;
-			t.tv_usec = 100000; /* .1 second */
-			do {
-				rc = select(fd+1, &read_fds, NULL, NULL, &t);
-			} while (rc < 0 && errno == EINTR);
-			// We'll try to read just in case
-			rc = audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
-			if (rc > 0) {
-				/* Reset timeout */
-				i = 0;
-
-				///* Don't make decisions based on wrong packet */
-				//if (reply.nlh->nlmsg_seq != seq)
-				//	continue;
-
-				/* If we get done or error, break out */
-				if (reply.type == NLMSG_DONE)
-					break;
-
-					if (reply.type == NLMSG_ERROR && reply.error->error) {
-					retval = -1;
-					break;
-				}
-
-				if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
-					printf("Event: Type=%s Message=%.*s\n",
-						audit_msg_type_to_name(reply.type),
-						reply.len,
-						reply.message);
-				}
-			}
-		}
-	}
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	ev_io_stop (loop, &monitor);
+	ev_default_destroy();
 
 	audit_close(fd);
 	return 0;
