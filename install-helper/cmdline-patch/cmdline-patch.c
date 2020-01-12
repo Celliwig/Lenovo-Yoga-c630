@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 #include <string.h>
 #include <libaudit.h>
 #include <unistd.h>
@@ -7,13 +8,13 @@
 #include <errno.h>
 #include "auditctl-llist.h"
 
-int fd;
+int fd_audit, fd_kmsg;
 
 void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 	const char prockey[] = "key=\"mount_proc\"";
 	struct audit_reply reply;
 
-	int rc = audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
+	int rc = audit_get_reply(fd_audit, &reply, GET_REPLY_NONBLOCKING, 0);
 	if (rc > 0) {
 		/* If we get done or error, break out */
 		if (reply.type == NLMSG_DONE)
@@ -33,7 +34,7 @@ void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 }
 
 /* Returns 0 for success and -1 for failure */
-int delete_all_rules(int fd)
+int delete_all_rules(int fd_audit)
 {
 	int seq, i, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
@@ -43,12 +44,12 @@ int delete_all_rules(int fd)
 	lnode *n;
 
 	/* list the rules */
-	seq = audit_request_rules_list_data(fd);
+	seq = audit_request_rules_list_data(fd_audit);
 	if (seq <= 0)
 		return -1;
 
 	FD_ZERO(&read_mask);
-	FD_SET(fd, &read_mask);
+	FD_SET(fd_audit, &read_mask);
 	list_create(&l);
 
 	for (i = 0; i < timeout; i++) {
@@ -57,10 +58,10 @@ int delete_all_rules(int fd)
 		t.tv_sec  = 0;
 		t.tv_usec = 100000; /* .1 second */
 		do {
-			rc = select(fd+1, &read_mask, NULL, NULL, &t);
+			rc = select(fd_audit+1, &read_mask, NULL, NULL, &t);
 		} while (rc < 0 && errno == EINTR);
 		// We'll try to read just in case
-		rc = audit_get_reply(fd, &rep, GET_REPLY_NONBLOCKING, 0);
+		rc = audit_get_reply(fd_audit, &rep, GET_REPLY_NONBLOCKING, 0);
 		if (rc > 0) {
 			/* Reset timeout */
 			i = 0;
@@ -93,7 +94,7 @@ int delete_all_rules(int fd)
 	if (retval == 0) {
 		while (n) {
 			struct audit_rule_data *ruledata = n->r;
-			rc = audit_delete_rule_data(fd, ruledata, ruledata->flags, ruledata->action);
+			rc = audit_delete_rule_data(fd_audit, ruledata, ruledata->flags, ruledata->action);
 			if (rc < 0) {
 				retval = -1;
 				break;
@@ -106,48 +107,88 @@ int delete_all_rules(int fd)
 	return retval;
 }
 
+void write_log(const char* log_msg) {
+	if (fd_kmsg >= 0) {
+		write(fd_kmsg, log_msg, strlen(log_msg));
+	}
+}
+
+void clean_up() {
+	// Close audit subsystem handler
+	if (fd_audit)
+		audit_close(fd_audit);
+	// Close log handler
+	if (fd_kmsg >= 0)
+		close(fd_kmsg);
+}
+
 int main() {
-	int rc = nice(-4);
-	if (rc == -1 && errno) {
-		printf("Error: Could not change nice level.\n");
-		return 1;
+	int rc;
+	struct audit_rule_data* rule_new;
+
+	// Log to dmesg if possible
+	fd_kmsg = open("/dev/kmsg", O_WRONLY);
+
+	// Renice to higher priority level
+	rc = nice(-4);
+	if (rc == -1 && errno)
+		write_log("cmdline-patch: Could not change nice level.");
+
+	// Open handle to audit subsystem
+	fd_audit = audit_open();
+	if (fd_audit >= 0) {
+		// Delete any existing rules
+		rc = delete_all_rules(fd_audit);
+		if (rc != 0) {
+			printf("Error: Could not delete existing rules.\n");
+			clean_up();
+			return -1;
+		}
+
+		// Generate new rule to monitor mounting of '/proc'
+		rule_new = new audit_rule_data();
+		audit_rule_syscallbyname_data(rule_new, "mount");
+		// Set extra filters
+		char arch[] = "arch=b64";
+		audit_rule_fieldpair_data(&rule_new, arch, AUDIT_FILTER_EXIT);
+		char path[] = "path=/projects/Lenovo/Lenovo-Yoga-c630/install-helper/cmdline-patch/tmp_dir";
+		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
+		char key[] = "key=mount_proc";
+		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
+		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
+		if (rc <= 0) {
+			printf("Error: Could not add new rule.\n");
+			clean_up();
+			return -1;
+		}
+
+		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
+			printf("Error: Failed to enable audit.\n");
+			clean_up();
+			return -1;
+		}
+		if (audit_set_pid(fd_audit, getpid(), WAIT_YES) < 0) {
+			printf("Error: Failed to set pid.\n");
+			clean_up();
+			return -1;
+		}
+
+		struct ev_io monitor;
+		struct ev_loop *loop = ev_default_loop(EVFLAG_NOENV);
+
+		ev_io_init(&monitor, monitoring, fd_audit, EV_READ);
+		ev_io_start(loop, &monitor);
+
+		ev_run(loop, 0);
+
+		ev_io_stop (loop, &monitor);
+		ev_default_destroy();
+	} else {
+		printf("Error: Failed to open audit subsystem.\n");
+		clean_up();
+		return -1;
 	}
 
-	fd = audit_open();
-	struct audit_rule_data* rule_new = new audit_rule_data();
-
-	delete_all_rules(fd);
-
-	audit_rule_syscallbyname_data(rule_new, "mount");
-	// Set extra filter, for example, follow the user with id=1000.
-	char arch[] = "arch=b64";
-	audit_rule_fieldpair_data(&rule_new, arch, AUDIT_FILTER_EXIT);
-	char path[] = "path=/projects/Lenovo/Lenovo-Yoga-c630/install-helper/cmdline-patch/tmp_dir";
-	audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
-	char key[] = "key=mount_proc";
-	audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
-	audit_add_rule_data(fd, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
-
-	if ((audit_is_enabled(fd) < 2) && (audit_set_enabled(fd, 1) < 0)) {
-		printf("Failed to enable.\n");
-		return 1;
-	}
-	if (audit_set_pid(fd, getpid(), WAIT_YES) < 0) {
-		printf("Failed to set pid.\n");
-		return 1;
-	}
-
-	struct ev_io monitor;
-	struct ev_loop *loop = ev_default_loop(EVFLAG_NOENV);
-
-	ev_io_init(&monitor, monitoring, fd, EV_READ);
-	ev_io_start(loop, &monitor);
-
-	ev_run(loop, 0);
-
-	ev_io_stop (loop, &monitor);
-	ev_default_destroy();
-
-	audit_close(fd);
+	clean_up();
 	return 0;
 }
