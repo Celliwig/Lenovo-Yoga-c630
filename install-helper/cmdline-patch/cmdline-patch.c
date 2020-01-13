@@ -6,9 +6,16 @@
 #include <unistd.h>
 #include <ev.h>
 #include <errno.h>
+#include <sys/mount.h>
 #include "auditctl-llist.h"
 
 int fd_audit, fd_kmsg;
+
+void write_log(const char* log_msg) {
+	if (fd_kmsg >= 0) {
+		write(fd_kmsg, log_msg, strlen(log_msg));
+	}
+}
 
 void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 	const char prockey[] = "key=\"mount_proc\"";
@@ -29,7 +36,7 @@ void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 			//	reply.len,
 			//	reply.message);
 
-			rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, null);
+			rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
 			if (rc == 0) {
 				write_log("cmdline-patch: Patched cmdline.");
 			} else {
@@ -113,12 +120,6 @@ int delete_all_rules(int fd_audit)
 	list_clear(&l);
 
 	return retval;
-}
-
-void write_log(const char* log_msg) {
-	if (fd_kmsg >= 0) {
-		write(fd_kmsg, log_msg, strlen(log_msg));
-	}
 }
 
 void clean_up() {
