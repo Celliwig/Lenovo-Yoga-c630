@@ -6,7 +6,7 @@
 # Standard PATH, without /snap/bin as documented in
 # https://wiki.ubuntu.com/PATH
 # This also matches /etc/environment, but without games path
-export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export PATH=/opt:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 [ -d /dev ] || mkdir -m 0755 /dev
 [ -d /root ] || mkdir -m 0700 /root

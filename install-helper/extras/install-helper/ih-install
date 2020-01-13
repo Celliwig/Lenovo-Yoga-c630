@@ -123,17 +123,13 @@ ih_install_cdrom() {
 							fi
 
 							# Patch kernel arguments
-							# Possibly need to create environment variables?
 							if [ -n "${ih_install_cdrom_grub_cfg_kernel_args}" ]; then
-								sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline > "${rootmnt}/cmdline-alt"
-								if [ ${?} -eq 0 ]; then
-									mount -n -o bind "${rootmnt}/cmdline-alt" /proc/cmdline &> /dev/null
-									if [ ${?} -ne 0 ]; then
-										ih_show_msg "Error: Failed to ammend kernel command line." 5 45
-										ih_install_cdrom_retval=1
-									fi
-								else
-									ih_show_msg "Error: Failed to copy kernel command line." 5 45
+								# Need to copy cmdline-patch
+								cp /opt/cmdline-patch "${rootmnt}/bin"
+								cmdline_alt=`sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline`
+								chroot "${rootmnt}" cmdline-patch "${cmdline_alt}"
+								if [ ${?} -ne 0 ]; then
+									ih_show_msg "Error: cmdline-patch failed." 5 45
 									ih_install_cdrom_retval=1
 								fi
 							fi
