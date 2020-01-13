@@ -197,7 +197,9 @@ required_utils=( "awk" \
 		"vgrename" \
 		"vgs" \
 		"vgscan" \
-		"vgsplit" )
+		"vgsplit" \
+		"cmdline-patch" \
+		"grub-cfg" )
 
 optional_utils=( "cfdisk" \
 		"fdisk" \
@@ -235,6 +237,14 @@ locate_util() {
 	fi
 
 	util_path=`find /usr/sbin -name "${util_name}" 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${util_path}" ]; then
+			echo "${util_path}"
+			return 0
+		fi
+	fi
+
+	util_path=`find /opt -name "${util_name}" 2>/dev/null`
 	if [ ${?} -eq 0 ]; then
 		if [ -n "${util_path}" ]; then
 			echo "${util_path}"
