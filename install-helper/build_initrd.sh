@@ -46,7 +46,7 @@ echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 sudo ls &> /dev/null
 
 # Make a tmpfs on /opt to copy our local utils into
-echo -n "       Making temporary /opt: "
+echo -n "	Making temporary /opt: "
 sudo mount -t tmpfs none /opt &> /dev/null
 okay_failedexit $?
 
