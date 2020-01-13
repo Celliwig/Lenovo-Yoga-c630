@@ -98,6 +98,14 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 fi
 
+# Make cmdline-patch
+echo -n "	Making cmdline-patch: "
+cd "${DIR_CMDLINE}"
+make cmdline-patch &> /dev/null
+okay_failedexit $?
+cd "${CWD}"
+sudo cp "${DIR_CMDLINE}/cmdline-patch" "${DIR_EXTRAS}/usr/bin" &> /dev/null
+
 # Make grub-cfg
 echo -n "	Making grub-cfg: "
 cd "${DIR_GRUBCFG}"
