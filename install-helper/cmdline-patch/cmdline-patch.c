@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
 		// Set extra filters
 		char arch[] = "arch=b64";
 		audit_rule_fieldpair_data(&rule_new, arch, AUDIT_FILTER_EXIT);
-		char path[] = "path=/projects/Lenovo/Lenovo-Yoga-c630/install-helper/cmdline-patch/tmp_dir";
+		char path[] = "path=/proc";
 		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
 		char key[] = "key=mount_proc";
 		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
