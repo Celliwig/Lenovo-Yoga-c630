@@ -4,7 +4,6 @@
 #include <string.h>
 #include <libaudit.h>
 #include <unistd.h>
-#include <ev.h>
 #include <errno.h>
 #include <sys/mount.h>
 #include "auditctl-llist.h"
@@ -14,37 +13,6 @@ int fd_audit, fd_kmsg;
 void write_log(const char* log_msg) {
 	if (fd_kmsg >= 0) {
 		write(fd_kmsg, log_msg, strlen(log_msg));
-	}
-}
-
-void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
-	const char prockey[] = "key=\"mount_proc\"";
-	struct audit_reply reply;
-
-	int rc = audit_get_reply(fd_audit, &reply, GET_REPLY_NONBLOCKING, 0);
-	if (rc > 0) {
-		/* If we get done or error, break out */
-		if (reply.type == NLMSG_DONE)
-			return;
-
-		if (reply.type == NLMSG_ERROR && reply.error->error)
-			return;
-
-		if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
-			//printf("Event: Type=%s Message=%.*s\n",
-			//	audit_msg_type_to_name(reply.type),
-			//	reply.len,
-			//	reply.message);
-
-			rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
-			if (rc == 0) {
-				write_log("cmdline-patch: Patched cmdline.");
-			} else {
-				write_log("cmdline-patch: Failed to patched cmdline.");
-			}
-
-			ev_break(EV_A_ EVBREAK_ALL);
-		}
 	}
 }
 
@@ -132,8 +100,17 @@ void clean_up() {
 }
 
 int main(int argc, char** argv) {
-	int rc, fd_cmdline;
+	int fd_cmdline, i, rc, retval = 0;
+	int timeout = 40; /* tenths of seconds */
+	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
+	struct timeval t;
+	fd_set master, read_fds;
+	const char prockey[] = "key=\"mount_proc\"";
+
+	FD_ZERO(&master);
+	FD_ZERO(&read_fds);
+	FD_SET(fd_audit, &master);
 
 	if (argc != 2) {
 		printf("Usage: %s <kernel args>\n", argv[0]);
@@ -198,16 +175,50 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 
-		struct ev_io monitor;
-		struct ev_loop *loop = ev_default_loop(EVFLAG_NOENV);
+		while(true){
+			read_fds = master;
 
-		ev_io_init(&monitor, monitoring, fd_audit, EV_READ);
-		ev_io_start(loop, &monitor);
+			for (i = 0; i < timeout; i++) {
+				t.tv_sec  = 0;
+				t.tv_usec = 100000; /* .1 second */
+				do {
+					rc = select(fd_audit+1, &read_fds, NULL, NULL, &t);
+				} while (rc < 0 && errno == EINTR);
+				// We'll try to read just in case
+				rc = audit_get_reply(fd_audit, &reply, GET_REPLY_NONBLOCKING, 0);
+				if (rc > 0) {
+					/* Reset timeout */
+					i = 0;
 
-		ev_run(loop, 0);
+					///* Don't make decisions based on wrong packet */
+					//if (reply.nlh->nlmsg_seq != seq)
+					//	continue;
 
-		ev_io_stop (loop, &monitor);
-		ev_default_destroy();
+					/* If we get done or error, break out */
+					if (reply.type == NLMSG_DONE)
+						break;
+
+					if (reply.type == NLMSG_ERROR && reply.error->error) {
+						clean_up();
+						return -1;
+					}
+
+					if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
+						//printf("Event: Type=%s Message=%.*s\n",
+						//	audit_msg_type_to_name(reply.type),
+						//	reply.len,
+						//	reply.message);
+
+						rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
+						if (rc == 0) {
+							write_log("cmdline-patch: Patched cmdline.");
+						} else {
+							write_log("cmdline-patch: Failed to patched cmdline.");
+						}
+					}
+				}
+			}
+		}
 	} else {
 		printf("Error: Failed to open audit subsystem.\n");
 		clean_up();
