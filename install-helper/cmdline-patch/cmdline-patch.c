@@ -146,6 +146,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
+		write_log("cmdline-patch: Deleted existing rules.");
 
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
@@ -163,6 +164,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
+		write_log("cmdline-patch: Added proc_mount rule.");
 
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
 			printf("Error: Failed to enable audit.\n");
@@ -175,6 +177,7 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 
+		write_log("cmdline-patch: Waiting.");
 		while(true){
 			read_fds = master;
 
@@ -199,6 +202,7 @@ int main(int argc, char** argv) {
 						break;
 
 					if (reply.type == NLMSG_ERROR && reply.error->error) {
+						write_log("cmdline-patch: Failed - NLMSG_ERROR.");
 						clean_up();
 						return -1;
 					}
