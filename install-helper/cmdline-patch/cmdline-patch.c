@@ -147,6 +147,7 @@ int main(int argc, char** argv) {
 		return -1;
 	} else {
 		write(fd_cmdline, argv[1], strlen(argv[1]));
+		write(fd_cmdline, "\n", 1);
 		close(fd_cmdline);
 	}
 
