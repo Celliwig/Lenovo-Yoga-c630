@@ -50,7 +50,7 @@ echo -n "	Making temporary /opt: "
 sudo mount -t tmpfs none /opt &> /dev/null
 okay_failedexit $?
 # TmpFS will mount as 777, so reset ACLs
-chmod 755 /opt
+sudo chmod 755 /opt
 
 # Make cmdline-patch
 echo -n "	Making cmdline-patch: "
