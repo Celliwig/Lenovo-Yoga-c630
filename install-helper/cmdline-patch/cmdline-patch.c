@@ -122,9 +122,24 @@ void clean_up() {
 		close(fd_kmsg);
 }
 
-int main() {
-	int rc;
+int main(int argc, char** argv) {
+	int rc, fd_cmdline;
 	struct audit_rule_data* rule_new;
+
+	if (argc != 2) {
+		printf("Usage: %s <kernel args>\n", argv[0]);
+		return -1;
+	}
+
+	// Write replacement cmdline file
+	fd_cmdline = open("/.cmdline-alt", O_CREAT | O_WRONLY);
+	if (fd_cmdline < 0) {
+		printf("Error: Could not write replacement cmdline file.\n");
+		return -1;
+	} else {
+		write(fd_cmdline, argv[1], strlen(argv[1]));
+		close(fd_cmdline);
+	}
 
 	// Log to dmesg if possible
 	fd_kmsg = open("/dev/kmsg", O_WRONLY);
