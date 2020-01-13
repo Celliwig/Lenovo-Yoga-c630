@@ -24,10 +24,18 @@ void monitoring(struct ev_loop *loop, struct ev_io *io, int revents) {
 			return;
 
 		if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
-			printf("Event: Type=%s Message=%.*s\n",
-				audit_msg_type_to_name(reply.type),
-				reply.len,
-				reply.message);
+			//printf("Event: Type=%s Message=%.*s\n",
+			//	audit_msg_type_to_name(reply.type),
+			//	reply.len,
+			//	reply.message);
+
+			rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, null);
+			if (rc == 0) {
+				write_log("cmdline-patch: Patched cmdline.");
+			} else {
+				write_log("cmdline-patch: Failed to patched cmdline.");
+			}
+
 			ev_break(EV_A_ EVBREAK_ALL);
 		}
 	}
@@ -204,6 +212,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
+	write_log("cmdline-patch: Finished.");
 	clean_up();
 	return 0;
 }
