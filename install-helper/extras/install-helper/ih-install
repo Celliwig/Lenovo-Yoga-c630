@@ -127,7 +127,7 @@ ih_install_cdrom() {
 								# Need to copy cmdline-patch
 								cp /opt/cmdline-patch "${rootmnt}/bin"
 								cmdline_alt=`sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline`
-								chroot "${rootmnt}" cmdline-patch "${cmdline_alt}"
+								chroot "${rootmnt}" /bin/cmdline-patch "${cmdline_alt}"
 								if [ ${?} -ne 0 ]; then
 									ih_show_msg "Error: cmdline-patch failed." 5 45
 									ih_install_cdrom_retval=1
