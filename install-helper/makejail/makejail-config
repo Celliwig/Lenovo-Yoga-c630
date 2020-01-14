@@ -63,6 +63,7 @@ required_utils=( "awk" \
 		"mv" \
 		"nano" \
 		"nice" \
+		"nohup" \
 		"passwd" \
 		"plymouth" \
 		"ps" \
