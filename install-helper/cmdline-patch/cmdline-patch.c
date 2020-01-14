@@ -102,7 +102,7 @@ void clean_up() {
 }
 
 int main(int argc, char** argv) {
-	int fd_cmdline, i, rc, retval = 0;
+	int fd_cmdline, i, loop = 1, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 		}
 
 		write_log("Waiting.");
-		while(true){
+		while (loop) {
 			read_fds = master;
 
 			for (i = 0; i < timeout; i++) {
@@ -221,6 +221,8 @@ int main(int argc, char** argv) {
 						} else {
 							write_log("Failed to patched cmdline.");
 						}
+
+						loop = 0;
 					}
 				}
 			}
