@@ -12,7 +12,9 @@ int fd_audit, fd_kmsg;
 
 void write_log(const char* log_msg) {
 	if (fd_kmsg >= 0) {
+		write(fd_kmsg, "cmdline-patch: ", 15);
 		write(fd_kmsg, log_msg, strlen(log_msg));
+		write(fd_kmsg, "\n", 1);
 	}
 }
 
@@ -134,7 +136,7 @@ int main(int argc, char** argv) {
 	// Renice to higher priority level
 	rc = nice(-4);
 	if (rc == -1 && errno)
-		write_log("cmdline-patch: Could not change nice level.");
+		write_log("Could not change nice level.");
 
 	// Open handle to audit subsystem
 	fd_audit = audit_open();
@@ -146,7 +148,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
-		write_log("cmdline-patch: Deleted existing rules.");
+		write_log("Deleted existing rules.");
 
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
@@ -164,7 +166,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
-		write_log("cmdline-patch: Added proc_mount rule.");
+		write_log("Added proc_mount rule.");
 
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
 			printf("Error: Failed to enable audit.\n");
@@ -177,7 +179,7 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 
-		write_log("cmdline-patch: Waiting.");
+		write_log("Waiting.");
 		while(true){
 			read_fds = master;
 
@@ -202,7 +204,7 @@ int main(int argc, char** argv) {
 						break;
 
 					if (reply.type == NLMSG_ERROR && reply.error->error) {
-						write_log("cmdline-patch: Failed - NLMSG_ERROR.");
+						write_log("Failed - NLMSG_ERROR.");
 						clean_up();
 						return -1;
 					}
@@ -215,9 +217,9 @@ int main(int argc, char** argv) {
 
 						rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
 						if (rc == 0) {
-							write_log("cmdline-patch: Patched cmdline.");
+							write_log("Patched cmdline.");
 						} else {
-							write_log("cmdline-patch: Failed to patched cmdline.");
+							write_log("Failed to patched cmdline.");
 						}
 					}
 				}
@@ -229,7 +231,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	write_log("cmdline-patch: Finished.");
+	write_log("Finished.");
 	clean_up();
 	return 0;
 }
