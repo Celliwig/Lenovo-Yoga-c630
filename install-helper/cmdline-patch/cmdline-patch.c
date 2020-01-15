@@ -102,7 +102,7 @@ void clean_up() {
 }
 
 int main(int argc, char** argv) {
-	int fd_cmdline, i, loop = 1, rc, retval = 0;
+	int fd_cmdline, i, loop = 1, opt, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
@@ -150,23 +150,38 @@ int main(int argc, char** argv) {
 		}
 		write_log("Deleted existing rules.");
 
+		char arch32[] = "arch=b32";
+		char arch64[] = "arch=b64";
+		char path[] = "path=/proc";
+		char key[] = "key=mount_proc";
+
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
+		audit_rule_fieldpair_data(&rule_new, arch32, AUDIT_FILTER_EXIT);
 		audit_rule_syscallbyname_data(rule_new, "mount");
-		// Set extra filters
-		char arch[] = "arch=b64";
-		audit_rule_fieldpair_data(&rule_new, arch, AUDIT_FILTER_EXIT);
-		char path[] = "path=/proc";
 		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
-		char key[] = "key=mount_proc";
 		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
 		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
 		if (rc <= 0) {
-			printf("Error: Could not add new rule.\n");
+			printf("Error: Could not add new rule. [32]\n");
 			clean_up();
 			return -1;
 		}
-		write_log("Added proc_mount rule.");
+		write_log("Added proc_mount rule. [32]");
+
+		// Generate new rule to monitor mounting of '/proc'
+		rule_new = new audit_rule_data();
+		audit_rule_fieldpair_data(&rule_new, arch64, AUDIT_FILTER_EXIT);
+		audit_rule_syscallbyname_data(rule_new, "mount");
+		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
+		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
+		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
+		if (rc <= 0) {
+			printf("Error: Could not add new rule. [64]\n");
+			clean_up();
+			return -1;
+		}
+		write_log("Added proc_mount rule. [64]");
 
 		rc = audit_set_enabled(fd_audit, 2);
 		if (rc == 0) {
