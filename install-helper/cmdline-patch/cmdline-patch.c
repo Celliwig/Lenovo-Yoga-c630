@@ -168,6 +168,13 @@ int main(int argc, char** argv) {
 		}
 		write_log("Added proc_mount rule.");
 
+		rc = audit_set_enabled(fd_audit, 2);
+		if (rc == 0) {
+			write_log("Locked rules.");
+		} else {
+			write_log("Failed to lock rules.");
+		}
+
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
 			printf("Error: Failed to enable audit.\n");
 			clean_up();
