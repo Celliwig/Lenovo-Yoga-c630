@@ -22,6 +22,24 @@
 : ${SIG_KILL=9}
 : ${SIG_TERM=15}
 
+ih_init_identify() {
+	search_path=${1}
+	local init=""
+	if [ -f "${search_path}/init" ] || [ -L "${search_path}/init" ]; then
+		init="/init"
+	elif [ -f "${search_path}/sbin/init" ] || [ -L "${search_path}/sbin/init" ]; then
+		init="/sbin/init"
+	elif [ -f "${search_path}/bin/init" ] || [ -L "${search_path}/bin/init" ]; then
+		init="/bin/init"
+	fi
+	echo "${init}"
+	if [ -n "${init}" ]; then
+		return 0
+	else
+		return -1
+	fi
+}
+
 ih_grub_cfg_identify() {
 	local ih_grub_cfg_root_path="${1}"
 	while IFS= read -r tmp_grub_cfg_path; do

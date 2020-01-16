@@ -124,14 +124,45 @@ ih_install_cdrom() {
 
 							# Patch kernel arguments
 							if [ -n "${ih_install_cdrom_grub_cfg_kernel_args}" ]; then
-								# First find nohup location
-								nohup_path=`find / -name nohup| grep -v "${rootmnt}"| head -n 1`
-								# Need to copy cmdline-patch
-								cp /opt/cmdline-patch "${nohup_path}" "${rootmnt}/bin/"
-								cmdline_alt=`sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline`
-								chroot "${rootmnt}" /bin/nohup /bin/cmdline-patch "${cmdline_alt}" &
-								if [ ${?} -ne 0 ]; then
-									ih_show_msg "Error: cmdline-patch failed." 5 45
+								# Identify installer init
+								init_path=`ih_init_identify "${rootmnt}"`
+								if [ ${?} -eq 0 ]; then
+									# inits based on shell scripts are tempremental about premounting /proc to patch cmdline.
+									# So if it's script based, delay patching cmdline
+									ih_file_identify "${init_path}" | grep -q 'ASCII text executable$' &> /dev/null
+									if [ ${?} -eq 0 ]; then
+										# Delay patching of cmdline
+										# First find nohup location
+										nohup_path=`find / -name nohup| grep -v "${rootmnt}"| head -n 1`
+										# Need to copy cmdline-patch
+										cp /opt/cmdline-patch "${nohup_path}" "${rootmnt}/bin/"
+										cmdline_alt=`sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline`
+										chroot "${rootmnt}" /bin/nohup /bin/cmdline-patch "${cmdline_alt}" &
+										if [ ${?} -ne 0 ]; then
+											ih_show_msg "Error: cmdline-patch failed." 5 45
+											ih_install_cdrom_retval=1
+										fi
+									else
+										# Mount /proc, then patch cmdline before swapping to original initrd
+										sed "s|$| ${ih_install_cdrom_grub_cfg_kernel_args}|" /proc/cmdline > "${rootmnt}/.cmdline-alt"
+										if [ ${?} -eq 0 ]; then
+											chroot "${rootmnt}" mount -t proc none /proc &> /dev/null
+											if [ ${?} -eq 0 ]; then
+												chroot "${rootmnt}" mount -o bind /.cmdline-alt /proc/cmdline &> /dev/null
+												if [ ${?} -ne 0 ]; then
+													ih_show_msg "Error: Failed to ammend kernel command line." 5 45
+													ih_install_cdrom_retval=1
+												fi
+											else
+												ih_show_msg "Error: Failed to mount /proc." 5 45
+												ih_install_cdrom_retval=1
+											fi
+										else
+											ih_show_msg "Error: Failed to copy kernel command line." 5 45
+											ih_install_cdrom_retval=1
+										fi
+								else
+									ih_show_msg "Error: Failed to find init command." 5 45
 									ih_install_cdrom_retval=1
 								fi
 							fi

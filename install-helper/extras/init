@@ -352,16 +352,11 @@ if { [ ${ih_retval} -ge 230 ] && [ ${ih_retval} -le 240 ]; } && [ ${rootmnt_coun
 #	#fi
 
 	init="/bin/sh"
-	if [ -f "${rootmnt}/init" ] || [ -L "${rootmnt}/init" ]; then
-		echo "Found: /init"
-		init="/init"
-	elif [ -f "${rootmnt}/sbin/init" ] || [ -L "${rootmnt}/sbin/init" ]; then
-		echo "Found: /sbin/init"
-		init="/sbin/init"
-	elif [ -f "${rootmnt}/bin/init" ] || [ -L "${rootmnt}/bin/init" ]; then
-		echo "Found: /bin/init"
-		init="/bin/init"
+	tmp_init=`ih_init_identify "${rootmnt}"`
+	if [ ${?} -eq 0 ]; then
+		init="${tmp_init}"
 	fi
+	echo "Found: ${init}"
 
 	maybe_break init
 
