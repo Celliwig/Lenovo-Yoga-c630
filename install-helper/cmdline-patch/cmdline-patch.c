@@ -116,7 +116,7 @@ void clean_up() {
 
 void print_usage() {
 	printf("Usage: cmdline-patch {options} <kernel args>\n");
-	printf("	-d			- Log received events.");
+	printf("	-d			- Log received events.\n");
 	printf("	-k			- Log to /dev/kmsg.\n");
 	printf("	-L <logfile path>	- Log to file.\n");
 	printf("	-l			- Lock rules so they can't be altered.\n");
@@ -214,7 +214,8 @@ int main(int argc, char** argv) {
 			char rule_syscall2[] = "mount";
 
 			// Generate new rule to monitor mounting of '/proc'
-			rule_new = new audit_rule_data();
+			rule_new = (struct audit_rule_data *) malloc(sizeof(struct audit_rule_data));
+			memset(rule_new, 0, sizeof(struct audit_rule_data));
 			audit_rule_fieldpair_data(&rule_new, rule_arch1, AUDIT_FILTER_EXIT);
 			audit_rule_syscallbyname_data(rule_new, rule_syscall1);
 			audit_rule_fieldpair_data(&rule_new, rule_path1, AUDIT_FILTER_EXIT);
@@ -228,7 +229,8 @@ int main(int argc, char** argv) {
 			write_log("Added proc_mount rule. [32]", log_cr);
 
 			// Generate new rule to monitor mounting of '/proc'
-			rule_new = new audit_rule_data();
+			rule_new = (struct audit_rule_data *) malloc(sizeof(struct audit_rule_data));
+			memset(rule_new, 0, sizeof(struct audit_rule_data));
 			audit_rule_fieldpair_data(&rule_new, rule_arch2, AUDIT_FILTER_EXIT);
 			audit_rule_syscallbyname_data(rule_new, rule_syscall2);
 			audit_rule_fieldpair_data(&rule_new, rule_path2, AUDIT_FILTER_EXIT);

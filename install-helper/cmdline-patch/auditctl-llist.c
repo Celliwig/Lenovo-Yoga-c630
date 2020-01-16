@@ -66,7 +66,7 @@ void list_append(llist *l, struct audit_rule_data *r, size_t sz)
 	newnode = (lnode*) malloc(sizeof(lnode));
 
 	if (r) {
-		audit_rule_data *rr = (audit_rule_data*) malloc(sz);
+		struct audit_rule_data *rr = (struct audit_rule_data*) malloc(sz);
 		if (rr)
 			memcpy(rr, r, sz);
 		newnode->r = rr;
