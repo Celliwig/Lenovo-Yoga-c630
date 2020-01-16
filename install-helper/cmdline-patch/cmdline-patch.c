@@ -101,22 +101,41 @@ void clean_up() {
 		close(fd_kmsg);
 }
 
+int print_usage() {
+	printf("Usage: cmdline-patch {options} <kernel args>\n");
+	printf("	-l	- Lock rules so they can't be altered.\n");
+	return -1;
+}
+
 int main(int argc, char** argv) {
-	int fd_cmdline, i, loop = 1, opt, rc, retval = 0;
+	int fd_cmdline, i, lock_rules = 0, loop = 1, opt, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
 	struct timeval t;
 	fd_set master, read_fds;
+	char *kernel_args;
 	const char prockey[] = "key=\"mount_proc\"";
 
 	FD_ZERO(&master);
 	FD_ZERO(&read_fds);
 	FD_SET(fd_audit, &master);
 
-	if (argc != 2) {
-		printf("Usage: %s <kernel args>\n", argv[0]);
-		return -1;
+	// Parse normal arguments
+	while ((opt = getopt(argc, argv, "l")) != -1) {
+		switch (opt) {
+			case 'l':
+				lock_rules = 1;
+				break;
+			default:
+				print_usage();
+				break;
+		}
+	}
+	if (optind == (argc - 1)) {
+		kernel_args = argv[optind];
+	} else {
+		print_usage();
 	}
 
 	// Write replacement cmdline file
@@ -125,7 +144,7 @@ int main(int argc, char** argv) {
 		printf("Error: Could not write replacement cmdline file.\n");
 		return -1;
 	} else {
-		write(fd_cmdline, argv[1], strlen(argv[1]));
+		write(fd_cmdline, kernel_args, strlen(kernel_args));
 		write(fd_cmdline, "\n", 1);
 		close(fd_cmdline);
 	}
@@ -183,13 +202,14 @@ int main(int argc, char** argv) {
 		}
 		write_log("Added proc_mount rule. [64]");
 
-		rc = audit_set_enabled(fd_audit, 2);
-		if (rc == 0) {
-			write_log("Locked rules.");
-		} else {
-			write_log("Failed to lock rules.");
+		if (lock_rules) {
+			rc = audit_set_enabled(fd_audit, 2);
+			if (rc == 0) {
+				write_log("Locked rules.");
+			} else {
+				write_log("Failed to lock rules.");
+			}
 		}
-
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
 			printf("Error: Failed to enable audit.\n");
 			clean_up();
