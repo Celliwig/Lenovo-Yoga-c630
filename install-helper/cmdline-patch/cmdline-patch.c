@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
 
 	// Open log file
 	if (log_path != NULL) {
-		fd_log = open(log_path, O_CREAT | O_WRONLY);
+		fd_log = open(log_path, O_CREAT | O_RDWR | O_APPEND);
 	}
 
 	// Renice to higher priority level
@@ -189,17 +189,21 @@ int main(int argc, char** argv) {
 		}
 		write_log("Deleted existing rules.", log_cr);
 
-		char arch32[] = "arch=b32";
-		char arch64[] = "arch=b64";
-		char path[] = "path=/proc";
-		char key[] = "key=mount_proc";
+		char rule_arch1[] = "arch=b32";
+		char rule_arch2[] = "arch=b64";
+		char rule_key1[] = "key=mount_proc";
+		char rule_key2[] = "key=mount_proc";
+		char rule_path1[] = "path=/proc";
+		char rule_path2[] = "path=/proc";
+		char rule_syscall1[] = "mount";
+		char rule_syscall2[] = "mount";
 
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
-		audit_rule_fieldpair_data(&rule_new, arch32, AUDIT_FILTER_EXIT);
-		audit_rule_syscallbyname_data(rule_new, "mount");
-		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
-		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
+		audit_rule_fieldpair_data(&rule_new, rule_arch1, AUDIT_FILTER_EXIT);
+		audit_rule_syscallbyname_data(rule_new, rule_syscall1);
+		audit_rule_fieldpair_data(&rule_new, rule_path1, AUDIT_FILTER_EXIT);
+		audit_rule_fieldpair_data(&rule_new, rule_key1, AUDIT_FILTER_EXIT);
 		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
 		if (rc <= 0) {
 			printf("Error: Could not add new rule. [32]\n");
@@ -210,10 +214,10 @@ int main(int argc, char** argv) {
 
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
-		audit_rule_fieldpair_data(&rule_new, arch64, AUDIT_FILTER_EXIT);
-		audit_rule_syscallbyname_data(rule_new, "mount");
-		audit_rule_fieldpair_data(&rule_new, path, AUDIT_FILTER_EXIT);
-		audit_rule_fieldpair_data(&rule_new, key, AUDIT_FILTER_EXIT);
+		audit_rule_fieldpair_data(&rule_new, rule_arch2, AUDIT_FILTER_EXIT);
+		audit_rule_syscallbyname_data(rule_new, rule_syscall2);
+		audit_rule_fieldpair_data(&rule_new, rule_path2, AUDIT_FILTER_EXIT);
+		audit_rule_fieldpair_data(&rule_new, rule_key2, AUDIT_FILTER_EXIT);
 		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
 		if (rc <= 0) {
 			printf("Error: Could not add new rule. [64]\n");
