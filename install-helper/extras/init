@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Default PATH differs between shells, and is not automatically exported
 # by klibc dash.  Make it consistent.
@@ -278,6 +278,9 @@ run_scripts /scripts/init-premount
 
 # Update path
 PATH=$PATH:/install-helper
+
+# Import function
+. /install-helper/ih-functions
 
 # Init LVM
 modprobe dm-mod

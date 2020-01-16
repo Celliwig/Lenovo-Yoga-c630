@@ -144,7 +144,7 @@ ih_file_identify() {
 	local ih_file_type=`file -0 -F '' "${ih_file_path}"| cut -d '' -f2| sed 's/[[:space:]]*//'`
 	if [ ${?} -eq 0 ]; then
 		ih_file_type_awk=`echo "${ih_file_type}"| awk "match(\\$0, /^([a-zA-Z0-9]+ compressed data)/, tmp_entry) {print tmp_entry[1]}"`
-		if [ ${?} -eq 0 ]; then
+		if [ -n "${ih_file_type_awk}" ]; then
 			echo "${ih_file_type_awk}"
 			return 0
 		else
