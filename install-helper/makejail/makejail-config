@@ -208,7 +208,8 @@ optional_utils=( "cfdisk" \
 		"kpartx" \
 		"parted" \
 		"sfdisk" \
-		"sgdisk" )
+		"sgdisk" \
+		"auditctl" )
 
 locate_util() {
 	util_name="${1}"
