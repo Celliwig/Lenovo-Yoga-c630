@@ -156,20 +156,20 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
+	// Open log file
+	if (log_path != NULL) {
+		fd_log = open(log_path, O_CREAT | O_RDWR | O_APPEND);
+	}
+
 	// Write replacement cmdline file
 	fd_cmdline = open("/.cmdline-alt", O_CREAT | O_WRONLY);
 	if (fd_cmdline < 0) {
-		printf("Error: Could not write replacement cmdline file.\n");
+		write_log("Error: Could not write replacement cmdline file.", log_cr);
 		return -1;
 	} else {
 		write(fd_cmdline, kernel_args, strlen(kernel_args));
 		write(fd_cmdline, "\n", 1);
 		close(fd_cmdline);
-	}
-
-	// Open log file
-	if (log_path != NULL) {
-		fd_log = open(log_path, O_CREAT | O_RDWR | O_APPEND);
 	}
 
 	// Renice to higher priority level
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
 		// Delete any existing rules
 		rc = delete_all_rules(fd_audit);
 		if (rc != 0) {
-			printf("Error: Could not delete existing rules.\n");
+			write_log("Error: Could not delete existing rules.", log_cr);
 			clean_up();
 			return -1;
 		}
@@ -206,7 +206,7 @@ int main(int argc, char** argv) {
 		audit_rule_fieldpair_data(&rule_new, rule_key1, AUDIT_FILTER_EXIT);
 		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
 		if (rc <= 0) {
-			printf("Error: Could not add new rule. [32]\n");
+			write_log("Error: Could not add new rule. [32]", log_cr);
 			clean_up();
 			return -1;
 		}
@@ -220,7 +220,7 @@ int main(int argc, char** argv) {
 		audit_rule_fieldpair_data(&rule_new, rule_key2, AUDIT_FILTER_EXIT);
 		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
 		if (rc <= 0) {
-			printf("Error: Could not add new rule. [64]\n");
+			write_log("Error: Could not add new rule. [64]", log_cr);
 			clean_up();
 			return -1;
 		}
@@ -235,12 +235,12 @@ int main(int argc, char** argv) {
 			}
 		}
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
-			printf("Error: Failed to enable audit.\n");
+			write_log("Error: Failed to enable audit.", log_cr);
 			clean_up();
 			return -1;
 		}
 		if (audit_set_pid(fd_audit, getpid(), WAIT_YES) < 0) {
-			printf("Error: Failed to set pid.\n");
+			write_log("Error: Failed to set pid.", log_cr);
 			clean_up();
 			return -1;
 		}
@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
 			}
 		}
 	} else {
-		printf("Error: Failed to open audit subsystem.\n");
+		write_log("Error: Failed to open audit subsystem.", log_cr);
 		clean_up();
 		return -1;
 	}
