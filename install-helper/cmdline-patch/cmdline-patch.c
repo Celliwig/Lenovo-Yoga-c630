@@ -113,10 +113,11 @@ void print_usage() {
 	printf("	-k			- Log to /dev/kmsg.\n");
 	printf("	-L <logfile path>	- Log to file.\n");
 	printf("	-l			- Lock rules so they can't be altered.\n");
+	printf("	-s			- Suppress rule insertion.\n");
 }
 
 int main(int argc, char** argv) {
-	int fd_cmdline, i, lock_rules = 0, log_cr = 0, loop = 1, opt, rc, retval = 0;
+	int add_rules = 1, fd_cmdline, i, lock_rules = 0, log_cr = 0, loop = 1, opt, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
@@ -130,7 +131,7 @@ int main(int argc, char** argv) {
 	FD_SET(fd_audit, &master);
 
 	// Parse normal arguments
-	while ((opt = getopt(argc, argv, "kL:l")) != -1) {
+	while ((opt = getopt(argc, argv, "kL:ls")) != -1) {
 		switch (opt) {
 			case 'k':
 				log_cr = 0;
@@ -142,6 +143,9 @@ int main(int argc, char** argv) {
 				break;
 			case 'l':
 				lock_rules = 1;
+				break;
+			case 's':
+				add_rules = 0;
 				break;
 			default:
 				print_usage();
@@ -180,51 +184,53 @@ int main(int argc, char** argv) {
 	// Open handle to audit subsystem
 	fd_audit = audit_open();
 	if (fd_audit >= 0) {
-		// Delete any existing rules
-		rc = delete_all_rules(fd_audit);
-		if (rc != 0) {
-			write_log("Error: Could not delete existing rules.", log_cr);
-			clean_up();
-			return -1;
-		}
-		write_log("Deleted existing rules.", log_cr);
+		if (add_rules) {
+			// Delete any existing rules
+			rc = delete_all_rules(fd_audit);
+			if (rc != 0) {
+				write_log("Error: Could not delete existing rules.", log_cr);
+				clean_up();
+				return -1;
+			}
+			write_log("Deleted existing rules.", log_cr);
 
-		char rule_arch1[] = "arch=b32";
-		char rule_arch2[] = "arch=b64";
-		char rule_key1[] = "key=mount_proc";
-		char rule_key2[] = "key=mount_proc";
-		char rule_path1[] = "path=/proc";
-		char rule_path2[] = "path=/proc";
-		char rule_syscall1[] = "mount";
-		char rule_syscall2[] = "mount";
+			char rule_arch1[] = "arch=b32";
+			char rule_arch2[] = "arch=b64";
+			char rule_key1[] = "key=mount_proc";
+			char rule_key2[] = "key=mount_proc";
+			char rule_path1[] = "path=/proc";
+			char rule_path2[] = "path=/proc";
+			char rule_syscall1[] = "mount";
+			char rule_syscall2[] = "mount";
 
-		// Generate new rule to monitor mounting of '/proc'
-		rule_new = new audit_rule_data();
-		audit_rule_fieldpair_data(&rule_new, rule_arch1, AUDIT_FILTER_EXIT);
-		audit_rule_syscallbyname_data(rule_new, rule_syscall1);
-		audit_rule_fieldpair_data(&rule_new, rule_path1, AUDIT_FILTER_EXIT);
-		audit_rule_fieldpair_data(&rule_new, rule_key1, AUDIT_FILTER_EXIT);
-		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
-		if (rc <= 0) {
-			write_log("Error: Could not add new rule. [32]", log_cr);
-			clean_up();
-			return -1;
-		}
-		write_log("Added proc_mount rule. [32]", log_cr);
+			// Generate new rule to monitor mounting of '/proc'
+			rule_new = new audit_rule_data();
+			audit_rule_fieldpair_data(&rule_new, rule_arch1, AUDIT_FILTER_EXIT);
+			audit_rule_syscallbyname_data(rule_new, rule_syscall1);
+			audit_rule_fieldpair_data(&rule_new, rule_path1, AUDIT_FILTER_EXIT);
+			audit_rule_fieldpair_data(&rule_new, rule_key1, AUDIT_FILTER_EXIT);
+			rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
+			if (rc <= 0) {
+				write_log("Error: Could not add new rule. [32]", log_cr);
+				clean_up();
+				return -1;
+			}
+			write_log("Added proc_mount rule. [32]", log_cr);
 
-		// Generate new rule to monitor mounting of '/proc'
-		rule_new = new audit_rule_data();
-		audit_rule_fieldpair_data(&rule_new, rule_arch2, AUDIT_FILTER_EXIT);
-		audit_rule_syscallbyname_data(rule_new, rule_syscall2);
-		audit_rule_fieldpair_data(&rule_new, rule_path2, AUDIT_FILTER_EXIT);
-		audit_rule_fieldpair_data(&rule_new, rule_key2, AUDIT_FILTER_EXIT);
-		rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
-		if (rc <= 0) {
-			write_log("Error: Could not add new rule. [64]", log_cr);
-			clean_up();
-			return -1;
+			// Generate new rule to monitor mounting of '/proc'
+			rule_new = new audit_rule_data();
+			audit_rule_fieldpair_data(&rule_new, rule_arch2, AUDIT_FILTER_EXIT);
+			audit_rule_syscallbyname_data(rule_new, rule_syscall2);
+			audit_rule_fieldpair_data(&rule_new, rule_path2, AUDIT_FILTER_EXIT);
+			audit_rule_fieldpair_data(&rule_new, rule_key2, AUDIT_FILTER_EXIT);
+			rc = audit_add_rule_data(fd_audit, rule_new, AUDIT_FILTER_EXIT, AUDIT_ALWAYS);
+			if (rc <= 0) {
+				write_log("Error: Could not add new rule. [64]", log_cr);
+				clean_up();
+				return -1;
+			}
+			write_log("Added proc_mount rule. [64]", log_cr);
 		}
-		write_log("Added proc_mount rule. [64]", log_cr);
 
 		if (lock_rules) {
 			rc = audit_set_enabled(fd_audit, 2);
