@@ -11,18 +11,24 @@
 int fd_audit = -1, fd_log = -1;
 
 void write_log(const char* log_msg, int cr) {
-	char log_buffer[256];
+	char log_buffer[1024];
 
 	if (fd_log >= 0) {
 		if (cr) {
-			snprintf(log_buffer, 256, "cmdline-patch: %s\n", log_msg);
+			snprintf(log_buffer, 1024, "cmdline-patch: %s\n", log_msg);
 		} else {
-			snprintf(log_buffer, 256, "cmdline-patch: %s", log_msg);
+			snprintf(log_buffer, 1024, "cmdline-patch: %s", log_msg);
 		}
 
 		write(fd_log, log_buffer, strlen(log_buffer));
 		fsync(fd_log);
 	}
+}
+
+void write_log_event(struct audit_reply reply, int cr) {
+	char msg_buffer[1024];
+	snprintf(msg_buffer, 1024, "Event: Type=%s Message=%s", audit_msg_type_to_name(reply.type), reply.message);
+	write_log(msg_buffer, cr);
 }
 
 /* Returns 0 for success and -1 for failure */
@@ -110,6 +116,7 @@ void clean_up() {
 
 void print_usage() {
 	printf("Usage: cmdline-patch {options} <kernel args>\n");
+	printf("	-d			- Log received events.");
 	printf("	-k			- Log to /dev/kmsg.\n");
 	printf("	-L <logfile path>	- Log to file.\n");
 	printf("	-l			- Lock rules so they can't be altered.\n");
@@ -117,7 +124,7 @@ void print_usage() {
 }
 
 int main(int argc, char** argv) {
-	int add_rules = 1, fd_cmdline, i, lock_rules = 0, log_cr = 0, loop = 1, opt, rc, retval = 0;
+	int add_rules = 1, fd_cmdline, i, lock_rules = 0, log_cr = 0, log_events = 0, loop = 1, opt, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
@@ -131,8 +138,11 @@ int main(int argc, char** argv) {
 	FD_SET(fd_audit, &master);
 
 	// Parse normal arguments
-	while ((opt = getopt(argc, argv, "kL:ls")) != -1) {
+	while ((opt = getopt(argc, argv, "dkL:ls")) != -1) {
 		switch (opt) {
+			case 'd':
+				log_events = 1;
+				break;
 			case 'k':
 				log_cr = 0;
 				log_path = (char*) "/dev/kmsg";
@@ -281,12 +291,11 @@ int main(int argc, char** argv) {
 						return -1;
 					}
 
-					if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
-						//printf("Event: Type=%s Message=%.*s\n",
-						//	audit_msg_type_to_name(reply.type),
-						//	reply.len,
-						//	reply.message);
+					if (log_events) {
+						write_log_event(reply, log_cr);
+					}
 
+					if (reply.type == AUDIT_SYSCALL && (strstr(reply.message, prockey) != NULL)) {
 						rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
 						if (rc == 0) {
 							write_log("Patched cmdline.", log_cr);
