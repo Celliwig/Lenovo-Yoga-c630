@@ -101,10 +101,9 @@ void clean_up() {
 		close(fd_kmsg);
 }
 
-int print_usage() {
+void print_usage() {
 	printf("Usage: cmdline-patch {options} <kernel args>\n");
 	printf("	-l	- Lock rules so they can't be altered.\n");
-	return -1;
 }
 
 int main(int argc, char** argv) {
@@ -129,6 +128,7 @@ int main(int argc, char** argv) {
 				break;
 			default:
 				print_usage();
+				return -1;
 				break;
 		}
 	}
@@ -136,6 +136,7 @@ int main(int argc, char** argv) {
 		kernel_args = argv[optind];
 	} else {
 		print_usage();
+		return -1;
 	}
 
 	// Write replacement cmdline file
