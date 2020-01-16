@@ -8,13 +8,20 @@
 #include <sys/mount.h>
 #include "auditctl-llist.h"
 
-int fd_audit, fd_kmsg;
+int fd_audit, fd_log;
 
-void write_log(const char* log_msg) {
-	if (fd_kmsg >= 0) {
-		write(fd_kmsg, "cmdline-patch: ", 15);
-		write(fd_kmsg, log_msg, strlen(log_msg));
-		write(fd_kmsg, "\n", 1);
+void write_log(const char* log_msg, int cr) {
+	char log_buffer[256];
+
+	if (fd_log >= 0) {
+		if (cr) {
+			snprintf(log_buffer, 256, "cmdline-patch: %s\n", log_msg);
+		} else {
+			snprintf(log_buffer, 256, "cmdline-patch: %s", log_msg);
+		}
+
+		write(fd_log, log_buffer, strlen(log_buffer));
+		fsync(fd_log);
 	}
 }
 
@@ -97,23 +104,25 @@ void clean_up() {
 	if (fd_audit)
 		audit_close(fd_audit);
 	// Close log handler
-	if (fd_kmsg >= 0)
-		close(fd_kmsg);
+	if (fd_log >= 0)
+		close(fd_log);
 }
 
 void print_usage() {
 	printf("Usage: cmdline-patch {options} <kernel args>\n");
-	printf("	-l	- Lock rules so they can't be altered.\n");
+	printf("	-k			- Log to /dev/kmsg.\n");
+	printf("	-L <logfile path>	- Log to file.\n");
+	printf("	-l			- Lock rules so they can't be altered.\n");
 }
 
 int main(int argc, char** argv) {
-	int fd_cmdline, i, lock_rules = 0, loop = 1, opt, rc, retval = 0;
+	int fd_cmdline, i, lock_rules = 0, log_cr = 0, loop = 1, opt, rc, retval = 0;
 	int timeout = 40; /* tenths of seconds */
 	struct audit_reply reply;
 	struct audit_rule_data* rule_new;
 	struct timeval t;
 	fd_set master, read_fds;
-	char *kernel_args;
+	char *kernel_args, *log_path = NULL;
 	const char prockey[] = "key=\"mount_proc\"";
 
 	FD_ZERO(&master);
@@ -121,8 +130,16 @@ int main(int argc, char** argv) {
 	FD_SET(fd_audit, &master);
 
 	// Parse normal arguments
-	while ((opt = getopt(argc, argv, "l")) != -1) {
+	while ((opt = getopt(argc, argv, "kL:l")) != -1) {
 		switch (opt) {
+			case 'k':
+				log_cr = 0;
+				log_path = (char*) &"/dev/kmsg";
+				break;
+			case 'L':
+				log_cr = 1;
+				log_path = optarg;
+				break;
 			case 'l':
 				lock_rules = 1;
 				break;
@@ -150,13 +167,15 @@ int main(int argc, char** argv) {
 		close(fd_cmdline);
 	}
 
-	// Log to dmesg if possible
-	fd_kmsg = open("/dev/kmsg", O_WRONLY);
+	// Open log file
+	if (log_path != NULL) {
+		fd_log = open(log_path, O_WRONLY);
+	}
 
 	// Renice to higher priority level
 	rc = nice(-4);
 	if (rc == -1 && errno)
-		write_log("Could not change nice level.");
+		write_log("Could not change nice level.", log_cr);
 
 	// Open handle to audit subsystem
 	fd_audit = audit_open();
@@ -168,7 +187,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
-		write_log("Deleted existing rules.");
+		write_log("Deleted existing rules.", log_cr);
 
 		char arch32[] = "arch=b32";
 		char arch64[] = "arch=b64";
@@ -187,7 +206,7 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
-		write_log("Added proc_mount rule. [32]");
+		write_log("Added proc_mount rule. [32]", log_cr);
 
 		// Generate new rule to monitor mounting of '/proc'
 		rule_new = new audit_rule_data();
@@ -201,14 +220,14 @@ int main(int argc, char** argv) {
 			clean_up();
 			return -1;
 		}
-		write_log("Added proc_mount rule. [64]");
+		write_log("Added proc_mount rule. [64]", log_cr);
 
 		if (lock_rules) {
 			rc = audit_set_enabled(fd_audit, 2);
 			if (rc == 0) {
-				write_log("Locked rules.");
+				write_log("Locked rules.", log_cr);
 			} else {
-				write_log("Failed to lock rules.");
+				write_log("Failed to lock rules.", log_cr);
 			}
 		}
 		if ((audit_is_enabled(fd_audit) < 2) && (audit_set_enabled(fd_audit, 1) < 0)) {
@@ -222,7 +241,7 @@ int main(int argc, char** argv) {
 			return -1;
 		}
 
-		write_log("Waiting.");
+		write_log("Waiting.", log_cr);
 		while (loop) {
 			read_fds = master;
 
@@ -247,7 +266,7 @@ int main(int argc, char** argv) {
 						break;
 
 					if (reply.type == NLMSG_ERROR && reply.error->error) {
-						write_log("Failed - NLMSG_ERROR.");
+						write_log("Failed - NLMSG_ERROR.", log_cr);
 						clean_up();
 						return -1;
 					}
@@ -260,9 +279,9 @@ int main(int argc, char** argv) {
 
 						rc = mount("/.cmdline-alt", "/proc/cmdline", "none", MS_BIND, NULL);
 						if (rc == 0) {
-							write_log("Patched cmdline.");
+							write_log("Patched cmdline.", log_cr);
 						} else {
-							write_log("Failed to patched cmdline.");
+							write_log("Failed to patched cmdline.", log_cr);
 						}
 
 						loop = 0;
@@ -276,7 +295,7 @@ int main(int argc, char** argv) {
 		return -1;
 	}
 
-	write_log("Finished.");
+	write_log("Finished.", log_cr);
 	clean_up();
 	return 0;
 }
