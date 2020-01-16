@@ -8,7 +8,7 @@
 #include <sys/mount.h>
 #include "auditctl-llist.h"
 
-int fd_audit, fd_log;
+int fd_audit = -1, fd_log = -1;
 
 void write_log(const char* log_msg, int cr) {
 	char log_buffer[256];
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
 		switch (opt) {
 			case 'k':
 				log_cr = 0;
-				log_path = (char*) &"/dev/kmsg";
+				log_path = (char*) "/dev/kmsg";
 				break;
 			case 'L':
 				log_cr = 1;
@@ -169,7 +169,7 @@ int main(int argc, char** argv) {
 
 	// Open log file
 	if (log_path != NULL) {
-		fd_log = open(log_path, O_WRONLY);
+		fd_log = open(log_path, O_CREAT | O_WRONLY);
 	}
 
 	// Renice to higher priority level
