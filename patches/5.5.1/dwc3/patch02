@@ -1,0 +1,71 @@
+From 34bb090a42857b89e877c16515320044e271f06e Mon Sep 17 00:00:00 2001
+From: Vamsi Krishna Samavedam <vskrishn@codeaurora.org>
+Date: Thu, 7 Jun 2018 13:17:21 -0700
+Subject: [PATCH] usb: dwc3: Disable USB20 internal retry feature
+
+Disable USB20 internal retry feature for dwc3 version 170A-GA to avoid
+controller lockup due to snps star:'9001346572:Host stops transfers
+to other EPs when a single USB2.0 EP NAKs continuously'
+
+Change-Id: I71f1d272f74dc51fed4617b7ea12c044160a69c7
+Signed-off-by: Vamsi Krishna Samavedam <vskrishn@codeaurora.org>
+---
+ drivers/usb/dwc3/core.c | 12 ++++++++++++
+ drivers/usb/dwc3/core.h |  7 ++++++-
+ 2 files changed, 18 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/usb/dwc3/core.c b/drivers/usb/dwc3/core.c
+index 97d6ae3c4df2f..c20955f0d1665 100644
+--- a/drivers/usb/dwc3/core.c
++++ b/drivers/usb/dwc3/core.c
+@@ -995,6 +995,18 @@ static int dwc3_core_init(struct dwc3 *dwc)
+ 		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
+ 	}
+ 
++	/*
++	 * STAR: 9001346572:Host stops transfers to other EPs when a single
++	 * USB2.0 EP NAKs continuously requires to disable internal retry
++	 * feature
++	 */
++	if ((dwc->revision == DWC3_USB31_REVISION_170A) &&
++		(dwc->version_type == DWC31_VERSIONTYPE_GA)) {
++		reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
++		reg |= DWC3_GUCTL3_USB20_RETRY_DISABLE;
++		dwc3_writel(dwc->regs, DWC3_GUCTL3, reg);
++	}
++
+ 	if (dwc->dr_mode == USB_DR_MODE_HOST ||
+ 	    dwc->dr_mode == USB_DR_MODE_OTG) {
+ 		reg = dwc3_readl(dwc->regs, DWC3_GUCTL);
+diff --git a/drivers/usb/dwc3/core.h b/drivers/usb/dwc3/core.h
+index 1c8b349379af2..560461123109e 100644
+--- a/drivers/usb/dwc3/core.h
++++ b/drivers/usb/dwc3/core.h
+@@ -116,6 +116,7 @@
+ #define DWC3_GPRTBIMAP_FS0	0xc188
+ #define DWC3_GPRTBIMAP_FS1	0xc18c
+ #define DWC3_GUCTL2		0xc19c
++#define DWC3_GUCTL3		0xc60c
+ 
+ #define DWC3_VER_NUMBER		0xc1a0
+ #define DWC3_VER_TYPE		0xc1a4
+@@ -370,6 +371,9 @@
+ /* Global User Control Register 2 */
+ #define DWC3_GUCTL2_RST_ACTBITLATER		BIT(14)
+ 
++/* Global User Control Register 3 */
++#define DWC3_GUCTL3_USB20_RETRY_DISABLE		BIT(16)
++
+ /* Device Configuration Register */
+ #define DWC3_DCFG_DEVADDR(addr)	((addr) << 3)
+ #define DWC3_DCFG_DEVADDR_MASK	DWC3_DCFG_DEVADDR(0x7f)
+@@ -1148,7 +1152,8 @@ struct dwc3 {
+ #define DWC31_VERSIONTYPE_EA04		0x65613034
+ #define DWC31_VERSIONTYPE_EA05		0x65613035
+ #define DWC31_VERSIONTYPE_EA06		0x65613036
+-
++#define DWC31_VERSIONTYPE_GA		0x67612a2a
++	
+ 	enum dwc3_ep0_next	ep0_next_event;
+ 	enum dwc3_ep0_state	ep0state;
+ 	enum dwc3_link_state	link_state;
