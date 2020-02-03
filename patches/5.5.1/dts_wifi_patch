@@ -1,0 +1,17 @@
+--- linux-5.4-rc7/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts	2019-11-19 16:36:54.976037418 +0000
++++ Lenovo-Yoga-c630-kernel/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts	2019-11-19 16:37:58.528430594 +0000
+@@ -467,3 +467,14 @@
+ 	vdda-phy-supply = <&vdda_usb2_ss_1p2>;
+ 	vdda-pll-supply = <&vdda_usb2_ss_core>;
+ };
++
++&wifi {
++	status = "okay";
++
++	vdd-0.8-cx-mx-supply = <&vreg_l5a_0p8>;
++	vdd-1.8-xo-supply = <&vreg_l7a_1p8>;
++	vdd-1.3-rfa-supply = <&vreg_l17a_1p3>;
++	vdd-3.3-ch0-supply = <&vreg_l25a_3p3>;
++
++	qcom,snoc-host-cap-8bit-quirk;
++};

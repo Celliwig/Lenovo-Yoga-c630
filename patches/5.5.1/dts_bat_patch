@@ -1,0 +1,14 @@
+--- linux-5.4-rc7/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts	2019-11-19 16:35:25.535483584 +0000
++++ Lenovo-Yoga-c630-kernel/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts	2019-11-19 16:35:59.499693971 +0000
+@@ -252,6 +252,11 @@
+ &i2c1 {
+ 	status = "okay";
+ 	clock-frequency = <400000>;
++
++	battery@70 {
++		compatible = "some,battery";
++		reg = <0x70>;
++	};
+ };
+ 
+ &i2c3 {
