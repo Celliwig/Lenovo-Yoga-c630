@@ -221,7 +221,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		esac
 
 		echo -n "	Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to USB key: "
-		cp -a "${KERNEL_PACKAGE_TEMPDIR}"/* "${DIR_USBKEY}"
+		cp -a "${KERNEL_PACKAGE_TEMPDIR}"/* "${DIR_USBKEY}"/ &> /dev/null
 		okay_failedexit $?
 		sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 	fi
