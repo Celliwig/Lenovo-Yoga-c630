@@ -3,7 +3,7 @@
 chroot="###PROJECT_DIR###"
 
 cleanJailFirst=1
-maxRemove=4200
+maxRemove=11000
 
 users=[]
 groups=[]
