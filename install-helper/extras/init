@@ -288,6 +288,8 @@ vgchange -ay
 
 # Mount the device associated with the partition label IHFILES.
 mkdir /media
+
+ih_retry=0
 # Wait for USB key to become available
 while true; do
 	echo -n "Looking for device with partition label 'IHFILES': "
@@ -297,8 +299,12 @@ while true; do
 		mount -t ext3 ${IHFILES_DEV} /media
 		break
 	else
+		ih_retry=$((ih_retry+1))
 		echo 'Not found'
 		sleep 1
+	fi
+	if [ ${ih_retry} -eq 10 ]; then
+		break;
 	fi
 done
 
