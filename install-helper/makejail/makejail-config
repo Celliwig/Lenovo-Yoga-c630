@@ -2,6 +2,8 @@
 
 DIR_MAKEJAIL=`dirname "${0}"`
 DIR_INITRD="${1}"
+MAKEJAIL_CFG="${DIR_MAKEJAIL}/${2}"
+MAKEJAIL_CFG_PRE="${MAKEJAIL_CFG}.pre"
 
 required_utils=( "awk" \
 		"basename" \
@@ -363,6 +365,4 @@ for tmp_command in ${optional_utils[@]}; do
 	fi
 done
 
-MAKEJAIL_CFG="${DIR_MAKEJAIL}/install-helper-initrd.py"
-MAKEJAIL_CFG_PRE="${DIR_MAKEJAIL}/install-helper-initrd.py.pre"
 sed "s|###PROJECT_DIR###|${DIR_INITRD}|g ; s|###UTILS###|${MAKEJAIL_CFG_TXT}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"

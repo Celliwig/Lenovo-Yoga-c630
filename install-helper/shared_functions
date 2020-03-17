@@ -83,6 +83,32 @@ copy_source_2_target () {
 	return 0											# Return okay
 }
 
+# Builds base initrd directory using makejail
+build_initrd () {
+	MAKEJAIL_CFG_NAME="install-helper-initrd.py"
+	MAKEJAIL_CFG_PATH="${DIR_MAKEJAIL}/${MAKEJAIL_CFG_NAME}"
+	echo -n "	Generating makejail configuration: "
+	"${DIR_MAKEJAIL}"/makejail-config "${DIR_INITRD}" "${MAKEJAIL_CFG_NAME}"
+	okay_failedexit $?
+
+	MAKEJAIL_CFG_CHKFILES=`"${DIR_MAKEJAIL}"/makejail-chkfiles "${MAKEJAIL_CFG_PATH}"`
+	if [ ${?} -ne 0 ]; then
+		echo "Please install the following files:"
+		echo "${MAKEJAIL_CFG_CHKFILES}"
+		exit
+	fi
+
+	if [ ! -d "${DIR_INITRD}" ]; then
+		echo -n "	Creating initrd image directory: "
+		mkdir "${DIR_INITRD}" &> /dev/null
+		okay_failedexit $?
+	fi
+
+	echo -n "	Running makejail: "
+	sudo makejail "${MAKEJAIL_CFG_PATH}" &> /dev/null
+	okay_failedexit $?
+}
+
 # DEB
 ###################################################################################################################################################
 # Pass path to kernel package

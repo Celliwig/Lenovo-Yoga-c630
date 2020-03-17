@@ -68,27 +68,7 @@ okay_failedexit $?
 cd "${CWD}"
 sudo cp "${DIR_GRUBCFG}/grub-cfg" "/opt" &> /dev/null
 
-echo -n "	Generating makejail configuration: "
-MAKEJAIL_CFG="${DIR_MAKEJAIL}/install-helper-initrd.py"
-"${DIR_MAKEJAIL}"/makejail-config "${DIR_INITRD}"
-okay_failedexit $?
-
-MAKEJAIL_CFG_CHKFILES=`"${DIR_MAKEJAIL}"/makejail-chkfiles "${MAKEJAIL_CFG}"`
-if [ ${?} -ne 0 ]; then
-	echo "Please install the following files:"
-	echo "${MAKEJAIL_CFG_CHKFILES}"
-	exit
-fi
-
-if [ ! -d "${DIR_INITRD}" ]; then
-	echo -n "	Creating initrd image directory: "
-	mkdir "${DIR_INITRD}" &> /dev/null
-	okay_failedexit $?
-fi
-
-echo -n "	Running makejail: "
-sudo makejail "${MAKEJAIL_CFG}" &> /dev/null
-okay_failedexit $?
+build_initrd
 
 # Unmount /opt as we're finished with it
 sudo umount /opt
