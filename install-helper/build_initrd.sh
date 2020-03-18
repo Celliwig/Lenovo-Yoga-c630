@@ -45,33 +45,7 @@ echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 # Run sudo to make sure we're authenticated (and not mess with displayed text)
 sudo ls &> /dev/null
 
-# Make a tmpfs on /opt to copy our local utils into
-echo -n "	Making temporary /opt: "
-sudo mount -t tmpfs none /opt &> /dev/null
-okay_failedexit $?
-# TmpFS will mount as 777, so reset ACLs
-sudo chmod 755 /opt
-
-# Make cmdline-patch
-echo -n "	Making cmdline-patch: "
-cd "${DIR_CMDLINE}"
-make cmdline-patch &> /dev/null
-okay_failedexit $?
-cd "${CWD}"
-sudo cp "${DIR_CMDLINE}/cmdline-patch" "/opt" &> /dev/null
-
-# Make grub-cfg
-echo -n "	Making grub-cfg: "
-cd "${DIR_GRUBCFG}"
-make grub-cfg &> /dev/null
-okay_failedexit $?
-cd "${CWD}"
-sudo cp "${DIR_GRUBCFG}/grub-cfg" "/opt" &> /dev/null
-
 build_initrd
-
-# Unmount /opt as we're finished with it
-sudo umount /opt
 
 INITRD_SUFFIX=""
 if [[ "${KERNEL_PACKAGE}" != "" ]]; then

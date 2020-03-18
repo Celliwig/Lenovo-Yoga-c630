@@ -85,6 +85,32 @@ copy_source_2_target () {
 
 # Builds base initrd directory using makejail
 build_initrd () {
+	# Run sudo to make sure we're authenticated (and not mess with displayed text)
+	sudo ls &> /dev/null
+
+	# Make a tmpfs on /opt to copy our local utils into
+	echo -n "	Making temporary /opt: "
+	sudo mount -t tmpfs none /opt &> /dev/null
+	okay_failedexit $?
+	# TmpFS will mount as 777, so reset ACLs
+	sudo chmod 755 /opt
+
+	# Make cmdline-patch
+	echo -n "	Making cmdline-patch: "
+	cd "${DIR_CMDLINE}"
+	make cmdline-patch &> /dev/null
+	okay_failedexit $?
+	cd "${CWD}"
+	sudo cp "${DIR_CMDLINE}/cmdline-patch" "/opt" &> /dev/null
+
+	# Make grub-cfg
+	echo -n "	Making grub-cfg: "
+	cd "${DIR_GRUBCFG}"
+	make grub-cfg &> /dev/null
+	okay_failedexit $?
+	cd "${CWD}"
+	sudo cp "${DIR_GRUBCFG}/grub-cfg" "/opt" &> /dev/null
+
 	MAKEJAIL_CFG_NAME="install-helper-initrd.py"
 	MAKEJAIL_CFG_PATH="${DIR_MAKEJAIL}/${MAKEJAIL_CFG_NAME}"
 	echo -n "	Generating makejail configuration: "
@@ -107,6 +133,9 @@ build_initrd () {
 	echo -n "	Running makejail: "
 	sudo makejail "${MAKEJAIL_CFG_PATH}" &> /dev/null
 	okay_failedexit $?
+
+	# Unmount /opt as we're finished with it
+	sudo umount /opt
 }
 
 # DEB
