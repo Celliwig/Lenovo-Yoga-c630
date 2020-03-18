@@ -171,12 +171,12 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 
 	echo -e "${TXT_UNDERLINE}Copying system files${TXT_NORMAL}"
 	if [ ! -d "${DIR_USBKEY}" ]; then
-		echo -n "       Creating 'usb_key/' directory: "
+		echo -n "	Creating 'usb_key/' directory: "
 		mkdir -p "${DIR_USBKEY}" &> /dev/null
 		okay_failedexit $?
 	fi
 	if [ ! -d "${DIR_USBKEYFILES}" ]; then
-		echo -n "       Creating 'usb_key-files/' directory: "
+		echo -n "	Creating 'usb_key-files/' directory: "
 		mkdir -p "${DIR_USBKEYFILES}" &> /dev/null
 		okay_failedexit $?
 	fi
