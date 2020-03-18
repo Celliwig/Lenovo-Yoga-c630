@@ -28,6 +28,7 @@ DIR_EFI_GRUB="${DIR_USBKEY}/${EFI_GRUB}"
 DIR_EFI_GRUBMODS="${DIR_EFI_GRUB}/modules"
 DIR_USBKEYFILES="${CWD}/usb_key-files"
 DIR_GRUB="${DIR_USBKEYFILES}/grub"
+DIR_PKGS="${CWD}/pkgs"
 
 FILE_EFI_GRUBBOOT="${DIR_EFI_GRUB}/BOOTAA64.EFI"
 FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
@@ -35,6 +36,8 @@ FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
 ###################################################################################################################################################
 # Defines
 ###################################################################################################################################################
+HOST_ARCH=`uname -m`
+
 TXT_UNDERLINE="\033[1m\033[4m"
 TXT_NORMAL="\033[0m"
 
