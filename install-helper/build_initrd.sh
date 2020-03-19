@@ -45,7 +45,14 @@ echo -e "${TXT_UNDERLINE}Creating initrd.img...${TXT_NORMAL}"
 # Run sudo to make sure we're authenticated (and not mess with displayed text)
 sudo ls &> /dev/null
 
-build_initrd
+TARGET_ARCH="${HOST_ARCH}"
+if [[ "${KERNEL_PACKAGE}" != "" ]]; then
+	echo -n "	Determining kernel package architecture: "
+	TARGET_ARCH=`identify_package_arch "${KERNEL_PACKAGE}"`
+	okay_failedexit $?
+fi
+
+build_base_initrd "${TARGET_ARCH}"
 
 INITRD_SUFFIX=""
 if [[ "${KERNEL_PACKAGE}" != "" ]]; then
