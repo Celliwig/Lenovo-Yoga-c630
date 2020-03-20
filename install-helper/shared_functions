@@ -25,12 +25,10 @@ DIR_USBKEY_BOOT="${DIR_USBKEY}/boot"
 DIR_EFI_BOOT="${DIR_USBKEY}/EFI/Boot"
 EFI_GRUB="/EFI/grub"
 DIR_EFI_GRUB="${DIR_USBKEY}/${EFI_GRUB}"
-DIR_EFI_GRUBMODS="${DIR_EFI_GRUB}/modules"
 DIR_USBKEYFILES="${CWD}/usb_key-files"
 DIR_GRUB="${DIR_USBKEYFILES}/grub"
 DIR_PKGS="${CWD}/pkgs"
 
-FILE_EFI_GRUBBOOT="${DIR_EFI_GRUB}/BOOTAA64.EFI"
 FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
 
 ###################################################################################################################################################
@@ -123,6 +121,8 @@ copy_source_2_target () {
 	return 0											# Return okay
 }
 
+# Initrd
+###################################################################################################################################################
 # Builds base initrd directory using makejail
 build_base_initrd_using_makejail () {
 	# Make a tmpfs on /opt to copy our local utils into
@@ -287,6 +287,81 @@ build_base_initrd () {
 		build_base_initrd_using_makejail
 	else
 		build_base_initrd_using_package "${target_arch}"
+	fi
+}
+
+# GRUB
+###################################################################################################################################################
+# Install GRUB from source
+install_grub_from_src () {
+	local grub_source="${1}"
+	local grub_target="${2}"/"${EFI_GRUB}"
+	local grub_target_mods="${grub_target}"/modules
+	local grub_efi_command="${grub_target}"/BOOTAA64.EFI
+
+	if [ -d "${grub_source}" ]; then
+		echo "	${grub_source} already exists"
+		local install_grub_git_update=""
+		read -r -p "	Update existing repo? (y/n): " install_grub_git_update
+		if [[ "${install_grub_git_update}" = [Yy] ]]; then
+			cd "${grub_source}"
+			git pull &> /dev/null
+			retval="${?}"
+			cd "${CWD}"
+			if [ "${retval}" -ne 0 ]; then
+				echo "	git pull failed!!!"
+				exit 1
+			fi
+		fi
+	else
+		echo "	No GRUB repo."
+		local install_grub_git_clone=""
+		read -r -p "	Clone GRUB repository? (y/n): " install_grub_git_clone
+		if [[ "${install_grub_git_clone}" = [Yy] ]]; then
+			git clone "${GIT_GRUB_REPO}" "${grub_source}" &> /dev/null
+			retval="${?}"
+			if [ "${retval}" -ne 0 ]; then
+				echo "	git clone failed!!!"
+				exit 1
+			fi
+		fi
+	fi
+	if [ -d "${grub_source}" ]; then
+		cd "${grub_source}"
+
+		local install_grub_build=""
+		read -r -p "	(Re)Build GRUB source? (y/n): " install_grub_build
+		if [[ "${install_grub_build}" = [Yy] ]]; then
+			echo -n "	GRUB - Running bootstrap: "
+			./bootstrap &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Running autogen: "
+			./autogen.sh &> /dev/null
+			okay_failedexit $?
+			echo -n "	GRUB - Running configure: "
+			local install_grub_config_out=`./configure|awk 'BEGIN { PRNT=0; } $1 == "*******************************************************" { PRNT=1; } { if (PRNT) print $0; } '`
+			okay_failedexit $?
+			while IFS= read -r tmp_config_line; do
+				echo "		${tmp_config_line}"
+			done <<< "${install_grub_config_out}"
+			echo -n "	GRUB - Running make: "
+			make -j 2 &> /dev/null
+			okay_failedexit $?
+		fi
+		if [ -d "${grub_target}" ]; then			# Remove the existing grub directory
+			rm -rf "${grub_target}" &> /dev/null
+		fi
+		mkdir -p "${grub_target_mods}" &> /dev/null
+		echo -n "	GRUB - Installing boot loader: "
+		./grub-mkimage --directory grub-core --prefix "${EFI_GRUB}" --output "${grub_efi_command}" --format arm64-efi \
+			part_gpt part_msdos ntfs ntfscomp hfsplus fat ext2 normal chain boot configfile linux minicmd \
+			gfxterm all_video efi_gop video_fb font video loadenv disk test gzio bufio gettext terminal \
+			crypto extcmd boot fshelp search iso9660 &> /dev/null
+		okay_failedexit $?
+		echo -n "	GRUB - Copying modules: "
+		cp grub-core/*.{mod,lst} "${grub_target_mods}" &> /dev/null
+		okay_failedexit $?
+		cd "${CWD}"
 	fi
 }
 
