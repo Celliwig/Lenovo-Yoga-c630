@@ -124,6 +124,153 @@ copy_source_2_target () {
 }
 
 # Builds base initrd directory using makejail
+build_base_initrd_using_makejail () {
+	# Make a tmpfs on /opt to copy our local utils into
+	echo -n "	Making temporary /opt: "
+	sudo mount -t tmpfs none /opt &> /dev/null
+	okay_failedexit $?
+	# TmpFS will mount as 777, so reset ACLs
+	sudo chmod 755 /opt
+
+	# Make cmdline-patch
+	echo -n "	Making cmdline-patch: "
+	cd "${DIR_CMDLINE}"
+	make cmdline-patch &> /dev/null
+	okay_failedexit $?
+	cd "${CWD}"
+	sudo cp "${DIR_CMDLINE}/cmdline-patch" "/opt" &> /dev/null
+
+	# Make grub-cfg
+	echo -n "	Making grub-cfg: "
+	cd "${DIR_GRUBCFG}"
+	make grub-cfg &> /dev/null
+	okay_failedexit $?
+	cd "${CWD}"
+	sudo cp "${DIR_GRUBCFG}/grub-cfg" "/opt" &> /dev/null
+
+	MAKEJAIL_CFG_NAME="install-helper-initrd.py"
+	MAKEJAIL_CFG_PATH="${DIR_MAKEJAIL}/${MAKEJAIL_CFG_NAME}"
+	echo -n "	Generating makejail configuration: "
+	"${DIR_MAKEJAIL}"/makejail-config "${DIR_INITRD}" "${MAKEJAIL_CFG_NAME}"
+	okay_failedexit $?
+
+	MAKEJAIL_CFG_CHKFILES=`"${DIR_MAKEJAIL}"/makejail-chkfiles "${MAKEJAIL_CFG_PATH}"`
+	if [ ${?} -ne 0 ]; then
+		echo "Please install the following files:"
+		echo "${MAKEJAIL_CFG_CHKFILES}"
+		exit
+	fi
+
+	echo -n "	Running makejail: "
+	sudo makejail "${MAKEJAIL_CFG_PATH}" &> /dev/null
+	okay_failedexit $?
+
+	# Unmount /opt as we're finished with it
+	sudo umount /opt
+}
+
+# Builds base initrd directory by extracting existing archive
+build_base_initrd_using_package () {
+	local target_arch="${1}"
+
+	local base_initrd="${DIR_PKGS}/initrd.img.${target_arch}.tgz"
+	local base_initrd_sig="${DIR_PKGS}/initrd.img.${target_arch}.tgz.asc"
+
+	echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	echo -e "	!!!			HOST ARCHITECTURE DOES NOT MATCH TARGET				!!!"
+	if [ -f "${base_initrd}" ]; then
+		echo -e "	!!!											!!!"
+		echo -e "	!!! A base initrd image is available for target: ${target_arch}				!!!"
+		echo -e "	!!!											!!!"
+		echo -e "	!!! While every effort is made to produce a clean initrd image, use at your own risk.	!!!"
+		echo -e "	!!! No warranty is implied or given.							!!!"
+		echo -e "	!!!											!!!"
+		echo -e "	!!! Images are signed however, so import the public key into your gpg keying if you	!!!"
+		echo -e "	!!! wish to check the veracity of the file.						!!!"
+		echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+		# Check for signing key
+		echo -n "	Check for signature key: "
+		gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
+		local signature_key_installed=${?}
+		if [ ${signature_key_installed} -eq 0 ]; then
+			echo "Found"
+		else
+			echo "Not Found"
+		fi
+
+		# Import signature public key into keyring
+		local signature_key_install="n"
+		if [ ${signature_key_installed} -ne 0 ]; then
+			if [ -f "${GPG_KEY_PATH}" ]; then
+				echo -n "	Import signature key? (y/N): "
+				read -r signature_key_install
+				if [[ "${signature_key_install}" = [Yy] ]]; then
+					echo -n "	Importing signature key: "
+					gpg --import "${GPG_KEY_PATH}" &> /dev/null
+					okay_failedexit $?
+				fi
+			else
+				echo "	Public key not found."
+				exit -1
+			fi
+		fi
+
+		# Check image against signature
+		echo -n "	Checking image signature: "
+		gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
+		signature_key_installed=${?}
+		local signature_key_msg=""
+		local signature_key_error=0
+		if [ ${signature_key_installed} -eq 0 ]; then
+			if [ -f "${base_initrd_sig}" ]; then
+				gpg --verify "${base_initrd_sig}" &> /dev/null
+				if [ ${?} -eq 0 ]; then
+					signature_key_msg="Okay"
+					signature_key_error=0
+				else
+					signature_key_msg="Failed"
+					signature_key_error=2
+				fi
+			else
+				signature_key_msg="No signature file"
+				signature_key_error=1
+			fi
+		else
+			signature_key_msg="No public key"
+			signature_key_error=1
+		fi
+		echo "${signature_key_msg}"
+		local signature_key_response
+		if [ ${signature_key_error} -ne 0 ]; then
+			if [ ${signature_key_error} -eq 2 ]; then
+				exit -1
+			fi
+
+			echo -n "	Do you want to continue (y/N): "
+			read -r signature_key_response
+			if [[ "${signature_key_response}" = [Nn] ]]; then
+				exit -1
+			fi
+		fi
+
+		# Clean existing contents
+		echo "	Removing existing contents"
+		sudo rm -rf "${DIR_INITRD}"/* &> /dev/null
+
+		# Extracting initrd image
+		echo -n "	Extracting initrd image: "
+		sudo tar -xzf "${base_initrd}" &> /dev/null
+		okay_failedexit $?
+	else
+		echo -e "	!!!											!!!"
+		echo -e "	!!! NO BASE INITRD IMAGE AVAILABLE FOR TARGET: ${target_arch}					!!!"
+		echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+		exit -1
+	fi
+}
+
+# Builds base initrd directory
 build_base_initrd () {
 	local target_arch="${1}"
 
@@ -137,144 +284,9 @@ build_base_initrd () {
 	fi
 
 	if [[ "${target_arch}" == "${HOST_ARCH}" ]]; then
-		# Make a tmpfs on /opt to copy our local utils into
-		echo -n "	Making temporary /opt: "
-		sudo mount -t tmpfs none /opt &> /dev/null
-		okay_failedexit $?
-		# TmpFS will mount as 777, so reset ACLs
-		sudo chmod 755 /opt
-
-		# Make cmdline-patch
-		echo -n "	Making cmdline-patch: "
-		cd "${DIR_CMDLINE}"
-		make cmdline-patch &> /dev/null
-		okay_failedexit $?
-		cd "${CWD}"
-		sudo cp "${DIR_CMDLINE}/cmdline-patch" "/opt" &> /dev/null
-
-		# Make grub-cfg
-		echo -n "	Making grub-cfg: "
-		cd "${DIR_GRUBCFG}"
-		make grub-cfg &> /dev/null
-		okay_failedexit $?
-		cd "${CWD}"
-		sudo cp "${DIR_GRUBCFG}/grub-cfg" "/opt" &> /dev/null
-
-		MAKEJAIL_CFG_NAME="install-helper-initrd.py"
-		MAKEJAIL_CFG_PATH="${DIR_MAKEJAIL}/${MAKEJAIL_CFG_NAME}"
-		echo -n "	Generating makejail configuration: "
-		"${DIR_MAKEJAIL}"/makejail-config "${DIR_INITRD}" "${MAKEJAIL_CFG_NAME}"
-		okay_failedexit $?
-
-		MAKEJAIL_CFG_CHKFILES=`"${DIR_MAKEJAIL}"/makejail-chkfiles "${MAKEJAIL_CFG_PATH}"`
-		if [ ${?} -ne 0 ]; then
-			echo "Please install the following files:"
-			echo "${MAKEJAIL_CFG_CHKFILES}"
-			exit
-		fi
-
-		echo -n "	Running makejail: "
-		sudo makejail "${MAKEJAIL_CFG_PATH}" &> /dev/null
-		okay_failedexit $?
-
-		# Unmount /opt as we're finished with it
-		sudo umount /opt
+		build_base_initrd_using_makejail
 	else
-		local base_initrd="${DIR_PKGS}/initrd.img.${target_arch}.tgz"
-		local base_initrd_sig="${DIR_PKGS}/initrd.img.${target_arch}.tgz.asc"
-
-		echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-		echo -e "	!!!			HOST ARCHITECTURE DOES NOT MATCH TARGET				!!!"
-		if [ -f "${base_initrd}" ]; then
-			echo -e "	!!!											!!!"
-			echo -e "	!!! A base initrd image is available for target: ${target_arch}				!!!"
-			echo -e "	!!!											!!!"
-			echo -e "	!!! While every effort is made to produce a clean initrd image, use at your own risk.	!!!"
-			echo -e "	!!! No warranty is implied or given.							!!!"
-			echo -e "	!!!											!!!"
-			echo -e "	!!! Images are signed however, so import the public key into your gpg keying if you	!!!"
-			echo -e "	!!! wish to check the veracity of the file.						!!!"
-			echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
-			# Check for signing key
-			echo -n "	Check for signature key: "
-			gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
-			local signature_key_installed=${?}
-			if [ ${signature_key_installed} -eq 0 ]; then
-				echo "Found"
-			else
-				echo "Not Found"
-			fi
-
-			# Import signature public key into keyring
-			local signature_key_install="n"
-			if [ ${signature_key_installed} -ne 0 ]; then
-				if [ -f "${GPG_KEY_PATH}" ]; then
-					echo -n "	Import signature key? (y/N): "
-					read -r signature_key_install
-					if [[ "${signature_key_install}" = [Yy] ]]; then
-						echo -n "	Importing signature key: "
-						gpg --import "${GPG_KEY_PATH}" &> /dev/null
-						okay_failedexit $?
-					fi
-				else
-					echo "	Public key not found."
-					exit -1
-				fi
-			fi
-
-			# Check image against signature
-			echo -n "	Checking image signature: "
-			gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
-			signature_key_installed=${?}
-			local signature_key_msg=""
-			local signature_key_error=0
-			if [ ${signature_key_installed} -eq 0 ]; then
-				if [ -f "${base_initrd_sig}" ]; then
-					gpg --verify "${base_initrd_sig}" &> /dev/null
-					if [ ${?} -eq 0 ]; then
-						signature_key_msg="Okay"
-						signature_key_error=0
-					else
-						signature_key_msg="Failed"
-						signature_key_error=2
-					fi
-				else
-					signature_key_msg="No signature file"
-					signature_key_error=1
-				fi
-			else
-				signature_key_msg="No public key"
-				signature_key_error=1
-			fi
-			echo "${signature_key_msg}"
-			local signature_key_response
-			if [ ${signature_key_error} -ne 0 ]; then
-				if [ ${signature_key_error} -eq 2 ]; then
-					exit -1
-				fi
-
-				echo -n "	Do you want to continue (y/N): "
-				read -r signature_key_response
-				if [[ "${signature_key_response}" = [Nn] ]]; then
-					exit -1
-				fi
-			fi
-
-			# Clean existing contents
-			echo "	Removing existing contents"
-			sudo rm -rf "${DIR_INITRD}"/* &> /dev/null
-
-			# Extracting initrd image
-			echo -n "	Extracting initrd image: "
-			sudo tar -xzf "${base_initrd}" &> /dev/null
-			okay_failedexit $?
-		else
-			echo -e "	!!!											!!!"
-			echo -e "	!!! NO BASE INITRD IMAGE AVAILABLE FOR TARGET: ${target_arch}					!!!"
-			echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-			exit -1
-		fi
+		build_base_initrd_using_package "${target_arch}"
 	fi
 }
 
