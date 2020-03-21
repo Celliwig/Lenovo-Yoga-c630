@@ -15,7 +15,7 @@ EOF
 	exit 1
 }
 
-local BUILD_GRUB_PACKAGE=0
+BUILD_GRUB_PACKAGE=0
 # Pass arguments
 while getopts ":y" opt; do
 	case $opt in
