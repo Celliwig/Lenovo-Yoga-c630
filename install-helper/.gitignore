@@ -1,4 +1,5 @@
-grub/*
+grub_src/*
+grub_pkg/*
 initrd/*
 makejail/install-helper-initrd.py
 usb_key/*

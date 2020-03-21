@@ -15,7 +15,7 @@ EOF
 	exit 1
 }
 
-BUILD_INITRD_PACKAGE=0
+local BUILD_INITRD_PACKAGE=0
 # Pass arguments
 while getopts ":y" opt; do
 	case $opt in
