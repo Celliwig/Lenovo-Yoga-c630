@@ -187,11 +187,6 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	sudo mount -t ext3 /dev/disk/by-label/IHFILES "${DIR_USBKEYFILES}" &> /dev/null
 	okay_failedexit $?
 	sudo chown ${MOUNTAS_UID}:${MOUNTAS_GID} "${DIR_USBKEYFILES}" &> /dev/null
-	if [ ! -d "${DIR_EFI_BOOT}" ]; then
-		echo -n "	Creating EFI boot directory: "
-		mkdir -p "${DIR_EFI_BOOT}" &> /dev/null
-		okay_failedexit $?
-	fi
 	if [ ! -d "${DIR_USBKEYFILES}/images" ]; then
 		echo -n "	Creating 'usb_key-files/images' directory: "
 		mkdir -p "${DIR_USBKEYFILES}/images" &> /dev/null
@@ -238,70 +233,8 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 
 	if "${INSTALL_GRUB}"; then
 		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
-		if [ -d "${DIR_GRUB}" ]; then
-			echo "	${DIR_GRUB} already exists"
-			read -r -p "	Update existing repo? (y/n): " INSTALL_GRUB_GIT_UPDATE
-			if [[ $INSTALL_GRUB_GIT_UPDATE = [Yy] ]]; then
-				cd "${DIR_GRUB}"
-				git pull &> /dev/null
-				retval="${?}"
-				cd "${CWD}"
-				if [ "${retval}" -ne 0 ]; then
-					echo "	git pull failed!!!"
-					exit 1
-				fi
-			fi
-		else
-			echo "	No GRUB repo."
-			read -r -p "	Clone GRUB repository? (y/n): " INSTALL_GRUB_GIT_CLONE
-			if [[ ${INSTALL_GRUB_GIT_CLONE} = [Yy] ]]; then
-				git clone "${GIT_GRUB_REPO}" "${DIR_GRUB}" &> /dev/null
-				retval="${?}"
-				if [ "${retval}" -ne 0 ]; then
-					echo "	git clone failed!!!"
-					exit 1
-				fi
-			fi
-		fi
-		if [ -d "${DIR_GRUB}" ]; then
-			cd "${DIR_GRUB}"
-
-			read -r -p "	(Re)Build GRUB source? (y/n): " INSTALL_GRUB_BUILD
-			if [[ ${INSTALL_GRUB_BUILD} = [Yy] ]]; then
-				echo -n "	GRUB - Running bootstrap: "
-				./bootstrap &> /dev/null
-				okay_failedexit $?
-				echo -n "	GRUB - Running autogen: "
-				./autogen.sh &> /dev/null
-				okay_failedexit $?
-				echo -n "	GRUB - Running configure: "
-				GRUB_CONFIG_OUT=`./configure|awk 'BEGIN { PRNT=0; } $1 == "*******************************************************" { PRNT=1; } { if (PRNT) print $0; } '`
-				okay_failedexit $?
-				while IFS= read -r GRUB_CONFIG_LINE; do
-					echo "		${GRUB_CONFIG_LINE}"
-				done <<< "${GRUB_CONFIG_OUT}"
-				echo -n "	GRUB - Running make: "
-				make -j 2 &> /dev/null
-				okay_failedexit $?
-			fi
-			if [ -d "${DIR_EFI_GRUB}" ]; then			# Remove the existing grub directory
-				rm -rf "${DIR_EFI_GRUB}" &> /dev/null
-			fi
-			mkdir -p "${DIR_EFI_GRUBMODS}" &> /dev/null
-			echo -n "	GRUB - Installing boot loader: "
-			./grub-mkimage --directory grub-core --prefix "${EFI_GRUB}" --output "${FILE_EFI_GRUBBOOT}" --format arm64-efi \
-				part_gpt part_msdos ntfs ntfscomp hfsplus fat ext2 normal chain boot configfile linux minicmd \
-				gfxterm all_video efi_gop video_fb font video loadenv disk test gzio bufio gettext terminal \
-				crypto extcmd boot fshelp search iso9660 &> /dev/null
-			okay_failedexit $?
-			echo -n "	GRUB - Copying modules: "
-			cp grub-core/*.{mod,lst} "${DIR_EFI_GRUBMODS}" &> /dev/null
-			okay_failedexit $?
-			echo -n "	GRUB - Set as default bootloader: "
-			cp "${FILE_EFI_GRUBBOOT}" "${DIR_EFI_BOOT}"
-			okay_failedexit $?
-			cd "${CWD}"
-		fi
+		grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
+		grub_set_default "${DIR_USBKEY}"
 	fi
 
 	if "${INSTALL_GRUB}"; then

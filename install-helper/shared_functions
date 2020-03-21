@@ -14,20 +14,22 @@ FEDORA_GPG_KEYS="https://getfedora.org/static/fedora.gpg"
 ###################################################################################################################################################
 CWD=$PWD
 
+# Build paths
+DIR_CMDLINE="${CWD}/cmdline-patch"
+DIR_EXTRAS="${CWD}/extras"
+DIR_GRUBCFG="${CWD}/grub-cfg"
+DIR_GRUBSRC="${CWD}/grub_src"
 DIR_INITRD="${CWD}/initrd"
 DIR_INITRD_GPGKEYS="${DIR_INITRD}/gpgkeys"
 DIR_MAKEJAIL="${CWD}/makejail"
-DIR_GRUBCFG="${CWD}/grub-cfg"
-DIR_CMDLINE="${CWD}/cmdline-patch"
-DIR_EXTRAS="${CWD}/extras"
+DIR_PKGS="${CWD}/pkgs"
 DIR_USBKEY="${CWD}/usb_key"
 DIR_USBKEY_BOOT="${DIR_USBKEY}/boot"
-DIR_EFI_BOOT="${DIR_USBKEY}/EFI/Boot"
-EFI_GRUB="/EFI/grub"
-DIR_EFI_GRUB="${DIR_USBKEY}/${EFI_GRUB}"
 DIR_USBKEYFILES="${CWD}/usb_key-files"
-DIR_GRUB="${DIR_USBKEYFILES}/grub"
-DIR_PKGS="${CWD}/pkgs"
+
+# UEFI System partition paths
+EFI_BOOT="/EFI/Boot"
+EFI_GRUB="/EFI/grub"
 
 FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
 
@@ -124,7 +126,7 @@ copy_source_2_target () {
 # Initrd
 ###################################################################################################################################################
 # Builds base initrd directory using makejail
-build_base_initrd_using_makejail () {
+initrd_build_base_using_makejail () {
 	# Make a tmpfs on /opt to copy our local utils into
 	echo -n "	Making temporary /opt: "
 	sudo mount -t tmpfs none /opt &> /dev/null
@@ -170,7 +172,7 @@ build_base_initrd_using_makejail () {
 }
 
 # Builds base initrd directory by extracting existing archive
-build_base_initrd_using_package () {
+initrd_build_base_using_package () {
 	local target_arch="${1}"
 
 	local base_initrd="${DIR_PKGS}/initrd.img.${target_arch}.tgz"
@@ -271,7 +273,7 @@ build_base_initrd_using_package () {
 }
 
 # Builds base initrd directory
-build_base_initrd () {
+initrd_build_base () {
 	local target_arch="${1}"
 
 	# Run sudo to make sure we're authenticated (and not mess with displayed text)
@@ -284,16 +286,16 @@ build_base_initrd () {
 	fi
 
 	if [[ "${target_arch}" == "${HOST_ARCH}" ]]; then
-		build_base_initrd_using_makejail
+		initrd_build_base_using_makejail
 	else
-		build_base_initrd_using_package "${target_arch}"
+		initrd_build_base_using_package "${target_arch}"
 	fi
 }
 
 # GRUB
 ###################################################################################################################################################
 # Install GRUB from source
-install_grub_from_src () {
+grub_install_from_src () {
 	local grub_source="${1}"
 	local grub_target="${2}"/"${EFI_GRUB}"
 	local grub_target_mods="${grub_target}"/modules
@@ -363,6 +365,29 @@ install_grub_from_src () {
 		okay_failedexit $?
 		cd "${CWD}"
 	fi
+
+	return 0
+}
+
+# Set GRUB as default boot loader
+grub_set_default () {
+	local grub_install_path="${1}"/"${EFI_GRUB}"
+	local grub_efi_command="${grub_install_path}"/BOOTAA64.EFI
+	local grub_boot_path="${1}"/"${EFI_BOOT}"
+
+	# Create boot directory if it doesn't exist
+	if [ ! -d "${grub_boot_path}" ]; then
+		echo -n "	Creating EFI boot directory: "
+		mkdir -p "${grub_boot_path}" &> /dev/null
+		okay_failedexit $?
+	fi
+
+	# Copy GRUB binary to default location
+	echo -n "	GRUB - Set as default bootloader: "
+	cp "${grub_efi_command}" "${grub_boot_path}"
+	okay_failedexit $?
+
+	return 0
 }
 
 # DEB

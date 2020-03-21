@@ -52,7 +52,7 @@ if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 	okay_failedexit $?
 fi
 
-build_base_initrd "${TARGET_ARCH}"
+initrd_build_base "${TARGET_ARCH}"
 
 INITRD_SUFFIX=""
 if [[ "${KERNEL_PACKAGE}" != "" ]]; then
