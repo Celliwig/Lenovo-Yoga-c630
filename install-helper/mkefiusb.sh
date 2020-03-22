@@ -240,7 +240,13 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 
 	if "${INSTALL_GRUB}"; then
 		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
-		grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
+
+		if [[ "${target_arch}" == "${HOST_ARCH}" ]]; then
+			grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
+		else
+			grub_install_from_pkg "${DIR_USBKEY}" "${target_arch}"
+		fi
+
 		grub_set_default "${DIR_USBKEY}"
 	fi
 
