@@ -419,7 +419,7 @@ grub_config_write_main () {
 
 	for tmp_configfile in `ls "${grub_config_dir}"`; do
 		tmp_configfile=`echo "${tmp_configfile}"| sed "s|${base_dir}||"`
-		echo "configfile ${tmp_configfile}" >> "${grub_config_path}"
+		echo "configfile ${EFI_GRUBCFG_DIR}/${tmp_configfile}" >> "${grub_config_path}"
 	done
 
 	return 0
