@@ -242,7 +242,10 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
 		grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
 		grub_set_default "${DIR_USBKEY}"
+	fi
 
+	if "${INSTALL_GRUB}" || [ ${#KERNEL_NAME[@]} -ne  0 ]; then
+		echo -e "${TXT_UNDERLINE}GRUB config${TXT_NORMAL}"
 		for tmp_kernel_name in ${KERNEL_NAME[@]}; do
 			grub_config_write_menuitem "${DIR_USBKEY}" "${tmp_kernel_name}"
 		done
