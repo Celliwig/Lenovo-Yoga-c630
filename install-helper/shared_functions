@@ -31,8 +31,8 @@ DIR_USBKEYFILES="${CWD}/usb_key-files"
 # UEFI System partition paths
 EFI_BOOT="/EFI/Boot"
 EFI_GRUB="/EFI/grub"
-
-FILE_EFI_GRUBCFG="${DIR_EFI_GRUB}/grub.cfg"
+EFI_GRUBCFG="${EFI_GRUB}/grub.cfg"
+EFI_GRUBCFG_DIR="${EFI_GRUB}/grub.cfg.d"
 
 ###################################################################################################################################################
 # Defines
@@ -387,6 +387,111 @@ grub_set_default () {
 	echo -n "	GRUB - Set as default bootloader: "
 	cp "${grub_efi_command}" "${grub_boot_path}"
 	okay_failedexit $?
+
+	return 0
+}
+
+# Write main GRUB config
+grub_config_write_main () {
+	local base_dir="${1}"
+	local grub_config_path="${1}"/"${EFI_GRUBCFG}"
+	local grub_config_dir="${1}"/"${EFI_GRUBCFG_DIR}"
+
+	# Create GRUB configuration directory if it doesn't exist
+	if [ ! -d "${grub_config_dir}" ]; then
+		echo -n "	Creating EFI config directory: "
+		mkdir -p "${grub_config_dir}" &> /dev/null
+		okay_failedexit $?
+	fi
+
+	rm "${grub_config_path}" &> /dev/null
+	echo "	Creating grub.cfg"
+	touch "${grub_config_path}"
+	echo "set menu_color_normal=white/black" >> "${grub_config_path}"
+	echo "set menu_color_highlight=black/light-gray" >> "${grub_config_path}"
+	echo "if background_color 44,0,30,0; then" >> "${grub_config_path}"
+	echo "	clear" >> "${grub_config_path}"
+	echo "fi" >> "${grub_config_path}"
+	echo "" >> "${grub_config_path}"
+	echo "insmod gzio" >> "${grub_config_path}"
+	echo "set timeout=30" >> "${grub_config_path}"
+	echo "" >> "${grub_config_path}"
+
+	for tmp_configfile in `ls "${grub_config_dir}"`; do
+		tmp_configfile=`echo "${tmp_configfile}"| sed "s|${base_dir}||"`
+		echo "configfile ${tmp_configfile}" >> "${grub_config_path}"
+	done
+
+	return 0
+}
+
+# Write individual GRUB menu items
+grub_config_write_menuitem () {
+	local base_dir="${1}"
+	local grub_config_path="${1}"/"${EFI_GRUBCFG}"
+	local grub_config_dir="${1}"/"${EFI_GRUBCFG_DIR}"
+	local kernel_name="${2}"
+	local grub_config_menuitem="${grub_config_dir}"/"${kernel_name}.cfg"
+	local kernel_version=`echo "${2}" |sed 's|vmlinuz||'`
+	local kernel_dtbs_dir="/usr/lib/linux-image${kernel_version}"
+	local kernel_dtbs_fullpath="${1}${kernel_dtbs_dir}"
+
+	# Create GRUB configuration directory if it doesn't exist
+	if [ ! -d "${grub_config_dir}" ]; then
+		echo -n "	Creating EFI config directory: "
+		mkdir -p "${grub_config_dir}" &> /dev/null
+		okay_failedexit $?
+	fi
+
+	echo "	Creating kernel grub.cfg"
+
+	local kernel_args="${DEFAULT_KERNEL_ARGS}"
+	kernel_args=`dialog --stdout --clear --title "install-helper" \
+				--inputbox "Enter kernel arguments for ${kernel_name}:" 10 70 "${kernel_args}"`
+	if [ $? -eq 0 ]; then
+		kernel_args="${DEFAULT_KERNEL_ARGS}"				# If canceled, load defaults
+	fi
+
+	local dialog_checkbox_lst=""
+	local kernel_dtb_path=""
+	for kernel_dtb_path in `find "${kernel_dtbs_fullpath}" -name \*\.dtb`; do
+		kernel_dtb_path=`echo "${kernel_dtb_path}"| sed "s|${kernel_dtbs_fullpath}||"`
+		local dtb_tmp_name=`basename "${kernel_dtb_path}"`
+		local dtb_tmp_dir=`dirname "${kernel_dtb_path}"|tr -d "/"`
+		dialog_checkbox_lst+="${dtb_tmp_name} \"${dtb_tmp_dir}\" off "
+	done
+
+	rm "${grub_config_menuitem}" &> /dev/null
+	local selected_kernel_dtbs=`dialog --stdout --clear --title "install-helper" \
+					--checklist "Select the DTB(s) to use with ${kernel_name}:" 20 61 8 ${dialog_checkbox_lst}`
+	local kernel_dtb_lst=()
+	for tmp_kernel_dtb in ${selected_kernel_dtbs}; do
+		kernel_dtb_lst+=( "${tmp_kernel_dtb}" )
+	done
+
+	if [ ${#kernel_dtb_lst[@]} -eq 0 ]; then
+		echo "		Adding entry: ${kernel_name}"
+		echo "menuentry \"${kernel_name}\" {" >> "${grub_config_menuitem}"
+		echo "	set gfxpayload=keep" >> "${grub_config_menuitem}"
+		echo "	linux /boot/${kernel_name} ${kernel_args}" >> "${grub_config_menuitem}"
+		echo "	initrd /boot/initrd${kernel_version}.gz" >> "${grub_config_menuitem}"
+		echo "}" >> "${grub_config_menuitem}"
+	else
+		echo "		Adding submenu: ${kernel_name}"
+		echo "submenu \"${kernel_name}\" {" >> "${grub_config_menuitem}"
+		for tmp_kernel_dtb in ${kernel_dtb_lst[@]}; do
+			echo "			Adding entry: ${tmp_kernel_dtb}"
+			local tmp_devicetree_path=`find "${kernel_dtbs_fullpath}" -name "${tmp_kernel_dtb}"`
+			tmp_devicetree_path=`echo "${tmp_devicetree_path}"| sed "s|${base_dir}||"`
+			echo "	menuentry \"${kernel_name} (${tmp_kernel_dtb})\" {" >> "${grub_config_menuitem}"
+			echo "		set gfxpayload=keep" >> "${grub_config_menuitem}"
+			echo "		linux /boot/${kernel_name} ${tmp_kernel_args}" >> "${grub_config_menuitem}"
+			echo "		initrd /boot/initrd${kernel_version}.gz" >> "${grub_config_menuitem}"
+			echo "		devicetree ${tmp_devicetree_path}" >> "${grub_config_menuitem}"
+			echo "	}" >> "${grub_config_menuitem}"
+		done
+		echo "}" >> "${grub_config_menuitem}"
+	fi
 
 	return 0
 }
