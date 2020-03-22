@@ -194,7 +194,12 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 	fi
 
 	KERNEL_NAME=()
+	TARGET_ARCH="${HOST_ARCH}"
 	if [[ "${KERNEL_PACKAGE}" != "" ]]; then
+		echo -n "       Determining kernel package architecture: "
+		TARGET_ARCH=`identify_package_arch "${KERNEL_PACKAGE}"`
+		okay_failedexit $?
+
 		echo -e "${TXT_UNDERLINE}Install kernel${TXT_NORMAL}"
 		KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
 		echo "	Kernel package type identified as: ${KERNEL_PACKAGE_TYPE}"
@@ -244,7 +249,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		if [[ "${target_arch}" == "${HOST_ARCH}" ]]; then
 			grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
 		else
-			grub_install_from_pkg "${DIR_USBKEY}" "${target_arch}"
+			grub_install_from_pkg "${DIR_USBKEY}" "${TARGET_ARCH}"
 		fi
 
 		grub_set_default "${DIR_USBKEY}"
