@@ -370,6 +370,116 @@ grub_install_from_src () {
 	return 0
 }
 
+# Install GRUB from package
+grub_install_from_pkg () {
+        local target_dir="${1}"
+        local target_grub_dir="${target_dir}"/"${EFI_GRUB}"
+	local target_arch="${2}"
+
+	local grub_pkg="${DIR_PKGS}/grub.${target_arch}.tgz"
+	local grub_pkg_sig="${DIR_PKGS}/grub.${target_arch}.tgz.asc"
+
+	echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	echo -e "	!!!			HOST ARCHITECTURE DOES NOT MATCH TARGET				!!!"
+	if [ -f "${grub_pkg}" ]; then
+		echo -e "	!!!											!!!"
+		echo -e "	!!! A GRUB package is available for target: ${target_arch}				!!!"
+		echo -e "	!!!											!!!"
+		echo -e "	!!! While every effort is made to produce a clean GRUB bootloader, use at your own risk.!!!"
+		echo -e "	!!! No warranty is implied or given.							!!!"
+		echo -e "	!!!											!!!"
+		echo -e "	!!! Images are signed however, so import the public key into your gpg keying if you	!!!"
+		echo -e "	!!! wish to check the veracity of the file.						!!!"
+		echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+		# Check for signing key
+		echo -n "	Check for signature key: "
+		gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
+		local signature_key_installed=${?}
+		if [ ${signature_key_installed} -eq 0 ]; then
+			echo "Found"
+		else
+			echo "Not Found"
+		fi
+
+		# Import signature public key into keyring
+		local signature_key_install="n"
+		if [ ${signature_key_installed} -ne 0 ]; then
+			if [ -f "${GPG_KEY_PATH}" ]; then
+				echo -n "	Import signature key? (y/N): "
+				read -r signature_key_install
+				if [[ "${signature_key_install}" = [Yy] ]]; then
+					echo -n "	Importing signature key: "
+					gpg --import "${GPG_KEY_PATH}" &> /dev/null
+					okay_failedexit $?
+				fi
+			else
+				echo "	Public key not found."
+				exit -1
+			fi
+		fi
+
+		# Check image against signature
+		echo -n "	Checking image signature: "
+		gpg --list-keys "${GPG_KEY_ID}" &> /dev/null
+		signature_key_installed=${?}
+		local signature_key_msg=""
+		local signature_key_error=0
+		if [ ${signature_key_installed} -eq 0 ]; then
+			if [ -f "${grub_pkg_sig}" ]; then
+				gpg --verify "${grub_pkg_sig}" &> /dev/null
+				if [ ${?} -eq 0 ]; then
+					signature_key_msg="Okay"
+					signature_key_error=0
+				else
+					signature_key_msg="Failed"
+					signature_key_error=2
+				fi
+			else
+				signature_key_msg="No signature file"
+				signature_key_error=1
+			fi
+		else
+			signature_key_msg="No public key"
+			signature_key_error=1
+		fi
+		echo "${signature_key_msg}"
+		local signature_key_response
+		if [ ${signature_key_error} -ne 0 ]; then
+			if [ ${signature_key_error} -eq 2 ]; then
+				exit -1
+			fi
+
+			echo -n "	Do you want to continue (y/N): "
+			read -r signature_key_response
+			if [[ "${signature_key_response}" = [Nn] ]]; then
+				exit -1
+			fi
+		fi
+
+		# Clean existing contents
+		echo "	Removing GRUB installation"
+		sudo rm -rf "${target_grub_dir}"/* &> /dev/null
+
+		# Change to target directory
+		cd "${target_dir}"
+
+		# Extracting GRUB package
+		echo -n "	Extracting GRUB package: "
+		sudo tar --no-same-owner --strip-components=1 -xzf "${grub_pkg}" &> /dev/null
+		okay_failedexit $?
+
+		cd "${CWD}"
+	else
+		echo -e "	!!!											!!!"
+		echo -e "	!!! NO GRUB PACKAGE AVAILABLE FOR TARGET: ${target_arch}					!!!"
+		echo -e "	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+		exit -1
+	fi
+
+	return 0
+}
+
 # Set GRUB as default boot loader
 grub_set_default () {
 	local grub_install_path="${1}"/"${EFI_GRUB}"
