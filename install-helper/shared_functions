@@ -436,6 +436,12 @@ grub_config_write_menuitem () {
 	local kernel_dtbs_dir="/usr/lib/linux-image${kernel_version}"
 	local kernel_dtbs_fullpath="${1}${kernel_dtbs_dir}"
 
+	# Check kernel image exists
+	if [ ! -f "${base_dir}/boot/"${kernel_name}" ]; then
+		echo "	Kernel image ${kernel_name} does not exist!"
+		return -1
+	fi
+
 	# Create GRUB configuration directory if it doesn't exist
 	if [ ! -d "${grub_config_dir}" ]; then
 		echo -n "	Creating EFI config directory: "

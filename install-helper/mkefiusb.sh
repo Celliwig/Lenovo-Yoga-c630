@@ -193,6 +193,7 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		okay_failedexit $?
 	fi
 
+	KERNEL_NAME=()
 	if [[ "${KERNEL_PACKAGE}" != "" ]]; then
 		echo -e "${TXT_UNDERLINE}Install kernel${TXT_NORMAL}"
 		KERNEL_PACKAGE_TYPE=`identify_package_type "${KERNEL_PACKAGE}"`
@@ -218,6 +219,12 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		echo -n "	Copying kernel package contents from ${KERNEL_PACKAGE_TEMPDIR} to USB key: "
 		cp -a "${KERNEL_PACKAGE_TEMPDIR}"/* "${DIR_USBKEY}"/ &> /dev/null
 		okay_failedexit $?
+
+		# Identify the kernel name(s)
+		for tmp_kernel_name in `find "${KERNEL_PACKAGE_TEMPDIR}" -name vmlinuz-\* `; do
+			KERNEL_NAME+=( `basename "${tmp_kernel_name}"` )
+		done
+
 		sudo rm -rf "${KERNEL_PACKAGE_TEMPDIR}"
 	fi
 
@@ -235,61 +242,11 @@ if [ -e /dev/disk/by-label/IHEFI ] && [ -e /dev/disk/by-label/IHFILES ]; then
 		echo -e "${TXT_UNDERLINE}Install GRUB${TXT_NORMAL}"
 		grub_install_from_src "${DIR_GRUBSRC}" "${DIR_USBKEY}"
 		grub_set_default "${DIR_USBKEY}"
-	fi
 
-	if "${INSTALL_GRUB}"; then
-		rm "${FILE_EFI_GRUBCFG}" &> /dev/null
-		echo "	Creating grub.cfg: "
-		touch "${FILE_EFI_GRUBCFG}"
-		echo "set menu_color_normal=white/black" >> "${FILE_EFI_GRUBCFG}"
-		echo "set menu_color_highlight=black/light-gray" >> "${FILE_EFI_GRUBCFG}"
-		echo "if background_color 44,0,30,0; then" >> "${FILE_EFI_GRUBCFG}"
-		echo "  clear" >> "${FILE_EFI_GRUBCFG}"
-		echo "fi" >> "${FILE_EFI_GRUBCFG}"
-		echo "" >> "${FILE_EFI_GRUBCFG}"
-		echo "insmod gzio" >> "${FILE_EFI_GRUBCFG}"
-		echo "set timeout=30" >> "${FILE_EFI_GRUBCFG}"
-		for tmp_kernel_version in `find "${DIR_USBKEY_BOOT}" -name vmlinuz-\* |sed "s|${DIR_USBKEY_BOOT}/||g"`; do
-			tmp_initrd_version=`echo "${tmp_kernel_version}" |sed 's|vmlinuz||'`
-
-			tmp_kernel_args=`dialog --stdout --clear --title "install-helper" \
-						--inputbox "Please enter kernel arguments for ${tmp_kernel_version}:" 10 70 "${DEFAULT_KERNEL_ARGS}"`
-			if [ $? -eq 0 ]; then
-				tmp_kernel_args="${DEFAULT_KERNEL_ARGS}"			# If canceled, load defaults
-			fi
-
-			DIALOG_CHECKBOX_LST=""
-			DIR_KERNEL_DTBS="/usr/lib/linux-image${tmp_initrd_version}"
-			DIR_KERNEL_DTBS_FULLPATH="${DIR_USBKEY}${DIR_KERNEL_DTBS}"
-			for tmp_dtb_path in `find "${DIR_KERNEL_DTBS_FULLPATH}" -name \*\.dtb`; do
-				tmp_dtb_path=`echo "${tmp_dtb_path}"| sed "s|${DIR_KERNEL_DTBS_FULLPATH}||"`
-				tmp_dtb_name=`basename "${tmp_dtb_path}"`
-				tmp_dtb_dir=`dirname "${tmp_dtb_path}"|tr -d "/"`
-				DIALOG_CHECKBOX_LST+="${tmp_dtb_name} \"${tmp_dtb_dir}\" off "
-			done
-
-			SELECTED_KERNEL_DTBS=`dialog --stdout --clear --title "install-helper" \
-				--checklist "Select the DTB to use with ${tmp_kernel_version}:" 20 61 8 ${DIALOG_CHECKBOX_LST}`
-			if [ $? -eq 0 ]; then
-				for tmp_kernel_dtb in ${SELECTED_KERNEL_DTBS}; do
-					echo "		Adding entry: ${tmp_kernel_version} - ${tmp_kernel_dtb}"
-					tmp_devicetree="${DIR_KERNEL_DTBS}/${tmp_dtb_dir}/${tmp_kernel_dtb}"
-					echo "menuentry \"${tmp_kernel_version} (${tmp_kernel_dtb})\" {" >> "${FILE_EFI_GRUBCFG}"
-					echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
-					echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
-					echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
-					echo "	devicetree ${tmp_devicetree}" >> "${FILE_EFI_GRUBCFG}"
-					echo "}" >> "${FILE_EFI_GRUBCFG}"
-				done
-			else
-				echo "		Adding entry: ${tmp_kernel_version}"
-				echo "menuentry \"${tmp_kernel_version}\" {" >> "${FILE_EFI_GRUBCFG}"
-				echo "	set gfxpayload=keep" >> "${FILE_EFI_GRUBCFG}"
-				echo "	linux /boot/${tmp_kernel_version} ${tmp_kernel_args}" >> "${FILE_EFI_GRUBCFG}"
-				echo "	initrd /boot/initrd${tmp_initrd_version}.gz" >> "${FILE_EFI_GRUBCFG}"
-				echo "}" >> "${FILE_EFI_GRUBCFG}"
-			fi
+		for tmp_kernel_name in ${KERNEL_NAME[@]}; do
+			grub_config_write_menuitem "${DIR_USBKEY}" "${tmp_kernel_name}"
 		done
+		grub_config_write_main "${DIR_USBKEY}"
 	fi
 
 	echo -n "	UnMounting EFI System partition: "
