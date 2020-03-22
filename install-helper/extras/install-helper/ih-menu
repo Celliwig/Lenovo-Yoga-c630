@@ -6,7 +6,7 @@
 . install-helper/ih-rescue
 . install-helper/ih-shell
 
-local ih_menu_debug=0
+ih_menu_debug=0
 if [[ "${ih_menu}" == "debug" ]]; then
 	ih_menu_debug=1
 fi
