@@ -419,7 +419,7 @@ grub_config_write_main () {
 
 	for tmp_configfile in `ls "${grub_config_dir}"`; do
 		tmp_configfile=`echo "${tmp_configfile}"| sed "s|${base_dir}||"`
-		echo "configfile ${EFI_GRUBCFG_DIR}/${tmp_configfile}" >> "${grub_config_path}"
+		echo "source ${EFI_GRUBCFG_DIR}/${tmp_configfile}" >> "${grub_config_path}"
 	done
 
 	return 0
@@ -491,7 +491,7 @@ grub_config_write_menuitem () {
 			tmp_devicetree_path=`echo "${tmp_devicetree_path}"| sed "s|${base_dir}||"`
 			echo "	menuentry \"${kernel_name} (${tmp_kernel_dtb})\" {" >> "${grub_config_menuitem}"
 			echo "		set gfxpayload=keep" >> "${grub_config_menuitem}"
-			echo "		linux /boot/${kernel_name} ${tmp_kernel_args}" >> "${grub_config_menuitem}"
+			echo "		linux /boot/${kernel_name} ${kernel_args}" >> "${grub_config_menuitem}"
 			echo "		initrd /boot/initrd${kernel_version}.gz" >> "${grub_config_menuitem}"
 			echo "		devicetree ${tmp_devicetree_path}" >> "${grub_config_menuitem}"
 			echo "	}" >> "${grub_config_menuitem}"
