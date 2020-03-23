@@ -1,0 +1,10 @@
+tty:x:5:
+disk:x:6:
+lp:x:7:
+kmem:x:15:
+dialout:x:20:
+cdrom:x:24:
+audio:x:29:
+video:x:44:
+input:x:107:
+lpadmin:x:115:
