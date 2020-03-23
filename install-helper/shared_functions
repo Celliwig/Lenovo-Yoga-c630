@@ -6,6 +6,7 @@ DEFAULT_KERNEL_ARGS='efi=novamap pd_ignore_unused clk_ignore_unused'
 ###################################################################################################################################################
 # URLs
 ###################################################################################################################################################
+GIT_EUDEV_REPO="https://github.com/gentoo/eudev.git"
 GIT_GRUB_REPO="https://git.savannah.gnu.org/git/grub.git"
 FEDORA_GPG_KEYS="https://getfedora.org/static/fedora.gpg"
 
@@ -16,6 +17,7 @@ CWD=$PWD
 
 # Build paths
 DIR_CMDLINE="${CWD}/cmdline-patch"
+DIR_EUDEV="${CWD}/eudev"
 DIR_EXTRAS="${CWD}/extras"
 DIR_GRUBCFG="${CWD}/grub-cfg"
 DIR_GRUBPKG="${CWD}/grub_pkg"
@@ -167,6 +169,63 @@ initrd_build_base_using_makejail () {
 	echo -n "	Running makejail: "
 	sudo makejail "${MAKEJAIL_CFG_PATH}" &> /dev/null
 	okay_failedexit $?
+
+	# Build and install eudev
+	echo "	Building eudev"
+	if [ -d "${DIR_EUDEV}" ]; then
+		echo "		${DIR_EUDEV} already exists"
+		local eudev_git_update=""
+		read -r -p "		Update existing repo? (y/n): " eudev_git_update
+		if [[ "${eudev_git_update}" = [Yy] ]]; then
+			cd "${DIR_EUDEV}"
+			git pull &> /dev/null
+			retval="${?}"
+			cd "${CWD}"
+			if [ "${retval}" -ne 0 ]; then
+				echo "		git pull failed!!!"
+				exit 1
+			fi
+		fi
+	else
+		echo "		No eudev repo."
+		local eudev_git_clone=""
+		read -r -p "		Clone eudev repository? (y/n): " eudev_git_clone
+		if [[ "${eudev_git_clone}" = [Yy] ]]; then
+			git clone "${GIT_EUDEV_REPO}" "${DIR_EUDEV}" &> /dev/null
+			retval="${?}"
+			if [ "${retval}" -ne 0 ]; then
+				echo "		git clone failed!!!"
+				exit 1
+			fi
+		fi
+	fi
+	if [ -d "${DIR_EUDEV}" ]; then
+		cd "${DIR_EUDEV}"
+
+		echo -n "		eudev - Running autogen.sh: "
+		./autogen.sh &> /dev/null
+		okay_failedexit $?
+		echo -n "		eudev - Running configure: "
+		./configure --prefix=/usr \
+				--bindir=/bin \
+				--sbindir=/sbin \
+				--libdir=/lib \
+				--sysconfdir=/etc \
+				--libexecdir=/lib \
+				--with-rootprefix= \
+				--with-rootlibdir=/lib \
+				--disable-manpages \
+				--disable-static &> /dev/null
+		okay_failedexit $?
+		echo -n "		eudev - Running make: "
+		make &> /dev/null
+		okay_failedexit $?
+		echo -n "		eudev - Running make install: "
+		sudo make DESTDIR="${DIR_INITRD}" install &> /dev/null
+		okay_failedexit $?
+
+		cd "${CWD}"
+	fi
 
 	# Unmount /opt as we're finished with it
 	sudo umount /opt
