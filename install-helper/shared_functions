@@ -223,6 +223,9 @@ initrd_build_base_using_makejail () {
 		echo -n "		eudev - Running make install: "
 		sudo make DESTDIR="${DIR_INITRD}" install &> /dev/null
 		okay_failedexit $?
+		echo -n "		eudev - Creating hardware database: "
+		sudo chroot initrd/ "udevadm hwdb --update" &> /dev/null
+		okay_failedexit $?
 
 		cd "${CWD}"
 	fi
