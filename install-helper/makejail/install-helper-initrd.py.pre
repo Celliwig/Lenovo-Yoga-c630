@@ -39,7 +39,6 @@ forceCopy=[
 		"/etc/modprobe.d/mdadm.conf",
 		"/etc/nsswitch.conf",
 		"/etc/os-release",
-		"/etc/udev/udev.conf",
 # File magic
 		"/etc/magic",
 		"/etc/magic.mime",

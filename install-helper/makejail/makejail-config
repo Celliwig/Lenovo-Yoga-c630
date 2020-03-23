@@ -165,7 +165,6 @@ required_utils=( "awk" \
 		"tr" \
 		"true" \
 		"tty" \
-		"udevadm" \
 		"umount" \
 		"uname" \
 		"uniq" \
