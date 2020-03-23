@@ -37,7 +37,7 @@ fi
 sudo ls &> /dev/null
 
 echo -e "${TXT_UNDERLINE}Creating base initrd.img package...${TXT_NORMAL}"
-initrd_build_base
+initrd_build_base "${HOST_ARCH}"
 
 # Make sure permissions are correct.
 sudo chown -R root:root "${DIR_EXTRAS}"
