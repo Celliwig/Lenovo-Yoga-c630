@@ -49,6 +49,8 @@ forceCopy=[
 		"/lib/terminfo/*/*",
 		"/usr/share/terminfo/*",
 		"/usr/share/terminfo/*/*",
+# Libraries
+###LIBRARIES###
 # Utils
 ###UTILS###
 		]

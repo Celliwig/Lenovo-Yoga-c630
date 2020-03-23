@@ -5,6 +5,8 @@ DIR_INITRD="${1}"
 MAKEJAIL_CFG="${DIR_MAKEJAIL}/${2}"
 MAKEJAIL_CFG_PRE="${MAKEJAIL_CFG}.pre"
 
+required_libs=( "libnss" )
+
 required_utils=( "awk" \
 		"basename" \
 		"bash" \
@@ -295,8 +297,32 @@ optional_utils=( "cfdisk" \
 		"sgdisk" \
 		"auditctl" )
 
+locate_lib() {
+	local library_name="${1}"
+	local library_paths=""
+
+	library_paths=`find /lib -name "${library_name}"\* 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${library_paths}" ]; then
+			echo "${library_paths}"
+			return 0
+		fi
+	fi
+
+	library_paths=`find /usr/lib -name "${library_name}"\* 2>/dev/null`
+	if [ ${?} -eq 0 ]; then
+		if [ -n "${library_paths}" ]; then
+			echo "${library_paths}"
+			return 0
+		fi
+	fi
+
+	return 1
+}
+
 locate_util() {
-	util_name="${1}"
+	local util_name="${1}"
+	local util_path=""
 
 	util_path=`find /bin -name "${util_name}" 2>/dev/null`
 	if [ ${?} -eq 0 ]; then
@@ -341,12 +367,25 @@ locate_util() {
 	return 1
 }
 
-MAKEJAIL_CFG_TXT=""
+MAKEJAIL_CFG_LIBS_TXT=""
+MAKEJAIL_CFG_UTIL_TXT=""
 MISSING_UTILS=""
+
+for tmp_library in ${required_libs[@]}; do
+	tmp_libraries=`locate_lib "${tmp_library}"`
+	if [ ${?} -eq 0 ]; then
+		for tmp_libpath in ${tmp_libraries}; do
+			MAKEJAIL_CFG_LIBS_TXT="${MAKEJAIL_CFG_LIBS_TXT}		\"${tmp_libpath}\",\n"
+		done
+	else
+		MISSING_UTILS="${MISSING_UTILS}	${tmp_library}\n"
+	fi
+done
+
 for tmp_command in ${required_utils[@]}; do
 	tmp_utilpath=`locate_util "${tmp_command}"`
 	if [ ${?} -eq 0 ]; then
-		MAKEJAIL_CFG_TXT="${MAKEJAIL_CFG_TXT}		\"${tmp_utilpath}\",\n"
+		MAKEJAIL_CFG_UTIL_TXT="${MAKEJAIL_CFG_UTIL_TXT}		\"${tmp_utilpath}\",\n"
 	else
 		MISSING_UTILS="${MISSING_UTILS}	${tmp_command}\n"
 	fi
@@ -360,8 +399,8 @@ fi
 for tmp_command in ${optional_utils[@]}; do
 	tmp_utilpath=`locate_util "${tmp_command}"`
 	if [ ${?} -eq 0 ]; then
-		MAKEJAIL_CFG_TXT="${MAKEJAIL_CFG_TXT}		\"${tmp_utilpath}\",\n"
+		MAKEJAIL_CFG_UTIL_TXT="${MAKEJAIL_CFG_UTIL_TXT}		\"${tmp_utilpath}\",\n"
 	fi
 done
 
-sed "s|###PROJECT_DIR###|${DIR_INITRD}|g ; s|###UTILS###|${MAKEJAIL_CFG_TXT}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"
+sed "s|###PROJECT_DIR###|${DIR_INITRD}|g ; s|###LIBRARIES###|${MAKEJAIL_CFG_LIBS_TXT}|g ; s|###UTILS###|${MAKEJAIL_CFG_UTIL_TXT}|g" "${MAKEJAIL_CFG_PRE}" > "${MAKEJAIL_CFG}"
