@@ -207,13 +207,7 @@ initrd_build_base_using_makejail () {
 		okay_failedexit $?
 		echo -n "		eudev - Running configure: "
 		./configure --prefix=/usr \
-				--bindir=/bin \
-				--sbindir=/sbin \
-				--libdir=/lib \
 				--sysconfdir=/etc \
-				--libexecdir=/lib \
-				--with-rootprefix= \
-				--with-rootlibdir=/lib \
 				--disable-manpages \
 				--disable-static &> /dev/null
 		okay_failedexit $?
