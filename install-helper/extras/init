@@ -14,8 +14,26 @@ export PATH=/opt:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 [ -d /proc ] || mkdir /proc
 [ -d /tmp ] || mkdir /tmp
 mkdir -p /var/lock
-mount -t sysfs -o nodev,noexec,nosuid sysfs /sys
+
+# Mount /proc
 mount -t proc -o nodev,noexec,nosuid proc /proc
+if [ ! -e /proc/filesystems ]; then
+	echo "Procfs mount failed..."
+	exit
+fi
+
+# Mount /sys
+if ! grep -q '[[:space:]]sysfs$' /proc/filesystems; then
+	echo "Sysfs not available, stopping!"
+	exit
+fi
+mount -t sysfs -o nodev,noexec,nosuid sysfs /sys
+if [ -d /sys/class/mem/null -a ! -L /sys/class/mem/null ] || \
+   [ -e /sys/block -a ! -e /sys/class/block ]; then
+	echo "CONFIG_SYSFS_DEPRECATED must not be selected"
+	echo "Booting will continue in 30 seconds but many things will be broken"
+	sleep 30
+fi
 
 # shellcheck disable=SC2013
 for x in $(cat /proc/cmdline); do
@@ -37,7 +55,13 @@ export quiet
 
 # Note that this only becomes /dev on the real filesystem if udev's scripts
 # are used; which they will be, but it's worth pointing out
+# Mount /dev
+if ! grep -q '[[:space:]]devtmpfs$' /proc/filesystems; then
+	echo "Devtmpfs not available, stopping!"
+	exit
+fi
 mount -t devtmpfs -o nosuid,mode=0755 udev /dev
+# Mount /dev/pts
 mkdir /dev/pts
 mount -t devpts -o noexec,nosuid,gid=5,mode=0620 devpts /dev/pts || true
 
@@ -270,6 +294,32 @@ maybe_break modules
 [ -n "${netconsole}" ] && modprobe netconsole netconsole="${netconsole}"
 load_modules
 [ "$quiet" != "y" ] && log_end_msg
+
+# Load additional kernel modules & configure devices
+# Disable any hotplug helpers
+if [ -w /sys/kernel/uevent_helper ]; then
+	echo > /sys/kernel/uevent_helper
+fi
+# clean up the database
+udevadm info --cleanup-db
+# Start udev
+echo "udev: Starting..."
+/usr/sbin/udevd --daemon
+if [ ${?} -eq 0 ];then
+	echo "udev: Synthesizing the initial hotplug events (subsystems)"
+	udevadm trigger --type=subsystems --action=add
+	echo "udev: Synthesizing the initial hotplug events (devices)"
+	udevadm trigger --type=devices --action=add
+
+	echo -n "udev: Waiting for /dev to be fully populated: "
+	if udevadm settle; then
+		echo "Okay"
+	else
+		echo 'Timeout'
+	fi
+	echo "udev: Stopping..."
+	/bin/killall udevd
+fi
 
 maybe_break premount
 [ "$quiet" != "y" ] && log_begin_msg "Running /scripts/init-premount"
