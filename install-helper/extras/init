@@ -7,6 +7,7 @@
 # https://wiki.ubuntu.com/PATH
 # This also matches /etc/environment, but without games path
 export PATH=/opt:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+export rootmnt=/rootfsmnt
 
 [ -d /dev ] || mkdir -m 0755 /dev
 [ -d /root ] || mkdir -m 0700 /root
@@ -14,6 +15,7 @@ export PATH=/opt:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 [ -d /proc ] || mkdir /proc
 [ -d /tmp ] || mkdir /tmp
 mkdir -p /var/lock
+[ -d ${rootmnt} ] || mkdir ${rootmnt}
 
 # Mount /proc
 mount -t proc -o nodev,noexec,nosuid proc /proc
@@ -88,7 +90,6 @@ export NETWORK_SKIP_ENSLAVED=
 export break=
 export init=/sbin/init
 export readonly=y
-export rootmnt=/rootfsmnt
 export debug=
 export panic=
 export blacklist=
