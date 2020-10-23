@@ -42,7 +42,7 @@ Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT parti
 ## Known Issues
 This is very much work in development!
 
-## Tested against
+## Tested working
 * Debian 10.2.0 Arm64 1
 * Ubuntu Server 18.04.3 Arm64
 * OpenSUSE Leap 15.1 Arm64
