@@ -41,4 +41,13 @@ Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT parti
 This is very much work in development!
 
 ## Tested against
-* Debian 10.2.0 arm64 1
+* Debian 10.2.0 Arm64 1
+* Ubuntu Server 18.04.3 Arm64
+* OpenSUSE Leap 15.1 Arm64
+
+## Tested not working
+* Ubuntu Live Server 19.04 Arm64 (Lenovo Yoga c630)
+* Ubuntu Live Server 19.10 Arm64 (Lenovo Yoga c630)
+* Ubuntu Live Server 20.04 Arm64 (Lenovo Yoga c630)
+
+Subquity, Ubuntu's new installer, does not handle the partioning of the Yoga's UFS drive. Trying to create a primary partition overwrote the EFS partition, and trying to use LVM crashed the installer. :(
