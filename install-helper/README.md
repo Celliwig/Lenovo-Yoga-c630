@@ -8,6 +8,8 @@ The problems of trying to get a new kernel intergrated with a particular distrib
 
 To keep this a generic method an initramfs image is generated which is used to preload and patch the installer initramfs image. It does this by first loading a number of predefined kernel modules (e.g. device mapper related, XFS which needed by Fedora 2nd stage), but can also include user specified modules. A basic CLI menu system is then run so that the installation media can be selected. From that selection it takes the existing initramfs image, unpacks it, and copies in the necessary kernel modules. It then patches the kernel command line string (/proc/cmdline) with the kernel arguments from selected installation method (necessary for Fedora, for example). It then uses switch_root to start executing the installer initramfs as if it were initiated as normal.
 
+10/2020 - udev is included in the initrd image so modules no longer need to be manually specified when building it if they are referenced by the devicetree.
+
 ## Commands
 
 * build_initrd.sh - Used to build the initramfs image with all the required tools from a specified kernel package.
