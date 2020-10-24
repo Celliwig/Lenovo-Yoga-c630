@@ -8,6 +8,8 @@ The problems of trying to get a new kernel intergrated with a particular distrib
 
 To keep this a generic method an initramfs image is generated which is used to preload and patch the installer initramfs image. It does this by first loading a number of predefined kernel modules (e.g. device mapper related, XFS which needed by Fedora 2nd stage), but can also include user specified modules. A basic CLI menu system is then run so that the installation media can be selected. From that selection it takes the existing initramfs image, unpacks it, and copies in the necessary kernel modules. It then patches the kernel command line string (/proc/cmdline) with the kernel arguments from selected installation method (necessary for Fedora, for example). It then uses switch_root to start executing the installer initramfs as if it were initiated as normal.
 
+10/2020 - udev is included in the initrd image so modules no longer need to be manually specified when building it if they are referenced by the devicetree.
+
 ## Commands
 
 * build_initrd.sh - Used to build the initramfs image with all the required tools from a specified kernel package.
@@ -40,5 +42,14 @@ Builds a UEFI bootable device by erasing '/dev/sdb'. It then creates 2 GPT parti
 ## Known Issues
 This is very much work in development!
 
-## Tested against
-* Debian 10.2.0 arm64 1
+## Tested working
+* Debian 10.2.0 Arm64 1
+* Ubuntu Server 18.04.3 Arm64
+* OpenSUSE Leap 15.1 Arm64
+
+## Tested not working
+* Ubuntu Live Server 19.04 Arm64 (Lenovo Yoga c630)
+* Ubuntu Live Server 19.10 Arm64 (Lenovo Yoga c630)
+* Ubuntu Live Server 20.04 Arm64 (Lenovo Yoga c630)
+
+Subquity, Ubuntu's new installer, does not handle the partioning of the Yoga's UFS drive. Trying to create a primary partition overwrote the EFS partition, and trying to use LVM crashed the installer. :(
