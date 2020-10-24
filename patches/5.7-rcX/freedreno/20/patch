@@ -1,0 +1,99 @@
+From a59a40065690048012f2957f2525f2561fe08424 Mon Sep 17 00:00:00 2001
+From: Rob Clark <robdclark@chromium.org>
+Date: Sat, 1 Jun 2019 08:05:59 -0700
+Subject: [PATCH] genpd/gdsc: inherit display powerdomain from bootloader
+
+Mark power domains that may be enabled by bootloader, and which should
+not be disabled until a driver takes them over.
+
+This keeps efifb alive until the real driver can be probed.  In a distro
+kernel, the driver will most likely built as a module, and not probed
+until we get to userspace (after late_initcall)
+
+Signed-off-by: Rob Clark <robdclark@chromium.org>
+Reviewed-by: Jeffrey Hugo <jeffrey.l.hugo@gmail.com>
+
+diff --git a/drivers/base/power/domain.c b/drivers/base/power/domain.c
+index 0a01df608849..f4900aa6d2d4 100644
+--- a/drivers/base/power/domain.c
++++ b/drivers/base/power/domain.c
+@@ -532,6 +532,16 @@ static int genpd_power_off(struct generic_pm_domain *genpd, bool one_dev_on,
+ 			not_suspended++;
+ 	}
+ 
++	/*
++	 * If the power domain is enabled by the bootloader (for example
++	 * display enabled by bootloader), but no devices attached yet
++	 * (perhaps because driver built as kernel module), then do not
++	 * suspend.
++	 */
++	if ((genpd->flags & GENPD_FLAG_INHERIT_BL) &&
++		list_empty(&genpd->dev_list))
++		not_suspended++;
++
+ 	if (not_suspended > 1 || (not_suspended == 1 && !one_dev_on))
+ 		return -EBUSY;
+ 
+diff --git a/drivers/clk/qcom/dispcc-sdm845.c b/drivers/clk/qcom/dispcc-sdm845.c
+index 2053c36796b9..55ea9894736f 100644
+--- a/drivers/clk/qcom/dispcc-sdm845.c
++++ b/drivers/clk/qcom/dispcc-sdm845.c
+@@ -774,7 +774,7 @@ static struct gdsc mdss_gdsc = {
+ 		.name = "mdss_gdsc",
+ 	},
+ 	.pwrsts = PWRSTS_OFF_ON,
+-	.flags = HW_CTRL | POLL_CFG_GDSCR,
++	.flags = HW_CTRL | POLL_CFG_GDSCR | INHERIT_BL,
+ };
+ 
+ static struct clk_regmap *disp_cc_sdm845_clocks[] = {
+diff --git a/drivers/clk/qcom/gdsc.c b/drivers/clk/qcom/gdsc.c
+index a250f59708d8..4639fbeb9a7f 100644
+--- a/drivers/clk/qcom/gdsc.c
++++ b/drivers/clk/qcom/gdsc.c
+@@ -331,6 +331,11 @@ static int gdsc_init(struct gdsc *sc)
+ 	if ((sc->flags & VOTABLE) && on)
+ 		gdsc_enable(&sc->pd);
+ 
++	if ((sc->flags & INHERIT_BL) && on) {
++		pr_debug("gdsc: %s is enabled from bootloader!\n", sc->pd.name);
++		sc->pd.flags |= GENPD_FLAG_INHERIT_BL;
++	}
++
+ 	/* If ALWAYS_ON GDSCs are not ON, turn them ON */
+ 	if (sc->flags & ALWAYS_ON) {
+ 		if (!on)
+diff --git a/drivers/clk/qcom/gdsc.h b/drivers/clk/qcom/gdsc.h
+index 64cdc8cf0d4d..c6fe56247399 100644
+--- a/drivers/clk/qcom/gdsc.h
++++ b/drivers/clk/qcom/gdsc.h
+@@ -49,6 +49,7 @@ struct gdsc {
+ #define AON_RESET	BIT(4)
+ #define POLL_CFG_GDSCR	BIT(5)
+ #define ALWAYS_ON	BIT(6)
++#define INHERIT_BL	BIT(7)
+ 	struct reset_controller_dev	*rcdev;
+ 	unsigned int			*resets;
+ 	unsigned int			reset_count;
+diff --git a/include/linux/pm_domain.h b/include/linux/pm_domain.h
+index 9ec78ee53652..fc6891b3556e 100644
+--- a/include/linux/pm_domain.h
++++ b/include/linux/pm_domain.h
+@@ -55,6 +55,9 @@
+  *
+  * GENPD_FLAG_RPM_ALWAYS_ON:	Instructs genpd to always keep the PM domain
+  *				powered on except for system suspend.
++ *
++ * GENPD_FLAG_INHERIT_BL:	The bootloader has already enabled this power
++ * 				domain.
+  */
+ #define GENPD_FLAG_PM_CLK	 (1U << 0)
+ #define GENPD_FLAG_IRQ_SAFE	 (1U << 1)
+@@ -62,6 +65,7 @@
+ #define GENPD_FLAG_ACTIVE_WAKEUP (1U << 3)
+ #define GENPD_FLAG_CPU_DOMAIN	 (1U << 4)
+ #define GENPD_FLAG_RPM_ALWAYS_ON (1U << 5)
++#define GENPD_FLAG_INHERIT_BL	 (1U << 6)
+ 
+ enum gpd_status {
+ 	GPD_STATE_ACTIVE = 0,	/* PM domain is active */

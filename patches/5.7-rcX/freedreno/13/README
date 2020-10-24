@@ -1,0 +1,10 @@
+commit d90cafb142eab4b456daaa29ff7c3ea68d9f4694
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Apr 17 23:38:31 2020 -0700
+
+    dt-bindings: display: simple: Add BOE NV133FHM-N61
+    
+    Add the BOE NV133FHM-N61 13.3" FHD (1920x1080) TFT LCD Panel to the
+    compatible list of panel-simple.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

@@ -1,0 +1,13 @@
+commit 8c6be92670e1c613d9c7206ba9401bdfaa71af0a
+Author: Sandeep Maheswaram <sanm@codeaurora.org>
+Date:   Mon Mar 9 15:23:08 2020 +0530
+
+    arm64: dts: qcom: sdm845: Add generic QUSB2 V2 Phy compatible
+    
+    Use generic QUSB2 V2 Phy configuration for sdm845.
+    
+    Signed-off-by: Sandeep Maheswaram <sanm@codeaurora.org>
+    Reviewed-by: Matthias Kaehlcke <mka@chromium.org>
+    Reviewed-by: Stephen Boyd <swboyd@chromium.org>
+    Link: https://lore.kernel.org/r/1583747589-17267-9-git-send-email-sanm@codeaurora.org
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

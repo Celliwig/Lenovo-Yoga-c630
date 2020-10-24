@@ -1,0 +1,19 @@
+From 89a4c041188097c6204f8af8178da124723d4a06 Mon Sep 17 00:00:00 2001
+From: Rob Clark <robdclark@chromium.org>
+Date: Sat, 29 Jun 2019 11:35:33 -0700
+Subject: [PATCH] WIP: drm/bridge: ti-sn65dsi86: initialize brightness to max
+
+
+diff --git a/drivers/gpu/drm/bridge/ti-sn65dsi86.c b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+index 7d456584ac0c..245f0a31ee8b 100644
+--- a/drivers/gpu/drm/bridge/ti-sn65dsi86.c
++++ b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+@@ -990,6 +990,8 @@ static int ti_sn_backlight_init(struct ti_sn_bridge *pdata)
+ 
+ 	props.type = BACKLIGHT_RAW;
+ 	props.max_brightness = pdata->max_brightness;
++	props.brightness = pdata->max_brightness;
++	pdata->brightness = pdata->max_brightness;
+ 	bl = devm_backlight_device_register(dev, "sn65dsi86", dev, pdata,
+ 					     &ti_sn_backlight_ops, &props);
+ 	if (IS_ERR(bl)) {

@@ -1,0 +1,14 @@
+commit 37a83fe8cc41a9476101d34793f90ecb7ac5705d
+Author: Alex Elder <elder@linaro.org>
+Date:   Fri Apr 3 12:50:04 2020 -0500
+
+    remoteproc: qcom_q6v5_mss: fix a bug in q6v5_probe()
+    
+    If looking up the DT "firmware-name" property fails in q6v6_probe(),
+    the function returns without freeing the remoteproc structure
+    that has been allocated.  Fix this by jumping to the free_rproc
+    label, which takes care of this.
+    
+    Signed-off-by: Alex Elder <elder@linaro.org>
+    Link: https://lore.kernel.org/r/20200403175005.17130-3-elder@linaro.org
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

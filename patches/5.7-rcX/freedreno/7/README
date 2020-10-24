@@ -1,0 +1,10 @@
+commit 63179d3de3bfda0cec7b51b1bd4f870145473f02
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Sat Dec 28 22:08:23 2019 -0800
+
+    panel: simple: Add BOE NV133FHM-N61
+    
+    The BOE NV133FHM-N61 panel is a 13.3" 1920x1080 eDP panel, add support
+    for it in panel-simple.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

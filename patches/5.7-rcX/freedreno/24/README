@@ -1,0 +1,5 @@
+commit 89a4c041188097c6204f8af8178da124723d4a06
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Sat Jun 29 11:35:33 2019 -0700
+
+    WIP: drm/bridge: ti-sn65dsi86: initialize brightness to max

@@ -1,0 +1,9 @@
+commit 933c81aa72759031ec2ee47c2f037fd40080eaee
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Nov 8 18:42:34 2019 -0800
+
+    arm64: defconfig: Update defconfig
+    
+    Add some things needed for the c630.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

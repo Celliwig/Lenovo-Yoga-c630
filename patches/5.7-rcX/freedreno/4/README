@@ -1,0 +1,10 @@
+commit bc980085155ecf8acffe92509db7771b0c852399
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Nov 20 22:06:13 2019 -0800
+
+    arm64: dts: qcom: c630: Specify UFS device reset
+    
+    On some device the reset line for the UFS memory needs to be tickled in
+    order for UFS to initialize properly, add this to the ufs_mem_hc node.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

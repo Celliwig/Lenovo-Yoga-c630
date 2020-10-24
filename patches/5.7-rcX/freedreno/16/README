@@ -1,0 +1,30 @@
+commit fc47cb0e3ecb28b1740e8c4970cf95178b5f05d2
+Author: Alex Elder <elder@linaro.org>
+Date:   Fri Apr 3 12:50:05 2020 -0500
+
+    remoteproc: qcom_q6v5_mss: fix q6v5_probe() error paths
+    
+    If an error occurs in q6v5_probe() after the proxy power domains
+    are attached, but before qcom_add_ipa_notify_subdev() is called,
+    qcom_remove_ipa_notify_subdev() is called in the error path, which
+    is a bug.  Fix this by having that call be reached through a
+    different label.
+    
+    Additionally, if qcom_add_sysmon_subdev() returns an error, the
+    subdevs that had already been added will not be properly removed.
+    Fix this by having the added subdevs (including the IPA notify one)
+    be removed in this case.
+    
+    Finally, arrange for the sysmon subdev to be removed before the rest
+    in the event rproc_add() returns an error.
+    
+    Have cleanup activity done in q6v5_remove() be done in the reverse
+    order they are set up in q6v5_probe() (the same order they're done
+    in the q6v5_probe() error path).  Use a local variable for the
+    remoteproc pointer, which is used repeatedly.
+    
+    Remove errant semicolons at the end of two function blocks.
+    
+    Signed-off-by: Alex Elder <elder@linaro.org>
+    Link: https://lore.kernel.org/r/20200403175005.17130-4-elder@linaro.org
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

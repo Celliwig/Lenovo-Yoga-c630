@@ -1,0 +1,21 @@
+commit f77b9357acbd6e639540ff62c0ef77190312ebe0
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Mon May 27 10:17:40 2019 -0700
+
+    clk: inherit clocks enabled by bootloader
+    
+    The goal here is to support inheriting a display setup by bootloader,
+    although there may also be some non-display related use-cases.
+    
+    Rough idea is to add a flag for clks and power domains that might
+    already be enabled when kernel starts, and which should not be
+    disabled at late_initcall if the kernel thinks they are "unused".
+    
+    If bootloader is enabling display, and kernel is using efifb before
+    real display driver is loaded (potentially from kernel module after
+    userspace starts, in a typical distro kernel), we don't want to kill
+    the clocks and power domains that are used by the display before
+    userspace starts.
+    
+    Signed-off-by: Rob Clark <robdclark@chromium.org>
+    Reviewed-by: Jeffrey Hugo <jeffrey.l.hugo@gmail.com>

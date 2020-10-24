@@ -1,0 +1,10 @@
+commit fa13722a44e65b02a69fd0d0d8a80f091d54fb05
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Sun Jul 21 11:12:27 2019 -0700
+
+    drm/msm/dsi: move pll init later
+    
+    Move pll init to after we takeover and shutdown clks from bootloader
+    enabled display.
+    
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

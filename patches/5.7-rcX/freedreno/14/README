@@ -1,0 +1,11 @@
+commit 1e5a8cae0ba4c10be5f308cd0a299fcc242c9322
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Apr 17 23:54:50 2020 -0700
+
+    dt-bindings: display: simple: Add IVO M133NWF4 R0
+    
+    Define the vendor prefix for InfoVision Optoelectronics and add their
+    M133NWF4 R0 13.3" FHD (1920x1080) TFT LCD panel to the compatible list
+    of panel-simple.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

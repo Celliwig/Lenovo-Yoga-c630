@@ -1,0 +1,13 @@
+commit 86888debe11da05868311ae6ab50d91bd8783ce5
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Mon Jul 22 22:14:46 2019 -0700
+
+    clk: Remove cached cores in parent map during unregister
+    
+    As clocks are registered their parents are resolved and the parent_map
+    is updated to cache the clk_core objects of each existing parent.
+    But in the event of a clock being unregistered this cache will carry
+    dangling pointers if not invalidated, so do this for all children of the
+    clock being unregistered.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
