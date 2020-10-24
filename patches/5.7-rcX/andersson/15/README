@@ -1,0 +1,8 @@
+commit dcd500b3ad24b051b028ae7eecbdbb23d32d8ed5
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Tue Apr 21 12:35:38 2020 -0700
+
+    arm64: dts: qcom: sdm845-lenovo-yoga: Drop direction from dais
+    
+    Suggested-by: Srini Kandagatla <srinivas.kandagatla@linaro.org>
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

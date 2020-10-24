@@ -1,0 +1,26 @@
+From dcd500b3ad24b051b028ae7eecbdbb23d32d8ed5 Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date: Tue, 21 Apr 2020 12:35:38 -0700
+Subject: [PATCH] arm64: dts: qcom: sdm845-lenovo-yoga: Drop direction from
+ dais
+
+Suggested-by: Srini Kandagatla <srinivas.kandagatla@linaro.org>
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+
+diff --git a/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts b/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
+index 99f197cc0505..c0fa2a731b52 100644
+--- a/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
++++ b/arch/arm64/boot/dts/qcom/sdm850-lenovo-yoga-c630.dts
+@@ -489,12 +489,10 @@
+ &q6asmdai {
+ 	dai@0 {
+ 		reg = <0>;
+-		direction = <2>;
+ 	};
+ 
+ 	dai@1 {
+ 		reg = <1>;
+-		direction = <1>;
+ 	};
+ };
+ 

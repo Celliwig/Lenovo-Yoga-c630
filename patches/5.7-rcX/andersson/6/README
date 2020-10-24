@@ -1,0 +1,10 @@
+commit d2f398e6edbcf6448502c0ccfdeb9730564d7b3b
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Nov 8 22:30:45 2019 -0800
+
+    arm64: dts: qcom: c630: Re-enable apps_smmu
+    
+    Re-enable the apps_smmu now that the arm-smmu driver supports stream
+    handoff from firmware.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

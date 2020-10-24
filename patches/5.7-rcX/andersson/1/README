@@ -1,0 +1,10 @@
+commit 29b2d73720d49bb9232905ec7d22fc44a7556bad
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Jan 2 17:05:06 2019 -0800
+
+    power: supply: Add driver for some battery
+    
+    The Lenovo Yoga C630 has some sort of EC providing AC-adapter and
+    battery status, this driver exposes these to the Linux kernel.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

@@ -1,0 +1,10 @@
+commit d58292068e7bdb3d543061ff63f11404ee5521c1
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Sat Dec 28 22:06:58 2019 -0800
+
+    panel: simple: Add Ivo M133NWF4 R0
+    
+    The InfoVision Optoelectronics M133NWF4 R0 panel is a 13.3" 1920x1080
+    eDP panel, add support for it in panel-simple.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

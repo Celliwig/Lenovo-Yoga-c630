@@ -1,0 +1,7 @@
+commit b6a9a619562abbac41564d08f713be9b8010f61e
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Nov 8 23:03:55 2019 -0800
+
+    arm64: dts: qcom: c630: Enable display
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
