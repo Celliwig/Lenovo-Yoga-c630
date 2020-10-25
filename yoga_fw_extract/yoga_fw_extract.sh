@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Firmware paths
+# These have changed with kernel version
+###################################################################################################################################################
+#PATH_FW_C630_SUFFIX="c630"				# Previous (5.4) directory
+PATH_FW_C630_SUFFIX="LENOVO/81JL"
+
 # This script tries to extract the firmware files needed to enable the DSPs/audio/wifi on the Lenovo Yoga
 # from the systems windows partion
 ###################################################################################################################################################
@@ -178,6 +184,14 @@ for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qc
 		COPY_ERR=$((COPY_ERR+1))
 	fi
 done
+# GPU firmware
+for GPU_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcdxkmsuc850.mbn`; do
+	GPU_PATH=`dirname "${GPU_FILE}"`
+	cp -a "${GPU_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	if [ $? -ne 0 ]; then
+		COPY_ERR=$((COPY_ERR+1))
+	fi
+done
 # Copy board files
 for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
 	BRD_PATH=`dirname "${BRD_FILE}"`
@@ -208,6 +222,14 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		exit
 	else
 		DSP_PATH=`dirname "${DSP_FILE_CUR}"`
+	fi
+	# Get path to latest GPU files
+	GPU_FILE_CUR=`find Windows\ Drivers/ -type f -name qcdxkmsuc850.mbn -exec ls -t {} +|head -n1`
+	if [[ "${GPU_FILE_CUR}" == "" ]]; then
+		echo "Failed to find any GPU FW files."
+		exit
+	else
+		GPU_PATH=`dirname "${GPU_FILE_CUR}"`
 	fi
 	# Get path to latest board files
 	BRD_FILE_CUR=`find Windows\ Drivers/ -type f -name bdwlan.bin -exec ls -t {} +|head -n1`
@@ -307,17 +329,20 @@ if [ ${COPY_ERR} -eq 0 ]; then
 ###################################################################################################################################################
 	# Create linux dsp directory
 	echo -e "\n${TXT_UNDERLINE}Qualcomm DSP firmware${TXT_NORMAL}"
-	PATH_FW_C630="${CWD}/c630"
+	PATH_FW_C630="${CWD}/${PATH_FW_C630_SUFFIX}"
 	if [ -e "${PATH_FW_C630}" ]; then
 		echo "Deleting existing copy of linux DSP files..."
 		rm -rf "${PATH_FW_C630}" &> /dev/null
 		done_failedexit $?
 	fi
 	echo -n "Creating directory for linux DSP files: "
-	mkdir "${PATH_FW_C630}" &> /dev/null
+	mkdir -p "${PATH_FW_C630}" &> /dev/null
 	done_failedexit $?
 	echo -n "Copying linux DSP files: "
 	cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
+	done_failedexit $?
+	echo -n "Copying linux GPU FW files: "
+	cp -a "${GPU_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
 	done_failedexit $?
 	cd "${PATH_FW_C630}"
 	echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
@@ -360,11 +385,16 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	sudo chown -R root:root "${PATH_LIBFW_ATH10K}"				# Reset ownership
 
 	PATH_LIBFW_QCOM="/lib/firmware/qcom"
-	if [ -e "${PATH_LIBFW_QCOM}/c630" ]; then
-		backup_or_delete "Qualcomm DSP" "${PATH_LIBFW_QCOM}/c630" "${BKUP_DATETIME}"
+	if [ -e "${PATH_LIBFW_QCOM}/${PATH_FW_C630_SUFFIX}" ]; then
+		backup_or_delete "Qualcomm DSP" "${PATH_LIBFW_QCOM}/${PATH_FW_C630_SUFFIX}" "${BKUP_DATETIME}"
 	fi
 	echo -n "Copying new Qualcomm DSP firmware: "
-	sudo cp -r "${PATH_FW_C630}" "${PATH_LIBFW_QCOM}" &> /dev/null
+	if [[ `dirname ${PATH_FW_C630_SUFFIX}` == "." ]]; then			# If multi level directory structure
+		PATH_FW_COPY=${PATH_FW_C630_SUFFIX}
+	else
+		PATH_FW_COPY=`dirname ${PATH_FW_C630_SUFFIX}`			# Strip second level
+	fi
+	sudo cp -r "${PATH_FW_COPY}" "${PATH_LIBFW_QCOM}" &> /dev/null
 	done_failedexit $?
 	sudo chown -R root:root "${PATH_LIBFW_QCOM}"				# Reset ownership
 fi
