@@ -1,6 +1,6 @@
 From	Stanimir Varbanov <>
-Subject	[PATCH 2/2] venus: firmware: Set virtual address ranges
-Date	Thu, 9 Jul 2020 14:58:29 +0300
+Subject	[PATCH v2 2/2] venus: firmware: Set virtual address ranges
+Date	Mon, 17 Aug 2020 11:27:23 +0300
 	
 
 In order to boot some of the new Venus firmware versions TZ call to set
