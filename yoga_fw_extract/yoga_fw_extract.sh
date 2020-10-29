@@ -5,6 +5,7 @@
 ###################################################################################################################################################
 #PATH_FW_C630_SUFFIX="c630"				# Previous (5.4) directory
 PATH_FW_C630_SUFFIX="LENOVO/81JL"
+PATH_FW_VENUS_SUFFIX="venus-5.2"
 
 # This script tries to extract the firmware files needed to enable the DSPs/audio/wifi on the Lenovo Yoga
 # from the systems windows partion
@@ -27,6 +28,7 @@ firmware_md5=(\
 ###################################################################################################################################################
 
 URL_FW_FIRMWARE5BIN="https://github.com/kvalo/ath10k-firmware/raw/master/WCN3990/hw1.0/HL2.0/WLAN.HL.2.0-01387-QCAHLSWMTPLZ-1/firmware-5.bin"
+URL_TOOLS_PILSPLITTER="https://github.com/remittor/qcom-mbn-tools/raw/master/pil-splitter.py"
 
 TXT_UNDERLINE="\033[1m\033[4m"
 TXT_NORMAL="\033[0m"
@@ -81,6 +83,21 @@ function backup_or_delete {
 			;;
 	esac
 }
+
+###################################################################################################################################################
+# Main routine
+###################################################################################################################################################
+echo -n "Creating temp directory: "
+TMP_DIR=`mktemp -d -p . -t yoga_fw_extract.XXXXXX`
+if [ ${?} -ne 0 ]; then
+	echo "Failed"
+	exit
+fi
+echo "${TMP_DIR}"
+cd "${TMP_DIR}" &> /dev/null
+
+CWD=`pwd`
+echo
 
 ###################################################################################################################################################
 # Find the relevant firmware directories, and make a working copy
@@ -162,7 +179,6 @@ if [[ "${WIN_MNT_STS_RO}" != "true" ]]; then
 	exit
 fi
 
-CWD=`pwd`
 COPY_ERR=0
 # Create directory to copy windows files into
 PATH_WIN_DRV="${CWD}/Windows Drivers"
@@ -178,24 +194,24 @@ done_failedexit $?
 echo -n "Copying Window's driver files: "
 # Copy DSP files
 for DSP_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcadsp850.mbn`; do
-	DSP_PATH=`dirname "${DSP_FILE}"`
-	cp -a "${DSP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	DSP_TMP_PATH=`dirname "${DSP_FILE}"`
+	cp -a "${DSP_TMP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
 	if [ $? -ne 0 ]; then
 		COPY_ERR=$((COPY_ERR+1))
 	fi
 done
 # GPU firmware
 for GPU_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name qcdxkmsuc850.mbn`; do
-	GPU_PATH=`dirname "${GPU_FILE}"`
-	cp -a "${GPU_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	GPU_TMP_PATH=`dirname "${GPU_FILE}"`
+	cp -a "${GPU_TMP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
 	if [ $? -ne 0 ]; then
 		COPY_ERR=$((COPY_ERR+1))
 	fi
 done
 # Copy board files
 for BRD_FILE in `find /mnt/Windows/System32/DriverStore/FileRepository/ -name bdwlan.bin`; do
-	BRD_PATH=`dirname "${BRD_FILE}"`
-	cp -a "${BRD_PATH}" "${PATH_WIN_DRV}" &> /dev/null
+	BRD_TMP_PATH=`dirname "${BRD_FILE}"`
+	cp -a "${BRD_TMP_PATH}" "${PATH_WIN_DRV}" &> /dev/null
 	if [ $? -ne 0 ]; then
 		COPY_ERR=$((COPY_ERR+1))
 	fi
@@ -221,7 +237,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		echo "Failed to find any DSP files."
 		exit
 	else
-		DSP_PATH=`dirname "${DSP_FILE_CUR}"`
+		DSP_TMP_PATH=`dirname "${DSP_FILE_CUR}"`
 	fi
 	# Get path to latest GPU files
 	GPU_FILE_CUR=`find Windows\ Drivers/ -type f -name qcdxkmsuc850.mbn -exec ls -t {} +|head -n1`
@@ -229,7 +245,15 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		echo "Failed to find any GPU FW files."
 		exit
 	else
-		GPU_PATH=`dirname "${GPU_FILE_CUR}"`
+		GPU_TMP_PATH=`dirname "${GPU_FILE_CUR}"`
+	fi
+	# Get path to latest Venus files
+	VENUS_FILE_CUR=`find Windows\ Drivers/ -type f -name qcvss850.mbn -exec ls -t {} +|head -n1`
+	if [[ "${VENUS_FILE_CUR}" == "" ]]; then
+		echo "Failed to find any Venus FW files."
+		exit
+	else
+		VENUS_TMP_PATH=`dirname "${VENUS_FILE_CUR}"`
 	fi
 	# Get path to latest board files
 	BRD_FILE_CUR=`find Windows\ Drivers/ -type f -name bdwlan.bin -exec ls -t {} +|head -n1`
@@ -237,7 +261,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 		echo "Failed to find any board files."
 		exit
 	else
-		BRD_PATH=`dirname "${BRD_FILE_CUR}"`
+		BRD_TMP_PATH=`dirname "${BRD_FILE_CUR}"`
 	fi
 	echo "Done"
 
@@ -258,7 +282,7 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	mkdir -p "${PATH_BRD_SRC}" &> /dev/null
 	done_failedexit $?
 	echo -n "Copying individual board files: "
-	cp -a "${BRD_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
+	cp -a "${BRD_TMP_PATH}"/bdwlan.b* "${PATH_BRD_SRC}" &> /dev/null
 	done_failedexit $?
 
 	cd "${PATH_BRD_MAKE}"
@@ -339,16 +363,45 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	mkdir -p "${PATH_FW_C630}" &> /dev/null
 	done_failedexit $?
 	echo -n "Copying linux DSP files: "
-	cp -a "${DSP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
+	cp -a "${DSP_TMP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
 	done_failedexit $?
 	echo -n "Copying linux GPU FW files: "
-	cp -a "${GPU_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
+	cp -a "${GPU_TMP_PATH}"/*.mbn "${PATH_FW_C630}" &> /dev/null
 	done_failedexit $?
 	cd "${PATH_FW_C630}"
 	echo -n "Creating symlink qcdsp2850.mbn -> modem.mdt: "
 	ln -s qcdsp2850.mbn modem.mdt &> /dev/null
 	done_failedexit $?
 	cd "${CWD}"
+
+###################################################################################################################################################
+# Qualcomm Venus DSP files
+###################################################################################################################################################
+	echo -e "\n${TXT_UNDERLINE}Qualcomm Venus DSP firmware${TXT_NORMAL}"
+	CMD_PILSPLITTER=`basename "${URL_TOOLS_PILSPLITTER}"`
+	if [ -e "${CMD_PILSPLITTER}" ]; then
+		echo "Deleting existing copy of Pil-Splitter tool: "
+		rm "${CMD_PILSPLITTER}" &> /dev/null
+		done_failedexit $?
+	fi
+	echo -n "Fetching Pil-Splitter tool: "
+	wget "${URL_TOOLS_PILSPLITTER}" &> /dev/null
+	done_failedexit $?
+	PATH_FW_VENUS="${CWD}/${PATH_FW_VENUS_SUFFIX}"
+	if [ -e "${PATH_FW_VENUS}" ]; then
+		echo "Deleting existing copy of linux Venus DSP files: "
+		rm -rf "${PATH_FW_VENUS}" &> /dev/null
+		done_failedexit $?
+	fi
+	echo -n "Creating directory for linux Venus DSP files: "
+	mkdir -p "${PATH_FW_VENUS}" &> /dev/null
+	done_failedexit $?
+	echo -n "Copying Venus firmware from tmp path: "
+	cp -a "${VENUS_TMP_PATH}/qcvss850.mbn" "${PATH_FW_VENUS}" &> /dev/null
+	done_failedexit $?
+	echo -n "Extracting Venus firmware files: "
+	python2 "${CMD_PILSPLITTER}" "${PATH_FW_VENUS}/qcvss850.mbn" "${PATH_FW_VENUS}/venus" &> /dev/null
+	done_failedexit $?
 
 ###################################################################################################################################################
 # Check files
@@ -385,6 +438,8 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	sudo chown -R root:root "${PATH_LIBFW_ATH10K}"				# Reset ownership
 
 	PATH_LIBFW_QCOM="/lib/firmware/qcom"
+
+	# Copy Yoga firmware files
 	if [ -e "${PATH_LIBFW_QCOM}/${PATH_FW_C630_SUFFIX}" ]; then
 		backup_or_delete "Qualcomm DSP" "${PATH_LIBFW_QCOM}/${PATH_FW_C630_SUFFIX}" "${BKUP_DATETIME}"
 	fi
@@ -396,5 +451,21 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	fi
 	sudo cp -r "${PATH_FW_COPY}" "${PATH_LIBFW_QCOM}" &> /dev/null
 	done_failedexit $?
-	sudo chown -R root:root "${PATH_LIBFW_QCOM}"				# Reset ownership
+
+	# Copy Venus DSP firmware files
+	if [ -e "${PATH_LIBFW_QCOM}/${PATH_FW_VENUS_SUFFIX}" ]; then
+		backup_or_delete "Qualcomm Venus DSP" "${PATH_LIBFW_QCOM}/${PATH_FW_VENUS_SUFFIX}" "${BKUP_DATETIME}"
+	fi
+	echo -n "Copying new Qualcomm Venus DSP firmware: "
+	if [[ `dirname ${PATH_FW_VENUS_SUFFIX}` == "." ]]; then			# If multi level directory structure
+		PATH_FW_COPY=${PATH_FW_VENUS_SUFFIX}
+	else
+		PATH_FW_COPY=`dirname ${PATH_FW_VENUS_SUFFIX}`			# Strip second level
+	fi
+	sudo cp -r "${PATH_FW_COPY}" "${PATH_LIBFW_QCOM}" &> /dev/null
+	done_failedexit $?
+
+	# Reset firmware owner/group permissions
+	sudo chown -R root:root "${PATH_LIBFW_QCOM}"
+	sudo find "${PATH_LIBFW_QCOM}" -type f -exec chmod 0644 {} \;
 fi
