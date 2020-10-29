@@ -1,6 +1,6 @@
 From	Stanimir Varbanov <>
-Subject	[PATCH v2 2/2] venus: firmware: Set virtual address ranges
-Date	Mon, 17 Aug 2020 11:27:23 +0300
+Subject	[PATCH v3 2/2] venus: firmware: Set virtual address ranges
+Date	Thu, 10 Sep 2020 10:52:27 +0300
 	
 
 In order to boot some of the new Venus firmware versions TZ call to set
@@ -12,14 +12,14 @@ Signed-off-by: Stanimir Varbanov <stanimir.varbanov@linaro.org>
 ---
  drivers/media/platform/qcom/venus/core.c     |  4 ++++
  drivers/media/platform/qcom/venus/core.h     |  4 ++++
- drivers/media/platform/qcom/venus/firmware.c | 18 +++++++++++++++++-
- 3 files changed, 25 insertions(+), 1 deletion(-)
+ drivers/media/platform/qcom/venus/firmware.c | 19 ++++++++++++++++++-
+ 3 files changed, 26 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/media/platform/qcom/venus/core.c b/drivers/media/platform/qcom/venus/core.c
-index 203c6538044f..5f8f7b72731c 100644
+index c5af42873aed..3549a094e860 100644
 --- a/drivers/media/platform/qcom/venus/core.c
 +++ b/drivers/media/platform/qcom/venus/core.c
-@@ -527,6 +527,10 @@ static const struct venus_resources sdm845_res_v2 = {
+@@ -540,6 +540,10 @@ static const struct venus_resources sdm845_res_v2 = {
  	.vmem_size = 0,
  	.vmem_addr = 0,
  	.dma_mask = 0xe0000000 - 1,
@@ -31,10 +31,10 @@ index 203c6538044f..5f8f7b72731c 100644
  };
  
 diff --git a/drivers/media/platform/qcom/venus/core.h b/drivers/media/platform/qcom/venus/core.h
-index 7118612673c9..8c88516e4694 100644
+index 1a7aee7ee628..3e3f0138e3c3 100644
 --- a/drivers/media/platform/qcom/venus/core.h
 +++ b/drivers/media/platform/qcom/venus/core.h
-@@ -68,6 +68,10 @@ struct venus_resources {
+@@ -77,6 +77,10 @@ struct venus_resources {
  	unsigned int vmem_id;
  	u32 vmem_size;
  	u32 vmem_addr;
@@ -46,7 +46,7 @@ index 7118612673c9..8c88516e4694 100644
  };
  
 diff --git a/drivers/media/platform/qcom/venus/firmware.c b/drivers/media/platform/qcom/venus/firmware.c
-index 8801a6a7543d..ac906ffc608f 100644
+index 8801a6a7543d..1db64a854b88 100644
 --- a/drivers/media/platform/qcom/venus/firmware.c
 +++ b/drivers/media/platform/qcom/venus/firmware.c
 @@ -181,6 +181,7 @@ static int venus_shutdown_no_tz(struct venus_core *core)
@@ -57,7 +57,7 @@ index 8801a6a7543d..ac906ffc608f 100644
  	phys_addr_t mem_phys;
  	size_t mem_size;
  	int ret;
-@@ -200,7 +201,22 @@ int venus_boot(struct venus_core *core)
+@@ -200,7 +201,23 @@ int venus_boot(struct venus_core *core)
  	else
  		ret = venus_boot_no_tz(core, mem_phys, mem_size);
  
@@ -71,6 +71,7 @@ index 8801a6a7543d..ac906ffc608f 100644
 +						     res->cp_nonpixel_start,
 +						     res->cp_nonpixel_size);
 +		if (ret) {
++			qcom_scm_pas_shutdown(VENUS_PAS_ID);
 +			dev_err(dev, "set virtual address ranges fail (%d)\n",
 +				ret);
 +			return ret;
