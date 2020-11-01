@@ -1,0 +1,54 @@
+From 92f17f38fc7d34c0c8917383835fd27c851384a6 Mon Sep 17 00:00:00 2001
+From: Rob Clark <robdclark@chromium.org>
+Date: Sat, 29 Jun 2019 11:44:50 -0700
+Subject: [PATCH] drm/bridge: ti-sn65dsi86: support booloader enabled display
+
+Request the enable gpio ASIS to avoid disabling bridge during probe, if
+already enabled.  And if already enabled, defer enabling runpm until
+attach to avoid cutting off the power to the bridge.
+
+Once we get to attach, we know panel and drm driver are probed
+successfully, so at this point it is safe to enable runpm and reset the
+bridge.  If we do it earlier, we kill efifb (in the case that panel or
+drm driver do not probe successfully), giving the user no way to see
+what is going on.
+
+Signed-off-by: Rob Clark <robdclark@chromium.org>
+
+diff --git a/drivers/gpu/drm/bridge/ti-sn65dsi86.c b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+index 3cf4dab9ace9..7d456584ac0c 100644
+--- a/drivers/gpu/drm/bridge/ti-sn65dsi86.c
++++ b/drivers/gpu/drm/bridge/ti-sn65dsi86.c
+@@ -305,6 +305,12 @@ static int ti_sn_bridge_attach(struct drm_bridge *bridge,
+ 		return -EINVAL;
+ 	}
+ 
++	if (gpiod_get_value(pdata->enable_gpio)) {
++		pm_runtime_enable(pdata->dev);
++		ti_sn_bridge_resume(pdata->dev);
++		ti_sn_bridge_suspend(pdata->dev);
++	}
++
+ 	ret = drm_connector_init(bridge->dev, &pdata->connector,
+ 				 &ti_sn_bridge_connector_funcs,
+ 				 DRM_MODE_CONNECTOR_eDP);
+@@ -1029,7 +1035,7 @@ static int ti_sn_bridge_probe(struct i2c_client *client,
+ 	dev_set_drvdata(&client->dev, pdata);
+ 
+ 	pdata->enable_gpio = devm_gpiod_get(pdata->dev, "enable",
+-					    GPIOD_OUT_LOW);
++					    GPIOD_ASIS);
+ 	if (IS_ERR(pdata->enable_gpio)) {
+ 		DRM_ERROR("failed to get enable gpio from DT\n");
+ 		ret = PTR_ERR(pdata->enable_gpio);
+@@ -1059,7 +1065,9 @@ static int ti_sn_bridge_probe(struct i2c_client *client,
+ 	if (ret)
+ 		return ret;
+ 
+-	pm_runtime_enable(pdata->dev);
++	if (!gpiod_get_value(pdata->enable_gpio)) {
++		pm_runtime_enable(pdata->dev);
++	}
+ 
+ 	i2c_set_clientdata(client, pdata);
+ 

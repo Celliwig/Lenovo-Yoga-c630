@@ -1,0 +1,7 @@
+commit 8b62fc5e193970502a05db475a5c7842005821ca
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Mon May 13 12:21:40 2019 -0700
+
+    sn65dsi86: backlight
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

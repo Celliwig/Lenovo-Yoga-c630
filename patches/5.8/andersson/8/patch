@@ -1,0 +1,62 @@
+From e379767c6c39cf02a9471f60b5c50b499f2064a9 Mon Sep 17 00:00:00 2001
+From: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date: Wed, 8 Jul 2020 10:44:01 -0700
+Subject: [PATCH] iommu/arm-smmu: Move SMR and S2CR definitions to header file
+
+Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+
+diff --git a/drivers/iommu/arm-smmu.c b/drivers/iommu/arm-smmu.c
+index 243bc4cb2705..acc7a135f527 100644
+--- a/drivers/iommu/arm-smmu.c
++++ b/drivers/iommu/arm-smmu.c
+@@ -68,24 +68,10 @@ module_param(disable_bypass, bool, S_IRUGO);
+ MODULE_PARM_DESC(disable_bypass,
+ 	"Disable bypass streams such that incoming transactions from devices that are not attached to an iommu domain will report an abort back to the device and will not be allowed to pass through the SMMU.");
+ 
+-struct arm_smmu_s2cr {
+-	struct iommu_group		*group;
+-	int				count;
+-	enum arm_smmu_s2cr_type		type;
+-	enum arm_smmu_s2cr_privcfg	privcfg;
+-	u8				cbndx;
+-};
+-
+ #define s2cr_init_val (struct arm_smmu_s2cr){				\
+ 	.type = disable_bypass ? S2CR_TYPE_FAULT : S2CR_TYPE_BYPASS,	\
+ }
+ 
+-struct arm_smmu_smr {
+-	u16				mask;
+-	u16				id;
+-	bool				valid;
+-};
+-
+ struct arm_smmu_cb {
+ 	u64				ttbr[2];
+ 	u32				tcr[2];
+diff --git a/drivers/iommu/arm-smmu.h b/drivers/iommu/arm-smmu.h
+index d172c024be61..0474263c6783 100644
+--- a/drivers/iommu/arm-smmu.h
++++ b/drivers/iommu/arm-smmu.h
+@@ -251,6 +251,21 @@ enum arm_smmu_implementation {
+ 	QCOM_SMMUV2,
+ };
+ 
++struct arm_smmu_s2cr {
++	struct iommu_group		*group;
++	int				count;
++	enum arm_smmu_s2cr_type		type;
++	enum arm_smmu_s2cr_privcfg	privcfg;
++	u8				cbndx;
++};
++
++struct arm_smmu_smr {
++	u16				mask;
++	u16				id;
++	bool				valid;
++	bool				pinned;
++};
++
+ struct arm_smmu_device {
+ 	struct device			*dev;
+ 

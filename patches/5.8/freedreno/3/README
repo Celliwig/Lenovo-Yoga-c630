@@ -1,0 +1,12 @@
+commit aa472721c8dbe1713cf510f56ffbc56ae9e14247
+Author: Chen Tao <chentao107@huawei.com>
+Date:   Mon Jun 8 09:48:59 2020 +0800
+
+    drm/msm/dpu: fix error return code in dpu_encoder_init
+    
+    Fix to return negative error code -ENOMEM with the use of
+    ERR_PTR from dpu_encoder_init.
+    
+    Fixes: 25fdd5933e4c ("drm/msm: Add SDM845 DPU support")
+    Signed-off-by: Chen Tao <chentao107@huawei.com>
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

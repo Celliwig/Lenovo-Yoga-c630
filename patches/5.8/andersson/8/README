@@ -1,0 +1,7 @@
+commit e379767c6c39cf02a9471f60b5c50b499f2064a9
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Jul 8 10:44:01 2020 -0700
+
+    iommu/arm-smmu: Move SMR and S2CR definitions to header file
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

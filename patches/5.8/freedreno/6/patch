@@ -1,0 +1,29 @@
+From f167989c673096c8d823b1292c6ee51ed266d178 Mon Sep 17 00:00:00 2001
+From: Eric Anholt <eric@anholt.net>
+Date: Wed, 17 Jun 2020 13:53:09 -0700
+Subject: [PATCH] drm/msm: Fix address space size after refactor.
+
+Previously the address space went from 16M to ~0u, but with the
+refactor one of the 'f's was dropped, limiting us to 256MB.
+Additionally, the new interface takes a start and size, not start and
+end, so we can't just copy and paste.
+
+Fixes regressions in dEQP-VK.memory.allocation.random.*
+
+Fixes: ccac7ce373c1 ("drm/msm: Refactor address space initialization")
+Signed-off-by: Eric Anholt <eric@anholt.net>
+Signed-off-by: Rob Clark <robdclark@chromium.org>
+
+diff --git a/drivers/gpu/drm/msm/adreno/adreno_gpu.c b/drivers/gpu/drm/msm/adreno/adreno_gpu.c
+index 3d4efe684a98..5db06b590943 100644
+--- a/drivers/gpu/drm/msm/adreno/adreno_gpu.c
++++ b/drivers/gpu/drm/msm/adreno/adreno_gpu.c
+@@ -194,7 +194,7 @@ adreno_iommu_create_address_space(struct msm_gpu *gpu,
+ 	struct msm_gem_address_space *aspace;
+ 
+ 	aspace = msm_gem_address_space_create(mmu, "gpu", SZ_16M,
+-		0xffffffff);
++		0xffffffff - SZ_16M);
+ 
+ 	if (IS_ERR(aspace) && !IS_ERR(mmu))
+ 		mmu->funcs->destroy(mmu);

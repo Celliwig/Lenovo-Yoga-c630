@@ -1,0 +1,11 @@
+commit c3186c28047f20846a2300ccad6d60ca0a9883db
+Author: Sibi Sankar <sibis@codeaurora.org>
+Date:   Fri Jul 3 02:16:43 2020 +0530
+
+    arm64: dts: qcom: sdm845: Add cpu OPP tables
+    
+    Add OPP tables required to scale DDR/L3 per freq-domain on SDM845 SoCs.
+    
+    Signed-off-by: Sibi Sankar <sibis@codeaurora.org>
+    Link: https://lore.kernel.org/r/20200702204643.25785-1-sibis@codeaurora.org
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

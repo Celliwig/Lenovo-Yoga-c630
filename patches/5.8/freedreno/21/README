@@ -1,0 +1,19 @@
+commit c6ef4c5e929ae537fbb8e782dbc7466bb36aaec9
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Wed Jun 19 09:23:10 2019 -0700
+
+    WIP: drm/msm/dsi: get the clocks into OFF state at init
+    
+    Update commit msg
+    add clk_is_enabled() earlier and use that
+    
+    Original commit msg:
+    
+    Do an extra enable/disable cycle at init, to get the clks into disabled
+    state in case bootloader left them enabled.
+    
+    In case they were already enabled, the clk_prepare_enable() has no real
+    effect, other than getting the enable_count/prepare_count into the right
+    state so that we can disable clocks in the correct order.  This way we
+    avoid having stuck clocks when we later want to do a modeset and set the
+    clock rates.

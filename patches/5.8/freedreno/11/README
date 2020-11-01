@@ -1,0 +1,22 @@
+commit faa9eec26385f5f3376399386df075769eb0653e
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed May 17 20:12:48 2017 -0700
+
+    iommu: arm-smmu: Handoff SMR registers and context banks (SDM845)
+    
+    This version only applies to the SDM845 display streams.
+    
+    Boot splash screen or EFI framebuffer requires the display hardware to
+    operate while the Linux iommu driver probes. Therefore, we cannot simply
+    wipe out the SMR register settings programmed by the bootloader.
+    
+    Detect which SMR registers are in use during probe, and which context
+    banks they are associated with. Reserve these context banks for the
+    first Linux device whose stream-id matches the SMR register.
+    
+    Any existing page-tables will be discarded.
+    
+    Heavily based on downstream implementation by Patrick Daly
+    <pdaly@codeaurora.org>.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

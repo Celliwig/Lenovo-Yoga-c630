@@ -1,0 +1,7 @@
+commit ac6fb157100bdb2f5f79f3c6d3f5b8c2e67b736d
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Sat Jun 1 10:23:27 2019 -0700
+
+    arm64: dts: c630: mark some panel/bridge related regs as boot-on
+    
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

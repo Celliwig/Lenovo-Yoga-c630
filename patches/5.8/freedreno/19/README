@@ -1,0 +1,15 @@
+commit e245b13198ba07526d9398dabfee0c1075f4b133
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Sat Jun 1 08:05:59 2019 -0700
+
+    genpd/gdsc: inherit display powerdomain from bootloader
+    
+    Mark power domains that may be enabled by bootloader, and which should
+    not be disabled until a driver takes them over.
+    
+    This keeps efifb alive until the real driver can be probed.  In a distro
+    kernel, the driver will most likely built as a module, and not probed
+    until we get to userspace (after late_initcall)
+    
+    Signed-off-by: Rob Clark <robdclark@chromium.org>
+    Reviewed-by: Jeffrey Hugo <jeffrey.l.hugo@gmail.com>

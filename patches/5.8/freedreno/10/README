@@ -1,0 +1,10 @@
+commit 955703f8b65f057351f66fda3a02057f44c1f516
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Sun Nov 10 11:49:40 2019 -0800
+
+    arm64: dts: qcom: c630: Make i2c devices active high
+    
+    The two i2c hid devices on i2c3 are supposed to have interrupts
+    triggered active high, update this.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

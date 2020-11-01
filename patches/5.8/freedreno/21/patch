@@ -1,0 +1,207 @@
+From c6ef4c5e929ae537fbb8e782dbc7466bb36aaec9 Mon Sep 17 00:00:00 2001
+From: Rob Clark <robdclark@chromium.org>
+Date: Wed, 19 Jun 2019 09:23:10 -0700
+Subject: [PATCH] WIP: drm/msm/dsi: get the clocks into OFF state at init
+
+Update commit msg
+add clk_is_enabled() earlier and use that
+
+Original commit msg:
+
+Do an extra enable/disable cycle at init, to get the clks into disabled
+state in case bootloader left them enabled.
+
+In case they were already enabled, the clk_prepare_enable() has no real
+effect, other than getting the enable_count/prepare_count into the right
+state so that we can disable clocks in the correct order.  This way we
+avoid having stuck clocks when we later want to do a modeset and set the
+clock rates.
+
+diff --git a/drivers/gpu/drm/msm/dsi/dsi.c b/drivers/gpu/drm/msm/dsi/dsi.c
+index 55ea4bc2ee9c..8f94aac37bf5 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi.c
++++ b/drivers/gpu/drm/msm/dsi/dsi.c
+@@ -77,6 +77,7 @@ static struct msm_dsi *dsi_init(struct platform_device *pdev)
+ 
+ 	msm_dsi->id = -1;
+ 	msm_dsi->pdev = pdev;
++	msm_dsi->enabled_at_boot = msm_is_enabled(&pdev->dev);
+ 	platform_set_drvdata(pdev, msm_dsi);
+ 
+ 	/* Init dsi host */
+@@ -94,6 +95,8 @@ static struct msm_dsi *dsi_init(struct platform_device *pdev)
+ 	if (ret)
+ 		goto destroy_dsi;
+ 
++	msm_dsi_host_post_init(msm_dsi);
++
+ 	return msm_dsi;
+ 
+ destroy_dsi:
+diff --git a/drivers/gpu/drm/msm/dsi/dsi.h b/drivers/gpu/drm/msm/dsi/dsi.h
+index 4de771d6f0be..7c08b0a843f3 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi.h
++++ b/drivers/gpu/drm/msm/dsi/dsi.h
+@@ -76,6 +76,8 @@ struct msm_dsi {
+ 	struct device *phy_dev;
+ 	bool phy_enabled;
+ 
++	bool enabled_at_boot;
++
+ 	/* the encoder we are hooked to (outside of dsi block) */
+ 	struct drm_encoder *encoder;
+ 
+@@ -176,6 +178,7 @@ void msm_dsi_host_destroy(struct mipi_dsi_host *host);
+ int msm_dsi_host_modeset_init(struct mipi_dsi_host *host,
+ 					struct drm_device *dev);
+ int msm_dsi_host_init(struct msm_dsi *msm_dsi);
++void msm_dsi_host_post_init(struct msm_dsi *msm_dsi);
+ int msm_dsi_runtime_suspend(struct device *dev);
+ int msm_dsi_runtime_resume(struct device *dev);
+ int dsi_link_clk_set_rate_6g(struct msm_dsi_host *msm_host);
+diff --git a/drivers/gpu/drm/msm/dsi/dsi_host.c b/drivers/gpu/drm/msm/dsi/dsi_host.c
+index 11ae5b8444c3..813f44fada39 100644
+--- a/drivers/gpu/drm/msm/dsi/dsi_host.c
++++ b/drivers/gpu/drm/msm/dsi/dsi_host.c
+@@ -217,8 +217,6 @@ static const struct msm_dsi_cfg_handler *dsi_get_config(
+ 		goto put_gdsc;
+ 	}
+ 
+-	pm_runtime_get_sync(dev);
+-
+ 	ret = regulator_enable(gdsc_reg);
+ 	if (ret) {
+ 		pr_err("%s: unable to enable gdsc\n", __func__);
+@@ -245,7 +243,6 @@ static const struct msm_dsi_cfg_handler *dsi_get_config(
+ 	clk_disable_unprepare(ahb_clk);
+ disable_gdsc:
+ 	regulator_disable(gdsc_reg);
+-	pm_runtime_put_sync(dev);
+ put_gdsc:
+ 	regulator_put(gdsc_reg);
+ exit:
+@@ -392,6 +389,8 @@ static int dsi_clk_init(struct msm_dsi_host *msm_host)
+ 				__func__, cfg->bus_clk_names[i], ret);
+ 			goto exit;
+ 		}
++
++		clk_prepare_enable(msm_host->bus_clks[i]);
+ 	}
+ 
+ 	/* get link and source clocks */
+@@ -438,6 +437,7 @@ static int dsi_clk_init(struct msm_dsi_host *msm_host)
+ 
+ 	if (cfg_hnd->ops->clk_init_ver)
+ 		ret = cfg_hnd->ops->clk_init_ver(msm_host);
++
+ exit:
+ 	return ret;
+ }
+@@ -1811,6 +1811,31 @@ static int dsi_host_get_id(struct msm_dsi_host *msm_host)
+ 	return -EINVAL;
+ }
+ 
++void msm_dsi_host_post_init(struct msm_dsi *msm_dsi)
++{
++	struct msm_dsi_host *msm_host = to_msm_dsi_host(msm_dsi->host);
++	const struct msm_dsi_cfg_handler *cfg_hnd = msm_host->cfg_hnd;
++	struct platform_device *pdev = msm_dsi->pdev;
++	int ret;
++
++	if (!msm_dsi->enabled_at_boot)
++		return;
++
++	pm_runtime_enable(&pdev->dev);
++	pm_runtime_get_sync(&pdev->dev);
++
++	/*
++	 * Do an extra enable/disable sequence initially to
++	 * ensure the clocks are actually off, if left enabled
++	 * by the bootloader..
++	 */
++	ret = cfg_hnd->ops->link_clk_enable(msm_host);
++	if (!ret)
++		cfg_hnd->ops->link_clk_disable(msm_host);
++
++	pm_runtime_put_sync(&pdev->dev);
++}
++
+ int msm_dsi_host_init(struct msm_dsi *msm_dsi)
+ {
+ 	struct msm_dsi_host *msm_host = NULL;
+@@ -1841,7 +1866,15 @@ int msm_dsi_host_init(struct msm_dsi *msm_dsi)
+ 		goto fail;
+ 	}
+ 
+-	pm_runtime_enable(&pdev->dev);
++	/*
++	 * If enabled at boot, defer enabling runpm until after we know
++	 * we will no longer -EPROBE_DEFER, to avoid disabling the running
++	 * clocks.
++	 */
++	if (!msm_dsi->enabled_at_boot)
++		pm_runtime_enable(&pdev->dev);
++
++	pm_runtime_get_sync(&pdev->dev);
+ 
+ 	msm_host->cfg_hnd = dsi_get_config(msm_host);
+ 	if (!msm_host->cfg_hnd) {
+@@ -1872,6 +1905,8 @@ int msm_dsi_host_init(struct msm_dsi *msm_dsi)
+ 		goto fail;
+ 	}
+ 
++	pm_runtime_put_sync(&pdev->dev);
++
+ 	msm_host->rx_buf = devm_kzalloc(&pdev->dev, SZ_4K, GFP_KERNEL);
+ 	if (!msm_host->rx_buf) {
+ 		ret = -ENOMEM;
+diff --git a/drivers/gpu/drm/msm/msm_drv.c b/drivers/gpu/drm/msm/msm_drv.c
+index f6ce40bf3699..26733dfff278 100644
+--- a/drivers/gpu/drm/msm/msm_drv.c
++++ b/drivers/gpu/drm/msm/msm_drv.c
+@@ -101,6 +101,33 @@ struct clk *msm_clk_bulk_get_clock(struct clk_bulk_data *bulk, int count,
+ 	return NULL;
+ }
+ 
++#include <linux/clk-provider.h>  /* hack to get __clk_is_enabled() */
++
++/* Check if any clk associated with the device is enabled, which would be
++ * an indication that display was enabled by bootloader
++ */
++bool msm_is_enabled(struct device *dev)
++{
++	struct clk_bulk_data *bulk;
++	int i, num_clks;
++	bool enabled = false;
++
++	num_clks = clk_bulk_get_all(dev, &bulk);
++	if (num_clks <= 0)
++		return false;
++
++	for (i = 0; i < num_clks; i++) {
++		if (__clk_is_enabled(bulk[i].clk)) {
++			enabled = true;
++			break;
++		}
++	}
++
++	clk_bulk_put_all(num_clks, bulk);
++
++	return enabled;
++}
++
+ struct clk *msm_clk_get(struct platform_device *pdev, const char *name)
+ {
+ 	struct clk *clk;
+diff --git a/drivers/gpu/drm/msm/msm_drv.h b/drivers/gpu/drm/msm/msm_drv.h
+index e2d6a6056418..ce4d9e5da458 100644
+--- a/drivers/gpu/drm/msm/msm_drv.h
++++ b/drivers/gpu/drm/msm/msm_drv.h
+@@ -409,6 +409,7 @@ struct clk *msm_clk_get(struct platform_device *pdev, const char *name);
+ 
+ struct clk *msm_clk_bulk_get_clock(struct clk_bulk_data *bulk, int count,
+ 	const char *name);
++bool msm_is_enabled(struct device *dev);
+ void __iomem *msm_ioremap(struct platform_device *pdev, const char *name,
+ 		const char *dbgname);
+ void msm_writel(u32 data, void __iomem *addr);

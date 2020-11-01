@@ -1,0 +1,12 @@
+commit 078e8f8ce8ad96fdcb5ca4dc8714d266a77eefc3
+Author: Eric Anholt <eric@anholt.net>
+Date:   Wed Jun 17 13:53:10 2020 -0700
+
+    drm/msm: Fix setup of a6xx create_address_space.
+    
+    We don't want it under CONFIG_DRM_MSM_GPU_STATE, we need it all the
+    time (like the other GPUs do).
+    
+    Fixes: ccac7ce373c1 ("drm/msm: Refactor address space initialization")
+    Signed-off-by: Eric Anholt <eric@anholt.net>
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

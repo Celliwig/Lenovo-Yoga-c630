@@ -1,0 +1,33 @@
+From d49f26cdd999673d56ab255f7e8df0cffef5c554 Mon Sep 17 00:00:00 2001
+From: Rob Clark <robdclark@gmail.com>
+Date: Fri, 15 Sep 2017 08:43:22 -0400
+Subject: [PATCH] WIP: iommu: arm-smmu: Set SCTLR.HUPCF bit
+
+We seem to need to set either this or CFCFG (stall), otherwise gpu
+faults trigger problems with other in-flight transactions from the
+GPU causing CP errors, etc.
+
+diff --git a/drivers/iommu/arm-smmu.c b/drivers/iommu/arm-smmu.c
+index 36271a296cfa..e5a50b459866 100644
+--- a/drivers/iommu/arm-smmu.c
++++ b/drivers/iommu/arm-smmu.c
+@@ -669,6 +669,7 @@ static void arm_smmu_write_context_bank(struct arm_smmu_device *smmu, int idx)
+ 	      ARM_SMMU_SCTLR_TRE | ARM_SMMU_SCTLR_M;
+ 	if (stage1)
+ 		reg |= ARM_SMMU_SCTLR_S1_ASIDPNE;
++	reg |= ARM_SMMU_SCTLR_HUPCF;
+ 	if (IS_ENABLED(CONFIG_CPU_BIG_ENDIAN))
+ 		reg |= ARM_SMMU_SCTLR_E;
+ 
+diff --git a/drivers/iommu/arm-smmu.h b/drivers/iommu/arm-smmu.h
+index d172c024be61..4c61b77c4fed 100644
+--- a/drivers/iommu/arm-smmu.h
++++ b/drivers/iommu/arm-smmu.h
+@@ -142,6 +142,7 @@ enum arm_smmu_cbar_type {
+ 
+ #define ARM_SMMU_CB_SCTLR		0x0
+ #define ARM_SMMU_SCTLR_S1_ASIDPNE	BIT(12)
++#define ARM_SMMU_SCTLR_HUPCF		BIT(8)
+ #define ARM_SMMU_SCTLR_CFCFG		BIT(7)
+ #define ARM_SMMU_SCTLR_CFIE		BIT(6)
+ #define ARM_SMMU_SCTLR_CFRE		BIT(5)

@@ -1,0 +1,10 @@
+commit f65f2e53bd2ddff87fac52d278fac239e338161e
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Nov 8 22:41:26 2019 -0800
+
+    arm64: dts: qcom: c630: Add wifi node and regulators
+    
+    Enable the &wifi node and specify its regulators, as well as specify
+    voltage (based on the MTP) for the supply regulator.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

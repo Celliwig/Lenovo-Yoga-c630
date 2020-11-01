@@ -1,0 +1,9 @@
+commit 99089d7d60d73d124471e5ca24671ef1d5982c49
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Fri Nov 8 18:55:24 2019 -0800
+
+    arm64: dts: qcom: c630: Add some-battery
+    
+    There's a some-battery on i2c1 address 0x70, add it.
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

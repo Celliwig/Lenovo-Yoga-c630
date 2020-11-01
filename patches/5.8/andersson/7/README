@@ -1,0 +1,19 @@
+commit 90e0fbd7f4e9aee2088ac428c1824bfa34f438d6
+Author: Stephen Boyd <swboyd@chromium.org>
+Date:   Thu Jul 2 11:21:55 2020 -0700
+
+    arm64: dts: sdm845: Add iommus property to qup
+    
+    The SMMU that sits in front of the QUP needs to be programmed properly
+    so that the i2c geni driver can allocate DMA descriptors. Failure to do
+    this leads to faults when using devices such as an i2c touchscreen where
+    the transaction is larger than 32 bytes and we use a DMA buffer.
+    
+    arm-smmu 15000000.iommu: Unexpected global fault, this could be serious
+    arm-smmu 15000000.iommu:         GFSR 0x00000002, GFSYNR0 0x00000002, GFSYNR1 0x000006c0, GFSYNR2 0x00000000
+    
+    Add the right SID and mask so this works.
+    
+    Signed-off-by: Stephen Boyd <swboyd@chromium.org>
+    [bjorn: Define for second QUP as well]
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

@@ -1,0 +1,9 @@
+commit d49f26cdd999673d56ab255f7e8df0cffef5c554
+Author: Rob Clark <robdclark@gmail.com>
+Date:   Fri Sep 15 08:43:22 2017 -0400
+
+    WIP: iommu: arm-smmu: Set SCTLR.HUPCF bit
+    
+    We seem to need to set either this or CFCFG (stall), otherwise gpu
+    faults trigger problems with other in-flight transactions from the
+    GPU causing CP errors, etc.

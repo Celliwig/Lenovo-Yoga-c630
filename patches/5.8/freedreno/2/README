@@ -1,0 +1,14 @@
+commit 177d3819633cd520e3f95df541a04644aab4c657
+Author: Bernard Zhao <bernard@vivo.com>
+Date:   Fri Jun 12 09:23:49 2020 +0800
+
+    drm/msm: fix potential memleak in error branch
+    
+    In function msm_submitqueue_create, the queue is a local
+    variable, in return -EINVAL branch, queue didn`t add to ctx`s
+    list yet, and also didn`t kfree, this maybe bring in potential
+    memleak.
+    
+    Signed-off-by: Bernard Zhao <bernard@vivo.com>
+    [trivial commit msg fixup]
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

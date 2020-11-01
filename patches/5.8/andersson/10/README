@@ -1,0 +1,7 @@
+commit 98d08aba720f2f35e3719630a91c62a3e44f92d5
+Author: Bjorn Andersson <bjorn.andersson@linaro.org>
+Date:   Wed Jul 8 11:55:41 2020 -0700
+
+    iommu/arm-smmu: Emulate bypass by using context banks without translation
+    
+    Signed-off-by: Bjorn Andersson <bjorn.andersson@linaro.org>

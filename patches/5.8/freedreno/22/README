@@ -1,0 +1,17 @@
+commit 92f17f38fc7d34c0c8917383835fd27c851384a6
+Author: Rob Clark <robdclark@chromium.org>
+Date:   Sat Jun 29 11:44:50 2019 -0700
+
+    drm/bridge: ti-sn65dsi86: support booloader enabled display
+    
+    Request the enable gpio ASIS to avoid disabling bridge during probe, if
+    already enabled.  And if already enabled, defer enabling runpm until
+    attach to avoid cutting off the power to the bridge.
+    
+    Once we get to attach, we know panel and drm driver are probed
+    successfully, so at this point it is safe to enable runpm and reset the
+    bridge.  If we do it earlier, we kill efifb (in the case that panel or
+    drm driver do not probe successfully), giving the user no way to see
+    what is going on.
+    
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

@@ -1,0 +1,14 @@
+commit 2e7ec6b5297157efabb50e5f82adc628cf90296c
+Author: Krishna Manikandan <mkrishn@codeaurora.org>
+Date:   Thu May 28 14:04:28 2020 +0530
+
+    drm/msm/dpu: allow initialization of encoder locks during encoder init
+    
+    In the current implementation, mutex initialization
+    for encoder mutex locks are done during encoder
+    setup. This can lead to scenarios where the lock
+    is used before it is initialized. Move mutex_init
+    to dpu_encoder_init to avoid this.
+    
+    Signed-off-by: Krishna Manikandan <mkrishn@codeaurora.org>
+    Signed-off-by: Rob Clark <robdclark@chromium.org>

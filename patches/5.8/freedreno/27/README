@@ -1,0 +1,24 @@
+commit 7ea70cbadd53c199b36f6d2433183dfcb9b1fbdb
+Author: Jordan Crouse <jcrouse@codeaurora.org>
+Date:   Tue Jun 9 12:05:16 2020 -0600
+
+    iommu/arm-smmu: Don't bypass pinned stream mappings
+    
+    Commit 0e764a01015d ("iommu/arm-smmu: Allow client devices to select
+    direct mapping") sets the initial domain type to SMMU_DOMAIN_IDENTITY
+    for devices that select direct mapping. This ends up setting the domain
+    as ARM_SMMU_DOMAIN_BYPASS which causes the stream ID mappings
+    for the device to be programmed to S2CR_TYPE_BYPASS.
+    
+    This causes a problem for stream mappings that are inherited from
+    the bootloader since rewriting the stream to BYPASS will disrupt the
+    display controller access to DDR.
+    
+    This is an extension to ("iommu/arm-smmu: Allow inheriting stream mapping
+    from bootloader") [1] that identifies streams that are already configured
+     and marked them as pinned. This patch extends that to not re-write pinned
+    stream mappings for ARM_SMMU_DOMAIN_BYPASS domains.
+    
+    [1] https://lore.kernel.org/r/20191226221709.3844244-4-bjorn.andersson@linaro.org
+    
+    Signed-off-by: Jordan Crouse <jcrouse@codeaurora.org>
