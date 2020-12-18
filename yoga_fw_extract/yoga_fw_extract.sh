@@ -432,6 +432,9 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	if [ -e "${PATH_LIBFW_ATH10K}/WCN3990" ]; then
 		backup_or_delete "Atheros" "${PATH_LIBFW_ATH10K}/WCN3990" "${BKUP_DATETIME}"
 	fi
+	if [ ! -e "${PATH_LIBFW_ATH10K}" ]; then
+		sudo mkdir -p "${PATH_LIBFW_ATH10K}" &> /dev/null
+	fi
 	echo -n "Copying new Atheros ath10k firmware: "
 	sudo cp -r "${PATH_FW_ATH10K}" "${PATH_LIBFW_ATH10K}" &> /dev/null
 	done_failedexit $?
