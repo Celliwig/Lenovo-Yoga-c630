@@ -107,7 +107,7 @@ WIN_PART=""									# Windows partition path
 echo -e "${TXT_UNDERLINE}Getting Windows drivers...${TXT_NORMAL}"
 echo "Searching for Windows partition..."
 WIN_PART_LABEL="Windows"
-WIN_PART_TMP=`blkid -L "${WIN_PART_LABEL}"`
+WIN_PART_TMP=`/sbin/blkid -L "${WIN_PART_LABEL}"`
 if [ $? -eq 0 ]; then
 	echo "	Found Windows partition: ${WIN_PART_TMP}"
 	WIN_PART=${WIN_PART_TMP}
