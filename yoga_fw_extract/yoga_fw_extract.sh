@@ -107,7 +107,7 @@ WIN_PART=""									# Windows partition path
 echo -e "${TXT_UNDERLINE}Getting Windows drivers...${TXT_NORMAL}"
 echo "Searching for Windows partition..."
 WIN_PART_LABEL="Windows"
-WIN_PART_TMP=`blkid -L "${WIN_PART_LABEL}"`
+WIN_PART_TMP=`/sbin/blkid -L "${WIN_PART_LABEL}"`
 if [ $? -eq 0 ]; then
 	echo "	Found Windows partition: ${WIN_PART_TMP}"
 	WIN_PART=${WIN_PART_TMP}
@@ -431,6 +431,9 @@ if [ ${COPY_ERR} -eq 0 ]; then
 	PATH_LIBFW_ATH10K="/lib/firmware/ath10k"
 	if [ -e "${PATH_LIBFW_ATH10K}/WCN3990" ]; then
 		backup_or_delete "Atheros" "${PATH_LIBFW_ATH10K}/WCN3990" "${BKUP_DATETIME}"
+	fi
+	if [ ! -e "${PATH_LIBFW_ATH10K}" ]; then
+		sudo mkdir -p "${PATH_LIBFW_ATH10K}" &> /dev/null
 	fi
 	echo -n "Copying new Atheros ath10k firmware: "
 	sudo cp -r "${PATH_FW_ATH10K}" "${PATH_LIBFW_ATH10K}" &> /dev/null
